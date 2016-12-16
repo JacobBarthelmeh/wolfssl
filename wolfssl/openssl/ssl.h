@@ -30,7 +30,10 @@
 #define WOLFSSL_OPENSSL_H_
 
 /* wolfssl_openssl compatibility layer */
+#ifndef OPENSSL_EXTRA_SSL_GUARD
+#define OPENSSL_EXTRA_SSL_GUARD
 #include <wolfssl/ssl.h>
+#endif /* OPENSSL_EXTRA_SSL_GUARD */
 
 #ifdef __cplusplus
     extern "C" {
@@ -78,7 +81,6 @@ typedef WOLFSSL_X509_EXTENSION X509_EXTENSION;
 typedef WOLFSSL_ASN1_TIME      ASN1_TIME;
 typedef WOLFSSL_ASN1_INTEGER   ASN1_INTEGER;
 typedef WOLFSSL_ASN1_OBJECT    ASN1_OBJECT;
-typedef WOLFSSL_ASN1_STRING    ASN1_STRING;
 typedef WOLFSSL_dynlock_value  CRYPTO_dynlock_value;
 typedef WOLFSSL_BUF_MEM        BUF_MEM;
 
@@ -600,8 +602,8 @@ typedef WOLFSSL_X509_NAME_ENTRY X509_NAME_ENTRY;
 #define X509_V_FLAG_CRL_CHECK     WOLFSSL_CRL_CHECK
 #define X509_V_FLAG_CRL_CHECK_ALL WOLFSSL_CRL_CHECKALL
 
-#ifdef HAVE_STUNNEL
 #include <wolfssl/openssl/asn1.h>
+#ifdef HAVE_STUNNEL
 
 /* defined as: (SSL_ST_ACCEPT|SSL_CB_LOOP), which becomes 0x2001*/
 #define SSL_CB_ACCEPT_LOOP               0x2001

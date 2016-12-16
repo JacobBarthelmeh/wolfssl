@@ -3020,6 +3020,26 @@ static void test_wolfSSL_BIO(void)
 }
 
 
+static void test_wolfSSL_ASN1_STRING(void)
+{
+    #if defined(OPENSSL_EXTRA)
+    ASN1_STRING* str = NULL;
+    const char data[] = "hello wolfSSL";
+
+    printf(testingFmt, "wolfSSL_ASN1_STRING()");
+
+    AssertNotNull(str = ASN1_STRING_type_new(V_ASN1_OCTET_STRING));
+    AssertIntEQ(ASN1_STRING_set(str, (const void*)data, sizeof(data)), 1);
+    AssertIntEQ(ASN1_STRING_set(str, (const void*)data, -1), 1);
+    AssertIntEQ(ASN1_STRING_set(str, NULL, -1), 0);
+
+    ASN1_STRING_free(str);
+
+    printf(resultFmt, passed);
+    #endif
+}
+
+
 /*----------------------------------------------------------------------------*
  | Main
  *----------------------------------------------------------------------------*/
@@ -3078,6 +3098,7 @@ void ApiTest(void)
     test_wolfSSL_set_options();
     test_wolfSSL_PEM_read_bio();
     test_wolfSSL_BIO();
+    test_wolfSSL_ASN1_STRING();
 
     AssertIntEQ(test_wolfSSL_Cleanup(), SSL_SUCCESS);
     printf(" End API Tests\n");
