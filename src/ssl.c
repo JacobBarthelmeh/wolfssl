@@ -9943,7 +9943,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
         static WOLFSSL_BIO_METHOD meth;
 
         WOLFSSL_ENTER("BIO_f_buffer");
-        meth.type = BIO_BUFFER;
+        meth.type = WOLFSSL_BIO_BUFFER;
 
         return &meth;
     }
@@ -9963,7 +9963,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
         static WOLFSSL_BIO_METHOD bio_meth;
 
         WOLFSSL_ENTER("wolfSSL_BIO_f_bio");
-        bio_meth.type = BIO_BIO;
+        bio_meth.type = WOLFSSL_BIO_BIO;
 
         return &bio_meth;
     }
@@ -9975,7 +9975,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
         static WOLFSSL_BIO_METHOD file_meth;
 
         WOLFSSL_ENTER("wolfSSL_BIO_f_file");
-        file_meth.type = BIO_FILE;
+        file_meth.type = WOLFSSL_BIO_FILE;
 
         return &file_meth;
     }
@@ -9987,7 +9987,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
         static WOLFSSL_BIO_METHOD meth;
 
         WOLFSSL_ENTER("BIO_f_ssl");
-        meth.type = BIO_SSL;
+        meth.type = WOLFSSL_BIO_SSL;
 
         return &meth;
     }
@@ -9998,7 +9998,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
         static WOLFSSL_BIO_METHOD meth;
 
         WOLFSSL_ENTER("BIO_s_socket");
-        meth.type = BIO_SOCKET;
+        meth.type = WOLFSSL_BIO_SOCKET;
 
         return &meth;
     }
@@ -10012,7 +10012,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
         WOLFSSL_ENTER("BIO_new_socket");
         if (bio) {
             XMEMSET(bio, 0, sizeof(WOLFSSL_BIO));
-            bio->type  = BIO_SOCKET;
+            bio->type  = WOLFSSL_BIO_SOCKET;
             bio->close = (byte)closeF;
             bio->fd    = sfd;
             bio->mem   = NULL;
@@ -10136,7 +10136,7 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
             }
 
         #ifndef NO_FILESYSTEM
-            if (bio->type == BIO_FILE && bio->close == BIO_CLOSE) {
+            if (bio->type == WOLFSSL_BIO_FILE && bio->close == BIO_CLOSE) {
                 if (bio->file) {
                     XFCLOSE(bio->file);
                 }
@@ -10186,12 +10186,12 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
 
         WOLFSSL_ENTER("wolfSSL_BIO_read");
 
-        if (bio && bio->type == BIO_BIO) {
+        if (bio && bio->type == WOLFSSL_BIO_BIO) {
             return wolfSSL_BIO_BIO_read(bio, buf, len);
         }
 
     #ifndef NO_FILESYSTEM
-        if (bio && bio->type == BIO_FILE) {
+        if (bio && bio->type == WOLFSSL_BIO_FILE) {
             return (int)XFREAD(buf, 1, len, bio->file);
         }
     #endif
@@ -10246,12 +10246,12 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
 
         WOLFSSL_ENTER("wolfSSL_BIO_write");
 
-        if (bio && bio->type == BIO_BIO) {
+        if (bio && bio->type == WOLFSSL_BIO_BIO) {
             return wolfSSL_BIO_BIO_write(bio, data, len);
         }
 
     #ifndef NO_FILESYSTEM
-        if (bio && bio->type == BIO_FILE) {
+        if (bio && bio->type == WOLFSSL_BIO_FILE) {
             return (int)XFWRITE(data, 1, len, bio->file);
         }
     #endif
@@ -13563,7 +13563,7 @@ WOLFSSL_BIO_METHOD* wolfSSL_BIO_s_mem(void)
     static WOLFSSL_BIO_METHOD meth;
 
     WOLFSSL_ENTER("BIO_s_mem");
-    meth.type = BIO_MEMORY;
+    meth.type = WOLFSSL_BIO_MEMORY;
 
     return &meth;
 }

@@ -201,6 +201,7 @@ WOLFSSL_API int wolfCrypt_Init(void);
     #define XFCLOSE                  vf_close
     #define XSEEK_END                VSEEK_END
     #define XBADFILE                 -1
+    #define XFGETS(b,s,f)            -2 /* Not ported yet */
 #elif defined(LSR_FS)
     #include <fs.h>
     #define XFILE                   struct fs_file*
@@ -213,6 +214,7 @@ WOLFSSL_API int wolfCrypt_Init(void);
     #define XFCLOSE                 fs_close
     #define XSEEK_END               0
     #define XBADFILE                NULL
+    #define XFGETS(b,s,f)            -2 /* Not ported yet */
 #elif defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX)
     #define XFILE                   MQX_FILE_PTR
     #define XFOPEN                  fopen
@@ -224,6 +226,7 @@ WOLFSSL_API int wolfCrypt_Init(void);
     #define XFCLOSE                 fclose
     #define XSEEK_END               IO_SEEK_END
     #define XBADFILE                NULL
+    #define XFGETS                  fgets
 #elif defined(MICRIUM)
     #include <fs.h>
     #define XFILE      FS_FILE*
@@ -236,6 +239,7 @@ WOLFSSL_API int wolfCrypt_Init(void);
     #define XFCLOSE    fs_fclose
     #define XSEEK_END  FS_SEEK_END
     #define XBADFILE   NULL
+    #define XFGETS(b,s,f) -2 /* Not ported yet */
 #else
     /* stdio, default case */
     #include <stdio.h>
@@ -254,6 +258,7 @@ WOLFSSL_API int wolfCrypt_Init(void);
     #define XFCLOSE    fclose
     #define XSEEK_END  SEEK_END
     #define XBADFILE   NULL
+    #define XFGETS     fgets
 #endif
 
 #endif /* NO_FILESYSTEM */

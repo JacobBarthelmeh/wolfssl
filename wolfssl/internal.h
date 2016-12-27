@@ -1238,16 +1238,6 @@ WOLFSSL_LOCAL ProtocolVersion MakeTLSv1_2(void);
 #endif
 
 
-enum BIO_TYPE {
-    BIO_BUFFER = 1,
-    BIO_SOCKET = 2,
-    BIO_SSL    = 3,
-    BIO_MEMORY = 4,
-    BIO_BIO    = 5,
-    BIO_FILE   = 6
-};
-
-
 /* wolfSSL BIO_METHOD type */
 struct WOLFSSL_BIO_METHOD {
     byte type;               /* method type */
