@@ -10901,6 +10901,21 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md)
     		}
     }
 
+    int wolfSSL_EVP_MD_CTX_copy(WOLFSSL_EVP_MD_CTX *out, const WOLFSSL_EVP_MD_CTX *in)
+    {
+        return EVP_MD_CTX_copy_ex(out, in);
+    }
+
+    int wolfSSL_EVP_MD_CTX_copy_ex(WOLFSSL_EVP_MD_CTX *out, const WOLFSSL_EVP_MD_CTX *in)
+    {
+        if((out == NULL) || (in == NULL))return 0;
+        if((out->macType != 0) && (out->macType != in->macType))return 0;
+
+        WOLFSSL_ENTER("EVP_CIPHER_MD_CTX_copy_ex");
+        XMEMCPY(out, in, sizeof(WOLFSSL_EVP_MD_CTX));
+        return 1;
+    }
+
     void wolfSSL_EVP_MD_CTX_init(WOLFSSL_EVP_MD_CTX* ctx)
     {
         WOLFSSL_ENTER("EVP_CIPHER_MD_CTX_init");
@@ -14308,6 +14323,7 @@ WOLFSSL_EVP_PKEY* wolfSSL_PKEY_new()
     if (pkey != NULL) {
         XMEMSET(pkey, 0, sizeof(WOLFSSL_EVP_PKEY));
     }
+    pkey->type = WOLFSSL_EVP_PKEY_DEFAULT;
 
     return pkey;
 }

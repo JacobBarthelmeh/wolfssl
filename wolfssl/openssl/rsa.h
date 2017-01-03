@@ -13,8 +13,9 @@
 #endif
 
 
-enum  { 
-	RSA_PKCS1_PADDING = 1
+enum  {
+	RSA_PKCS1_PADDING = 1,
+  RSA_PKCS1_OAEP_PADDING = 4,
  };
 
 /* rsaTypes */
@@ -76,7 +77,7 @@ WOLFSSL_API int wolfSSL_RSA_LoadDer(WOLFSSL_RSA*, const unsigned char*, int sz);
 
 
 #ifdef __cplusplus
-    }  /* extern "C" */ 
+    }  /* extern "C" */
 #endif
 
 #endif /* header */

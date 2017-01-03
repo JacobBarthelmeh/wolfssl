@@ -173,17 +173,28 @@ typedef struct WOLFSSL_EVP_CIPHER_CTX {
     int  lastUsed;
 } WOLFSSL_EVP_CIPHER_CTX;
 
+typedef struct  WOLFSSL_EVP_PKEY_CTX {
+    WOLFSSL_EVP_PKEY *pkey;
+    int op; /* operation */
+    int padding;
+} WOLFSSL_EVP_PKEY_CTX;
+
 typedef int WOLFSSL_ENGINE  ;
 typedef WOLFSSL_ENGINE ENGINE;
 
+#define EVP_PKEY_OP_ENCRYPT (1 << 6)
+#define EVP_PKEY_OP_DECRYPT (1 << 7)
+
 WOLFSSL_API void wolfSSL_EVP_init(void);
 WOLFSSL_API int  wolfSSL_EVP_MD_size(const WOLFSSL_EVP_MD* md);
-WOLFSSL_API int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md);
+WOLFSSL_API int  wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD *md);
 
 WOLFSSL_API WOLFSSL_EVP_MD_CTX *wolfSSL_EVP_MD_CTX_new (void);
 WOLFSSL_API void                wolfSSL_EVP_MD_CTX_free(WOLFSSL_EVP_MD_CTX* ctx);
 WOLFSSL_API void wolfSSL_EVP_MD_CTX_init(WOLFSSL_EVP_MD_CTX* ctx);
 WOLFSSL_API int  wolfSSL_EVP_MD_CTX_cleanup(WOLFSSL_EVP_MD_CTX* ctx);
+WOLFSSL_API int  wolfSSL_EVP_MD_CTX_copy(WOLFSSL_EVP_MD_CTX *out, const WOLFSSL_EVP_MD_CTX *in);
+WOLFSSL_API int  wolfSSL_EVP_MD_CTX_copy_ex(WOLFSSL_EVP_MD_CTX *out, const WOLFSSL_EVP_MD_CTX *in);
 WOLFSSL_API const WOLFSSL_EVP_MD *wolfSSL_EVP_MD_CTX_md(const WOLFSSL_EVP_MD_CTX *ctx);
 WOLFSSL_API const WOLFSSL_EVP_CIPHER *wolfSSL_EVP_get_cipherbyname(const char *name);
 WOLFSSL_API const WOLFSSL_EVP_MD     *wolfSSL_EVP_get_digestbyname(const char *name);
@@ -266,6 +277,30 @@ WOLFSSL_API WOLFSSL_RSA* wolfSSL_EVP_PKEY_get1_RSA(WOLFSSL_EVP_PKEY*);
 WOLFSSL_API WOLFSSL_DSA* wolfSSL_EVP_PKEY_get1_DSA(WOLFSSL_EVP_PKEY*);
 WOLFSSL_API WOLFSSL_EC_KEY *wolfSSL_EVP_PKEY_get1_EC_KEY(WOLFSSL_EVP_PKEY *key);
 
+WOLFSSL_API int wolfSSL_EVP_PKEY_bits(const WOLFSSL_EVP_PKEY *pkey);
+WOLFSSL_API int wolfSSL_EVP_PKEY_CTX_free(WOLFSSL_EVP_PKEY_CTX *ctx);
+WOLFSSL_API WOLFSSL_EVP_PKEY_CTX *wolfSSL_EVP_PKEY_CTX_new(WOLFSSL_EVP_PKEY *pkey, WOLFSSL_ENGINE *e);
+WOLFSSL_API int wolfSSL_EVP_PKEY_CTX_set_rsa_padding(WOLFSSL_EVP_PKEY_CTX *ctx, int padding);
+WOLFSSL_API int wolfSSL_EVP_PKEY_decrypt(WOLFSSL_EVP_PKEY_CTX *ctx,
+                     unsigned char *out, size_t *outlen,
+                     const unsigned char *in, size_t inlen);
+WOLFSSL_API int wolfSSL_EVP_PKEY_decrypt_init(WOLFSSL_EVP_PKEY_CTX *ctx);
+WOLFSSL_API int wolfSSL_EVP_PKEY_encrypt(WOLFSSL_EVP_PKEY_CTX *ctx,
+                     unsigned char *out, size_t *outlen,
+                     const unsigned char *in, size_t inlen);
+WOLFSSL_API int wolfSSL_EVP_PKEY_encrypt_init(WOLFSSL_EVP_PKEY_CTX *ctx);
+WOLFSSL_API WOLFSSL_EVP_PKEY *wolfSSL_EVP_PKEY_new(void);
+WOLFSSL_API int wolfSSL_EVP_PKEY_size(WOLFSSL_EVP_PKEY *pkey);
+WOLFSSL_API int wolfSSL_EVP_SignFinal(WOLFSSL_EVP_MD_CTX *ctx, unsigned char *sigret,
+                  unsigned int *siglen, WOLFSSL_EVP_PKEY *pkey);
+WOLFSSL_API int wolfSSL_EVP_SignInit(WOLFSSL_EVP_MD_CTX *ctx, const WOLFSSL_EVP_MD *type);
+WOLFSSL_API int wolfSSL_EVP_SignUpdate(WOLFSSL_EVP_MD_CTX *ctx, const void *data, size_t len);
+WOLFSSL_API int wolfSSL_EVP_VerifyFinal(WOLFSSL_EVP_MD_CTX *ctx, const uint8_t *sig, size_t sig_len,
+                    WOLFSSL_EVP_PKEY *pkey);
+WOLFSSL_API int wolfSSL_EVP_VerifyInit(WOLFSSL_EVP_MD_CTX *ctx, const WOLFSSL_EVP_MD *type);
+WOLFSSL_API int wolfSSL_EVP_VerifyUpdate(WOLFSSL_EVP_MD_CTX *ctx, const void *data, size_t len);
+
+
 /* these next ones don't need real OpenSSL type, for OpenSSH compat only */
 WOLFSSL_API void* wolfSSL_EVP_X_STATE(const WOLFSSL_EVP_CIPHER_CTX* ctx);
 WOLFSSL_API int   wolfSSL_EVP_X_STATE_LEN(const WOLFSSL_EVP_CIPHER_CTX* ctx);
@@ -314,11 +349,13 @@ typedef WOLFSSL_EVP_MD         EVP_MD;
 typedef WOLFSSL_EVP_CIPHER     EVP_CIPHER;
 typedef WOLFSSL_EVP_MD_CTX     EVP_MD_CTX;
 typedef WOLFSSL_EVP_CIPHER_CTX EVP_CIPHER_CTX;
+typedef WOLFSSL_EVP_PKEY_CTX   EVP_PKEY_CTX;
 
 #ifndef NO_MD5
     #define EVP_md5       wolfSSL_EVP_md5
 #endif
 #define EVP_sha1      wolfSSL_EVP_sha1
+#define EVP_dds1      wolfSSL_EVP_sha1
 #define EVP_sha224    wolfSSL_EVP_sha224
 #define EVP_sha256    wolfSSL_EVP_sha256
 #define EVP_sha384    wolfSSL_EVP_sha384
@@ -398,6 +435,25 @@ typedef WOLFSSL_EVP_CIPHER_CTX EVP_CIPHER_CTX;
 #define EVP_PKEY_get1_RSA   wolfSSL_EVP_PKEY_get1_RSA
 #define EVP_PKEY_get1_DSA   wolfSSL_EVP_PKEY_get1_DSA
 #define EVP_PKEY_get1_EC_KEY wolfSSL_EVP_PKEY_get1_EC_KEY
+#define EVP_MD_CTX_copy     wolfSSL_EVP_MD_CTX_copy
+#define EVP_MD_CTX_copy_ex  wolfSSL_EVP_MD_CTX_copy_ex
+#define EVP_PKEY_bits       wolfSSL_EVP_PKEY_bits
+#define EVP_PKEY_CTX_free   wolfSSL_EVP_PKEY_CTX_free
+#define EVP_PKEY_CTX_new    wolfSSL_EVP_PKEY_CTX_new
+#define EVP_PKEY_CTX_set_rsa_padding wolfSSL_EVP_PKEY_CTX_set_rsa_padding
+#define EVP_PKEY_decrypt    wolfSSL_EVP_PKEY_decrypt
+#define EVP_PKEY_decrypt_init wolfSSL_EVP_PKEY_decrypt_init
+#define EVP_PKEY_encrypt    wolfSSL_EVP_PKEY_encrypt
+#define EVP_PKEY_encrypt_init wolfSSL_EVP_PKEY_encrypt_init
+#define EVP_PKEY_new        wolfSSL_PKEY_new
+#define EVP_PKEY_free       wolfSSL_EVP_PKEY_free
+#define EVP_PKEY_size       wolfSSL_EVP_PKEY_size
+#define EVP_SignFinal       wolfSSL_EVP_SignFinal
+#define EVP_SignInit        wolfSSL_EVP_SignInit
+#define EVP_SignUpdate      wolfSSL_EVP_SignUpdate
+#define EVP_VerifyFinal     wolfSSL_EVP_VerifyFinal
+#define EVP_VerifyInit      wolfSSL_EVP_VerifyInit
+#define EVP_VerifyUpdate    wolfSSL_EVP_VerifyUpdate
 
 #define EVP_CIPHER_CTX_block_size  wolfSSL_EVP_CIPHER_CTX_block_size
 #define EVP_CIPHER_block_size      wolfSSL_EVP_CIPHER_block_size

@@ -139,6 +139,8 @@ typedef struct WOLFSSL_EVP_PKEY {
     #endif
 } WOLFSSL_EVP_PKEY;
 
+#define WOLFSSL_EVP_PKEY_DEFAULT EVP_PKEY_RSA /* default key type */
+
 typedef struct WOLFSSL_MD4_CTX {
     int buffer[32];      /* big enough to hold, check size in Init */
 } WOLFSSL_MD4_CTX;
