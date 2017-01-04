@@ -17026,15 +17026,80 @@ int wolfSSL_RSA_blinding_on(WOLFSSL_RSA* rsa, WOLFSSL_BN_CTX* bn)
 int wolfSSL_RSA_public_encrypt(int len, unsigned char* fr,
                             unsigned char* to, WOLFSSL_RSA* rsa, int padding)
 {
-    (void)len;
-    (void)fr;
-    (void)to;
-    (void)rsa;
-    (void)padding;
+    int initTmpRng = 0;
+    WC_RNG *rng = NULL;
+    int outLen;
+    int ret = 0;
+#ifdef WOLFSSL_SMALL_STACK
+    WC_RNG* tmpRNG = NULL;
+#else
+    WC_RNG  tmpRNG[1];
+#endif
 
     WOLFSSL_MSG("wolfSSL_RSA_public_encrypt");
+    if (rsa->inSet == 0)
+    {
+        if (SetRsaInternal(rsa) != SSL_SUCCESS) {
+            WOLFSSL_MSG("SetRsaInternal failed");
+            return 0;
+        }
+    }
 
-    return SSL_FATAL_ERROR;
+    outLen = wolfSSL_RSA_size(rsa);
+
+#ifdef WOLFSSL_SMALL_STACK
+    tmpRNG = (WC_RNG*)XMALLOC(sizeof(WC_RNG), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    if (tmpRNG == NULL)
+        return 0;
+
+    encodedSig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ, NULL,
+                                                   DYNAMIC_TYPE_TMP_BUFFER);
+    if (encodedSig == NULL) {
+        XFREE(tmpRNG, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        return 0;
+    }
+#endif
+
+    if (outLen == 0)
+        WOLFSSL_MSG("Bad RSA size");
+    else if (wc_InitRng(tmpRNG) == 0) {
+        rng = tmpRNG;
+        initTmpRng = 1;
+    }
+    else {
+        WOLFSSL_MSG("Bad RNG Init, trying global");
+
+        if (initGlobalRNG == 0)
+            WOLFSSL_MSG("Global RNG no Init");
+        else
+            rng = &globalRNG;
+    }
+
+    if (rng) {
+        if(padding == 0) {
+            ret = wc_RsaPublicEncrypt(fr, len, to, outLen, (RsaKey*)rsa->internal, rng);
+        } else {
+            ret = wc_RsaPublicEncrypt_ex(fr, len, to, outLen, (RsaKey*)rsa->internal, rng,
+                       padding, WC_HASH_TYPE_SHA, WC_MGF1SHA1, NULL, 0);
+        }
+        if (len <= 0)
+            WOLFSSL_MSG("Bad Rsa Encrypt");
+    }
+
+    if (initTmpRng)
+        wc_FreeRng(tmpRNG);
+
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(tmpRNG,     NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(encodedSig, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+
+    if (ret == SSL_SUCCESS)
+        WOLFSSL_MSG("wolfSSL_RSA_public_encrypt success");
+    else {
+        WOLFSSL_MSG("wolfSSL_RSA_public_encrypt failed");
+    }
+    return ret;
 }
 
 /* return compliant with OpenSSL
@@ -17043,15 +17108,36 @@ int wolfSSL_RSA_public_encrypt(int len, unsigned char* fr,
 int wolfSSL_RSA_private_decrypt(int len, unsigned char* fr,
                             unsigned char* to, WOLFSSL_RSA* rsa, int padding)
 {
-    (void)len;
-    (void)fr;
-    (void)to;
-    (void)rsa;
-    (void)padding;
+  int outLen;
+  int ret = 0;
 
-    WOLFSSL_MSG("wolfSSL_RSA_private_decrypt");
+      WOLFSSL_MSG("wolfSSL_RSA_private_decrypt");
+      if (rsa->inSet == 0)
+      {
+          if (SetRsaInternal(rsa) != SSL_SUCCESS) {
+              WOLFSSL_MSG("SetRsaInternal failed");
+              return 0;
+          }
+      }
 
-    return SSL_FATAL_ERROR;
+      outLen = wolfSSL_RSA_size(rsa);
+      if (outLen == 0)
+          WOLFSSL_MSG("Bad RSA size");
+
+      if(padding == 0) {
+          ret = wc_RsaPrivateDecrypt(fr, len, to, outLen, (RsaKey*)rsa->internal);
+      } else {
+          ret = wc_RsaPrivateDecrypt_ex(fr, len, to, outLen, (RsaKey*)rsa->internal,
+                     padding, WC_HASH_TYPE_SHA, WC_MGF1SHA1, NULL, 0);
+      }
+      if (len <= 0)
+          WOLFSSL_MSG("Bad Rsa Decrypt");
+      if (ret == SSL_SUCCESS)
+          WOLFSSL_MSG("wolfSSL_RSA_private_decrypt success");
+      else {
+          WOLFSSL_MSG("wolfSSL_RSA_private_decrypt failed");
+      }
+      return ret;
 }
 
 /* return compliant with OpenSSL
