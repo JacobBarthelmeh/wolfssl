@@ -7268,13 +7268,13 @@ static int DoCertificate(WOLFSSL* ssl, byte* input, word32* inOutIdx,
                     ssl->peerVerifyRet = X509_V_OK;
                 #endif
                     args->fatal = 0;
-        #ifdef OPENSSL_EXTRA
-                    ssl->peerVerifyRet = X509_V_ERR_CERT_REJECTED;
-        #endif
                 }
                 else if (ret == ASN_PARSE_E) {
                     WOLFSSL_MSG("Got Peer cert ASN PARSE ERROR, fatal");
                     SendAlert(ssl, alert_fatal, bad_certificate);
+                #ifdef OPENSSL_EXTRA
+                    ssl->peerVerifyRet = X509_V_ERR_CERT_REJECTED;
+                #endif
                     args->fatal = 1;
                 }
                 else {
