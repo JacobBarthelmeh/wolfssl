@@ -22823,7 +22823,10 @@ int wolfSSL_HMAC_Init(WOLFSSL_HMAC_CTX* ctx, const void* key, int keylen,
         WOLFSSL_MSG("no ctx on init");
         return SSL_FAILURE;
     }
-
+    if (key && (keylen > HMAC_BLOCK_SIZE)) {
+        WOLFSSL_MSG("invalid keylen");
+        return SSL_FAILURE;
+    }
     if (type) {
         WOLFSSL_MSG("init has type");
 
