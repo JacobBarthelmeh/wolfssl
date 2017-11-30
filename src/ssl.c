@@ -11733,7 +11733,7 @@ size_t wolfSSL_get_client_random(const WOLFSSL* ssl, unsigned char* out,
     #ifndef NO_MD4
          {MD4, "MD4"},
     #endif /* NO_MD4 */
-    
+
     #ifndef NO_MD5
        {MD5, "MD5"},
     #endif /* NO_MD5 */
@@ -17941,7 +17941,7 @@ const char* wolfSSL_state_string_long(const WOLFSSL* ssl)
         break;
 	case DTLS_MAJOR:
 		switch (ssl->version.minor){
-		case DTLS_MINOR: 
+		case DTLS_MINOR:
 			protocol = DTLS_V1;
 			break;
 		case DTLSv1_2_MINOR:
@@ -22795,8 +22795,11 @@ int wolfSSL_HMAC_CTX_copy(WOLFSSL_HMAC_CTX* des, WOLFSSL_HMAC_CTX* src)
     des->hmac.heap    = src->hmac.heap;
     des->hmac.macType = src->hmac.macType;
     des->hmac.innerHashKeyed = src->hmac.innerHashKeyed;
-    des->save_len     = src->save_len;
-    XMEMCPY(des->save_key, src->save_key, src->save_len);
+    XMEMCPY((byte *)&des->save_ipad, (byte *)&src->hmac.ipad,
+                                HMAC_BLOCK_SIZE);
+    XMEMCPY((byte *)&des->save_opad, (byte *)&src->hmac.opad,
+                                HMAC_BLOCK_SIZE);
+
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     XMEMCPY(des->hmac.asyncDev, src->hmac.asyncDev, sizeof(WC_ASYNC_DEV));
@@ -22819,14 +22822,13 @@ int wolfSSL_HMAC_CTX_copy(WOLFSSL_HMAC_CTX* des, WOLFSSL_HMAC_CTX* src)
 int wolfSSL_HMAC_Init(WOLFSSL_HMAC_CTX* ctx, const void* key, int keylen,
                   const EVP_MD* type)
 {
+    int ret;
+    byte dummy[MAX_DIGEST_SIZE];
+
     WOLFSSL_MSG("wolfSSL_HMAC_Init");
 
     if (ctx == NULL) {
         WOLFSSL_MSG("no ctx on init");
-        return SSL_FAILURE;
-    }
-    if (key && (keylen > HMAC_BLOCK_SIZE)) {
-        WOLFSSL_MSG("invalid keylen");
         return SSL_FAILURE;
     }
     if (type) {
@@ -22870,15 +22872,26 @@ int wolfSSL_HMAC_Init(WOLFSSL_HMAC_CTX* ctx, const void* key, int keylen,
         if (wc_HmacInit(&ctx->hmac, NULL, INVALID_DEVID) == 0) {
             wc_HmacSetKey(&ctx->hmac, ctx->type, (const byte*)key,
                                                         (word32)keylen);
-            XMEMCPY((byte *)&ctx->save_key, (const byte*)key, (word32)keylen);
-            ctx->save_len = keylen;
+            XMEMCPY((byte *)&ctx->save_ipad, (byte *)&ctx->hmac.ipad,
+                                        HMAC_BLOCK_SIZE);
+            XMEMCPY((byte *)&ctx->save_opad, (byte *)&ctx->hmac.opad,
+                                        HMAC_BLOCK_SIZE);
         }
         /* OpenSSL compat, no error */
     } else if(ctx->type >= 0) { /* MD5 == 0 */
         WOLFSSL_MSG("recover hmac");
         if (wc_HmacInit(&ctx->hmac, NULL, INVALID_DEVID) == 0) {
-            wc_HmacSetKey(&ctx->hmac, ctx->type, (byte *)&ctx->save_key,
-                                                        (word32)ctx->save_len);
+            wc_HmacSetKey(&ctx->hmac, ctx->type, (byte *)" ",
+                                                        (word32)1);
+            ctx->hmac.macType = ctx->type;
+            ctx->hmac.innerHashKeyed = 1;
+            XMEMCPY((byte *)&ctx->hmac.ipad, (byte *)&ctx->save_ipad,
+                                       HMAC_BLOCK_SIZE);
+            XMEMCPY((byte *)&ctx->hmac.opad, (byte *)&ctx->save_opad,
+                                       HMAC_BLOCK_SIZE);
+            ret = wc_HmacFinal(&ctx->hmac, dummy);
+            if (ret != 0)
+                return ret;
         }
     }
 
