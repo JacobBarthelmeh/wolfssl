@@ -22881,10 +22881,8 @@ int wolfSSL_HMAC_Init(WOLFSSL_HMAC_CTX* ctx, const void* key, int keylen,
     } else if(ctx->type >= 0) { /* MD5 == 0 */
         WOLFSSL_MSG("recover hmac");
         if (wc_HmacInit(&ctx->hmac, NULL, INVALID_DEVID) == 0) {
-            wc_HmacSetKey(&ctx->hmac, ctx->type, (byte *)" ",
-                                                        (word32)1);
             ctx->hmac.macType = ctx->type;
-            ctx->hmac.innerHashKeyed = 1;
+            ctx->hmac.innerHashKeyed = 0;
             XMEMCPY((byte *)&ctx->hmac.ipad, (byte *)&ctx->save_ipad,
                                        HMAC_BLOCK_SIZE);
             XMEMCPY((byte *)&ctx->hmac.opad, (byte *)&ctx->save_opad,
