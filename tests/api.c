@@ -15202,7 +15202,7 @@ static void test_wolfSSL_ASN1_TIME_adj(void)
     const int year = 365*24*60*60;
     const int day  = 24*60*60;
     const int hour = 60*60;
-    const int min  = 60;
+    const int mini  = 60;
     const byte asn_utc_time = ASN_UTC_TIME;
 #if !defined(TIME_T_NOT_LONG) && !defined(NO_64BIT)
     const byte asn_gen_time = ASN_GENERALIZED_TIME;
@@ -15219,9 +15219,9 @@ static void test_wolfSSL_ASN1_TIME_adj(void)
                                     DYNAMIC_TYPE_OPENSSL);
     /* UTC notation test */
     /* 2000/2/15 20:30:00 */
-    t = (time_t)30 * year + 45 * day + 20 * hour + 30 * min + 7 * day;
+    t = (time_t)30 * year + 45 * day + 20 * hour + 30 * mini + 7 * day;
     offset_day = 7;
-    offset_sec = 45 * min;
+    offset_sec = 45 * mini;
     /* offset_sec = -45 * min;*/
     asn_time = wolfSSL_ASN1_TIME_adj(s, t, offset_day, offset_sec);
     AssertTrue(asn_time->data[0] == asn_utc_time);
@@ -15229,7 +15229,7 @@ static void test_wolfSSL_ASN1_TIME_adj(void)
     AssertIntEQ(0, XMEMCMP(date_str, "000222211500Z", 13));
 
     /* negative offset */
-    offset_sec = -45 * min;
+    offset_sec = -45 * mini;
     asn_time = wolfSSL_ASN1_TIME_adj(s, t, offset_day, offset_sec);
     AssertTrue(asn_time->data[0] == asn_utc_time);
     XSTRNCPY(date_str,(const char*) &asn_time->data+2,13);
@@ -15246,7 +15246,7 @@ static void test_wolfSSL_ASN1_TIME_adj(void)
     /* 2055/03/01 09:00:00 */
     t = (time_t)85 * year + 59 * day + 9 * hour + 21 * day;
     offset_day = 12;
-    offset_sec = 10 * min;
+    offset_sec = 10 * mini;
     asn_time = wolfSSL_ASN1_TIME_adj(s, t, offset_day, offset_sec);
     AssertTrue(asn_time->data[0] == asn_gen_time);
     XSTRNCPY(date_str,(const char*) &asn_time->data+2, 15);
@@ -15259,9 +15259,9 @@ static void test_wolfSSL_ASN1_TIME_adj(void)
     /* if WOLFSSL_ASN1_TIME struct is not allocated */
     s = NULL;
 
-    t = (time_t)30 * year + 45 * day + 20 * hour + 30 * min + 15 + 7 * day;
+    t = (time_t)30 * year + 45 * day + 20 * hour + 30 * mini + 15 + 7 * day;
     offset_day = 7;
-    offset_sec = 45 * min;
+    offset_sec = 45 * mini;
     asn_time = wolfSSL_ASN1_TIME_adj(s, t, offset_day, offset_sec);
     AssertTrue(asn_time->data[0] == asn_utc_time);
     XSTRNCPY(date_str,(const char*) &asn_time->data+2,13);
@@ -16202,13 +16202,13 @@ static void test_wolfSSL_HMAC_CTX(void)
 }
 
 #if defined(OPENSSL_EXTRA) && !defined(NO_RSA)
-static void sslMsgCb(int write, int version, int type, const void* buf,
+static void sslMsgCb(int w, int version, int type, const void* buf,
         size_t sz, SSL* ssl, void* arg)
 {
     int i;
     unsigned char* pt = (unsigned char*)buf;
 
-    printf("%s %d bytes of version %d , type %d : ", (write)?"Writing":"Reading",
+    printf("%s %d bytes of version %d , type %d : ", (w)?"Writing":"Reading",
             (int)sz, version, type);
     for (i = 0; i < (int)sz; i++) printf("%02X", pt[i]);
     printf("\n");
