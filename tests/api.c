@@ -14435,15 +14435,15 @@ static void test_wolfSSL_X509_STORE_CTX_set_time(void)
 {
     #if defined(OPENSSL_EXTRA)
     WOLFSSL_X509_STORE_CTX*  ctx;
-    time_t ctime;
+    time_t ctim;
 
     printf(testingFmt, "wolfSSL_X509_set_time()");
     AssertNotNull(ctx = wolfSSL_X509_STORE_CTX_new());
-    ctime = 365*24*60*60;
-    wolfSSL_X509_STORE_CTX_set_time(ctx, 0, ctime);
+    ctim = 365*24*60*60;
+    wolfSSL_X509_STORE_CTX_set_time(ctx, 0, ctim);
     AssertTrue(
       (ctx->param->flags & WOLFSSL_USE_CHECK_TIME) == WOLFSSL_USE_CHECK_TIME);
-    AssertTrue(ctx->param->check_time == ctime);
+    AssertTrue(ctx->param->check_time == ctim);
     wolfSSL_X509_STORE_CTX_free(ctx);
 
     printf(resultFmt, passed);
