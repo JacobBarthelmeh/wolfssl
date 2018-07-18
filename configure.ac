@@ -975,6 +975,21 @@ fi
 AM_CONDITIONAL([BUILD_AESNI], [test "x$ENABLED_AESNI" = "xyes"])
 
 
+# Linux af_alg 
+AC_ARG_ENABLE([afalg],
+    [AS_HELP_STRING([--enable-afalg],[Enable Linux af_alg use for crypto (default: disabled)])],
+    [ ENABLED_AFALG=$enableval ],
+    [ ENABLED_AFALG=no ]
+    )
+
+if test "$ENABLED_AFALG" = "yes"
+then
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_AFALG"
+fi
+
+AM_CONDITIONAL([BUILD_AFALG], [test "x$ENABLED_AFALG" = "xyes"])
+
+
 # Camellia
 AC_ARG_ENABLE([camellia],
     [AS_HELP_STRING([--enable-camellia],[Enable wolfSSL Camellia support (default: disabled)])],
@@ -4467,6 +4482,7 @@ echo "   * Write duplicate:            $ENABLED_WRITEDUP"
 echo "   * Intel Quick Assist:         $ENABLED_INTEL_QA"
 echo "   * Xilinx Hardware Acc.:       $ENABLED_XILINX"
 echo "   * Inline Code:                $ENABLED_INLINE"
+echo "   * Linux AF_ALG:               $ENABLED_AFALG"
 echo ""
 echo "---"
 

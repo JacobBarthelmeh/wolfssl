@@ -2022,6 +2022,9 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
 #elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_AES)
       /* implemented in wolfcrypt/src/port/caam/caam_aes.c */
 
+#elif defined(WOLFSSL_AFALG)
+    /* implemented in wolfcrypt/src/port/af_alg/afalg_aes.c */
+
 #else
     static int wc_AesSetKeyLocal(Aes* aes, const byte* userKey, word32 keylen,
                 const byte* iv, int dir)
@@ -2942,6 +2945,9 @@ int wc_AesSetIV(Aes* aes, const byte* iv)
 
 #elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_AES)
       /* implemented in wolfcrypt/src/port/caam/caam_aes.c */
+
+#elif defined(WOLFSSL_AFALG)
+    /* implemented in wolfcrypt/src/port/af_alg/afalg_aes.c */
 
 #else
 
