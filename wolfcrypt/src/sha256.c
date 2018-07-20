@@ -135,7 +135,8 @@
 
 
 #if !defined(WOLFSSL_PIC32MZ_HASH) && !defined(STM32_HASH_SHA2) && \
-    (!defined(WOLFSSL_IMX6_CAAM) || defined(NO_IMX6_CAAM_HASH))
+    (!defined(WOLFSSL_IMX6_CAAM) || defined(NO_IMX6_CAAM_HASH)) && \
+    !defined(WOLFSSL_AFALG_HASH)
 static int InitSha256(wc_Sha256* sha256)
 {
     int ret = 0;
@@ -439,6 +440,10 @@ static int InitSha256(wc_Sha256* sha256)
 
 #elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_HASH)
     /* functions defined in wolfcrypt/src/port/caam/caam_sha256.c */
+
+#elif defined(WOLFSSL_AFALG_HASH)
+    /* implemented in wolfcrypt/src/port/af_alg/afalg_hash.c */
+
 #else
     #define NEED_SOFT_SHA256
 
@@ -2561,6 +2566,10 @@ SHA256_NOINLINE static int Transform_Sha256_AVX2_RORX_Len(wc_Sha256* sha256,
 
 #elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_HASH)
     /* functions defined in wolfcrypt/src/port/caam/caam_sha256.c */
+
+//#elif defined(WOLFSSL_AFALG_HASH)
+//    /* implemented in wolfcrypt/src/port/af_alg/afalg_hash.c */
+
 #else
 
     #define NEED_SOFT_SHA224
@@ -2702,6 +2711,10 @@ void wc_Sha256Free(wc_Sha256* sha256)
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA256)
     wolfAsync_DevCtxFree(&sha256->asyncDev, WOLFSSL_ASYNC_MARKER_SHA256);
 #endif /* WOLFSSL_ASYNC_CRYPT */
+#if defined(WOLFSSL_AFALG_HASH)
+    close(sha256->alFd);
+    close(sha256->rdFd);
+#endif /* WOLFSSL_AFALG_HASH */
 }
 
 #endif /* !WOLFSSL_TI_HASH */
@@ -2741,6 +2754,10 @@ void wc_Sha256Free(wc_Sha256* sha256)
     }
 #endif /* WOLFSSL_SHA224 */
 
+#ifdef WOLFSSL_AFALG_HASH
+    /* implemented in wolfcrypt/src/port/af_alg/afalg_hash.c */
+#else
+
 int wc_Sha256GetHash(wc_Sha256* sha256, byte* hash)
 {
     int ret;
@@ -2773,6 +2790,7 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
 
     return ret;
 }
+#endif
 #endif /* !WOLFSSL_TI_HASH */
 
 #endif /* NO_SHA256 */

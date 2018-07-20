@@ -817,6 +817,9 @@
             wc_AesEncryptDirect(aes, outBlock, inBlock);
             return 0;
         }
+
+#elif defined(WOLFSSL_AFALG)
+
 #else
 
     /* using wolfCrypt software AES implementation */
@@ -3418,6 +3421,10 @@ static WC_INLINE void IncCtr(byte* ctr, word32 ctrSz)
 
 #ifdef WOLFSSL_ARMASM
     /* implementation is located in wolfcrypt/src/port/arm/armv8-aes.c */
+
+#elif defined(WOLFSSL_AFALG)
+    /* implemented in wolfcrypt/src/port/afalg/afalg_aes.c */
+
 #else /* software + AESNI implementation */
 
 #if !defined(FREESCALE_LTC_AES_GCM)

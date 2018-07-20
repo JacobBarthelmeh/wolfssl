@@ -93,10 +93,27 @@ int wc_Afalg_SetIv(struct cmsghdr* cmsg, byte* iv, word32 ivSz)
 
 	cmsg->cmsg_level = SOL_ALG;
 	cmsg->cmsg_type  = ALG_SET_IV;
-        cmsg->cmsg_len   = CMSG_LEN(sizeof(struct af_alg_iv) + 16);
+        cmsg->cmsg_len   = CMSG_LEN(sizeof(struct af_alg_iv) + ivSz);
         afIv = (void*)CMSG_DATA(cmsg);
-	afIv->ivlen = 16;
-	XMEMCPY(afIv->iv, iv, 16);
+	afIv->ivlen = ivSz;
+	XMEMCPY(afIv->iv, iv, ivSz);
+
+	return 0;
+}
+
+
+/* sets the AAD size in CMSG structure, returns 0 on success */
+int wc_Afalg_SetAad(struct cmsghdr* cmsg, word32 sz)
+{
+	if (cmsg == NULL) {
+		WOLFSSL_MSG("Null cmsg passed in");
+		return BAD_FUNC_ARG;
+	}
+
+	cmsg->cmsg_level = SOL_ALG;
+	cmsg->cmsg_type  = ALG_SET_AEAD_ASSOCLEN;
+        cmsg->cmsg_len   = CMSG_LEN(sizeof(word32));
+	*((word32*)CMSG_DATA(cmsg)) = sz;
 
 	return 0;
 }

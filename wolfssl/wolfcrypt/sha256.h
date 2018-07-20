@@ -137,6 +137,10 @@ typedef struct wc_Sha256 {
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
 #endif /* WOLFSSL_ASYNC_CRYPT */
+#ifdef WOLFSSL_AFALG_HASH
+    int  alFd; /* file descriptors for reading/writing */
+    int  rdFd;
+#endif
 #endif
 } wc_Sha256;
 

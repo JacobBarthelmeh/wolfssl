@@ -38,6 +38,7 @@ WOLFSSL_LOCAL int wc_Afalg_Socket(void);
 WOLFSSL_LOCAL int wc_Afalg_CreateRead(int sock, const char* type, const char* name);
 WOLFSSL_LOCAL int wc_Afalg_SetIv(struct cmsghdr* cmsg, byte* iv, word32 ivSz);
 WOLFSSL_LOCAL int wc_Afalg_SetOp(struct cmsghdr* cmsg, int dir);
+WOLFSSL_LOCAL int wc_Afalg_SetAad(struct cmsghdr* cmsg, word32 sz);
 
 #endif /* WOLFSSL_AFALG_H */
 
