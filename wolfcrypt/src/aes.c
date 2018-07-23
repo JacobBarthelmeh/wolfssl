@@ -9163,6 +9163,7 @@ int wc_Gmac(const byte* key, word32 keySz, byte* iv, word32 ivSz,
     if (ret == 0)
         ret = wc_AesGcmEncrypt_ex(&aes, NULL, NULL, 0, iv, ivSz,
                                   authTag, authTagSz, authIn, authInSz);
+    wc_AesFree(&aes);
     ForceZero(&aes, sizeof(aes));
 
     return ret;
@@ -9187,6 +9188,7 @@ int wc_GmacVerify(const byte* key, word32 keySz,
     if (ret == 0)
         ret = wc_AesGcmDecrypt(&aes, NULL, NULL, 0, iv, ivSz,
                                   authTag, authTagSz, authIn, authInSz);
+    wc_AesFree(&aes);
     ForceZero(&aes, sizeof(aes));
 
     return ret;
@@ -9633,6 +9635,10 @@ void wc_AesFree(Aes* aes)
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_AES)
     wolfAsync_DevCtxFree(&aes->asyncDev, WOLFSSL_ASYNC_MARKER_AES);
 #endif /* WOLFSSL_ASYNC_CRYPT */
+#ifdef WOLFSSL_AFALG
+    close(aes->alFd);
+    close(aes->rdFd);
+#endif /* WOLFSSL_AFALG */
 }
 
 

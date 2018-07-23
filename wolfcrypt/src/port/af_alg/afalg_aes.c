@@ -426,7 +426,6 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 	struct iovec    iov[3];
 	int ret;
   struct msghdr* msg;
-  byte tag[16];
   byte scratch[16];
 
     /* argument checks */
@@ -452,6 +451,15 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 	    }
 
 	    /* note that if the ivSz was to change, the msg_controllen would need reset */
+
+	/* set auth tag
+	 * @TODO case where tag size changes between calls? */
+	ret = setsockopt(aes->alFd, SOL_ALG, ALG_SET_AEAD_AUTHSIZE, NULL, authTagSz);
+        if (ret != 0) {
+		perror("set tag");
+            WOLFSSL_MSG("Unable to set AF_ALG tag size ");
+            return WC_AFALG_SOCK_E;
+        }
 	}
 
   	msg = &(aes->msg);
@@ -466,11 +474,13 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
 	}
 
+	if (authInSz > 0) {
     	cmsg = CMSG_NXTHDR(msg, cmsg);
 	ret = wc_Afalg_SetAad(cmsg, authInSz);
 	if (ret < 0) {
 		WOLFSSL_MSG("Unable to set AAD size");
 		return ret;
+	}
 	}
 
     	/* set data to be encrypted*/
@@ -496,8 +506,8 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     	iov[1].iov_base = out;
     	iov[1].iov_len  = sz;
 
-    	iov[2].iov_base = tag;
-    	iov[2].iov_len  = sizeof(tag);
+    	iov[2].iov_base = authTag;
+    	iov[2].iov_len  = authTagSz;
 
 	ret = readv(aes->rdFd, iov, 3);
 	if (ret < 0) {
@@ -505,11 +515,10 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 		return ret;
 	}
 
-	XMEMCPY(authTag, tag, authTagSz);
 	return 0;
 }
 
-
+#include <errno.h>
 #if defined(HAVE_AES_DECRYPT) || defined(HAVE_AESGCM_DECRYPT)
 int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
                      const byte* iv, word32 ivSz,
@@ -525,14 +534,6 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     /* argument checks */
     if (aes == NULL || authTagSz > AES_BLOCK_SIZE) {
         return BAD_FUNC_ARG;
-    }
-
-    {
-	    int z;
-	    printf("decryptin [%d]", sz); for (z = 0; z < sz; z++) { printf("%02X", in[z]); } printf("\n");
-	    printf("tag [%d]=", authTagSz); for (z = 0; z < authTagSz; z++) { printf("%02X", authTag[z]); } printf("\n");
-	    printf("aad [%d]=", authInSz); for (z = 0; z < authInSz; z++) { printf("%02X", authIn[z]); } printf("\n");
-
     }
 
     if (ivSz != WC_SYSTEM_AESGCM_IV || authTagSz > WOLFSSL_MAX_AUTH_TAG_SZ) {
@@ -551,7 +552,17 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 		    WOLFSSL_MSG("Error with first time setup of AF_ALG socket");
 		    return ret;
 	    }
+
+	/* set auth tag
+	 * @TODO case where tag size changes between calls? */
+	ret = setsockopt(aes->alFd, SOL_ALG, ALG_SET_AEAD_AUTHSIZE, NULL, authTagSz);
+        if (ret != 0) {
+		perror("set tag");
+            WOLFSSL_MSG("Unable to set AF_ALG tag size ");
+            return WC_AFALG_SOCK_E;
+        }
 	}
+
 
 	/* set IV and AAD size */
 	msg = &(aes->msg);
@@ -563,10 +574,12 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
 	}
 
+	if (authInSz > 0) {
     	cmsg = CMSG_NXTHDR(msg, cmsg);
 	ret = wc_Afalg_SetAad(cmsg, authInSz);
 	if (ret < 0) {
 		return ret;
+	}
 	}
     
     	/* set data to be decrypted*/
@@ -597,7 +610,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 	ret = readv(aes->rdFd, iov, 2);
 	if (ret < 0) {
 		perror("read msg");
-		return ret;
+                return AES_GCM_AUTH_E;
 	}
 
 	return 0;
