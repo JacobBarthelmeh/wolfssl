@@ -63,13 +63,14 @@ static int wc_AesSetup(Aes* aes, const char* type, const char* name, int ivSz, i
     /* set up CMSG headers */
     XMEMSET((byte*)&(aes->msg), 0, sizeof(struct msghdr));
 
-    aes->msg.msg_control = (byte*)(aes->key); /* use existing key buffer for control buffer */
+    aes->msg.msg_control = (byte*)(aes->key); /* use existing key buffer for
+                                               * control buffer */
     aes->msg.msg_controllen = CMSG_SPACE(4);
     if (aadSz > 0) {
-	aes->msg.msg_controllen += CMSG_SPACE(4);
+        aes->msg.msg_controllen += CMSG_SPACE(4);
     }
     if (ivSz > 0) {
-    	aes->msg.msg_controllen += CMSG_SPACE((sizeof(struct af_alg_iv) + ivSz));
+        aes->msg.msg_controllen += CMSG_SPACE((sizeof(struct af_alg_iv) + ivSz));
     }
 
     if (wc_Afalg_SetOp(CMSG_FIRSTHDR(&(aes->msg)), aes->dir) < 0) {
@@ -122,8 +123,8 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
     int wc_AesSetKeyDirect(Aes* aes, const byte* userKey, word32 keylen,
                         const byte* iv, int dir)
     {
-	return wc_AesSetKey(aes, userKey, keylen, iv, dir);
-	}
+    return wc_AesSetKey(aes, userKey, keylen, iv, dir);
+    }
 #endif
 
 
@@ -131,52 +132,52 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
 #ifdef HAVE_AES_CBC
     int wc_AesCbcEncrypt(Aes* aes, byte* out, const byte* in, word32 sz)
     {
-	struct cmsghdr* cmsg;
-	struct iovec    iov;
-	int ret;
+        struct cmsghdr* cmsg;
+        struct iovec    iov;
+        int ret;
 
         if (aes == NULL || out == NULL || in == NULL) {
             return BAD_FUNC_ARG;
         }
 
-	if (aes->rdFd == WC_SOCK_NOTSET) {
-            if ((ret = wc_AesSetup(aes, WC_TYPE_SYMKEY, WC_NAME_AESCBC, AES_IV_SIZE, 0)) != 0) {
-		    WOLFSSL_MSG("Error with first time setup of AF_ALG socket");
-		    return ret;
-	    }
-	}
+        if (aes->rdFd == WC_SOCK_NOTSET) {
+                if ((ret = wc_AesSetup(aes, WC_TYPE_SYMKEY, WC_NAME_AESCBC,
+                                AES_IV_SIZE, 0)) != 0) {
+                WOLFSSL_MSG("Error with first time setup of AF_ALG socket");
+                return ret;
+            }
+        }
 
-	sz = sz - (sz % AES_BLOCK_SIZE);
-	if ((sz / AES_BLOCK_SIZE) > 0) {
-    	/* update IV */
-    	cmsg = CMSG_FIRSTHDR(&(aes->msg));
-    	ret = wc_Afalg_SetIv(CMSG_NXTHDR(&(aes->msg), cmsg), (byte*)(aes->reg), AES_IV_SIZE);
-	if (ret < 0) {
-		WOLFSSL_MSG("Error setting IV");
-		return ret;
-	}
-    
-    	/* set data to be encrypted */
-    	iov.iov_base = (byte*)in;
-    	iov.iov_len  = sz;
+        sz = sz - (sz % AES_BLOCK_SIZE);
+        if ((sz / AES_BLOCK_SIZE) > 0) {
+            /* update IV */
+            cmsg = CMSG_FIRSTHDR(&(aes->msg));
+            ret = wc_Afalg_SetIv(CMSG_NXTHDR(&(aes->msg), cmsg),
+                    (byte*)(aes->reg), AES_IV_SIZE);
+            if (ret < 0) {
+                WOLFSSL_MSG("Error setting IV");
+                return ret;
+            }
 
-    	aes->msg.msg_iov    = &iov;
-    	aes->msg.msg_iovlen = 1; /* # of iov structures */
+            /* set data to be encrypted */
+            iov.iov_base = (byte*)in;
+            iov.iov_len  = sz;
 
-    	ret = sendmsg(aes->rdFd, &(aes->msg), 0);
-	if (ret < 0) {
-		perror("send error");
-		return ret;
-	}
-    	ret = read(aes->rdFd, out, sz);
-	if (ret < 0) {
-		perror("read error");
-		return ret;
-	}
+            aes->msg.msg_iov    = &iov;
+            aes->msg.msg_iovlen = 1; /* # of iov structures */
 
-    	/* set IV for next CBC call */
-    	XMEMCPY(aes->reg, out + sz - AES_BLOCK_SIZE, AES_BLOCK_SIZE);
-    	}
+            ret = sendmsg(aes->rdFd, &(aes->msg), 0);
+            if (ret < 0) {
+                return ret;
+            }
+            ret = read(aes->rdFd, out, sz);
+            if (ret < 0) {
+                return ret;
+            }
+
+            /* set IV for next CBC call */
+            XMEMCPY(aes->reg, out + sz - AES_BLOCK_SIZE, AES_BLOCK_SIZE);
+        }
 
         return 0;
     }
@@ -184,50 +185,51 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
     #ifdef HAVE_AES_DECRYPT
     int wc_AesCbcDecrypt(Aes* aes, byte* out, const byte* in, word32 sz)
     {
-	struct cmsghdr* cmsg;
-	struct iovec    iov;
-	int ret;
-
+        struct cmsghdr* cmsg;
+        struct iovec    iov;
+        int ret;
 
         if (aes == NULL || out == NULL || in == NULL
                                        || sz % AES_BLOCK_SIZE != 0) {
             return BAD_FUNC_ARG;
         }
 
-	if (aes->rdFd == WC_SOCK_NOTSET) {
-            if ((ret = wc_AesSetup(aes, WC_TYPE_SYMKEY, WC_NAME_AESCBC, AES_IV_SIZE, 0)) != 0) {
-		    return ret;
-	    }
-	}
+        if (aes->rdFd == WC_SOCK_NOTSET) {
+            if ((ret = wc_AesSetup(aes, WC_TYPE_SYMKEY, WC_NAME_AESCBC,
+                                AES_IV_SIZE, 0)) != 0) {
+                return ret;
+            }
+        }
 
-	if ((sz / AES_BLOCK_SIZE) > 0) {
-    	/* update IV */
-    	cmsg = CMSG_FIRSTHDR(&(aes->msg));
-    	ret = wc_Afalg_SetIv(CMSG_NXTHDR(&(aes->msg), cmsg), (byte*)(aes->reg), AES_IV_SIZE);
-	if (ret != 0) {
-		return ret;
-	}
-    
-    	/* set data to be decrypted */
-    	iov.iov_base = (byte*)in;
-    	iov.iov_len  = sz;
+        if ((sz / AES_BLOCK_SIZE) > 0) {
+            /* update IV */
+            cmsg = CMSG_FIRSTHDR(&(aes->msg));
+            ret = wc_Afalg_SetIv(CMSG_NXTHDR(&(aes->msg), cmsg),
+                    (byte*)(aes->reg), AES_IV_SIZE);
+            if (ret != 0) {
+                return ret;
+            }
 
-    	aes->msg.msg_iov    = &iov;
-    	aes->msg.msg_iovlen = 1; /* # of iov structures */
+            /* set data to be decrypted */
+            iov.iov_base = (byte*)in;
+            iov.iov_len  = sz;
 
-    	/* set IV for next CBC call */
-    	XMEMCPY(aes->reg, in + sz - AES_BLOCK_SIZE, AES_BLOCK_SIZE);
+            aes->msg.msg_iov    = &iov;
+            aes->msg.msg_iovlen = 1; /* # of iov structures */
 
-    	ret = sendmsg(aes->rdFd, &(aes->msg), 0);
-	if (ret < 0) {
-		return ret;
-	}
-    	ret = read(aes->rdFd, out, sz);
-	if (ret < 0) {
-		return ret;
-	}
+            /* set IV for next CBC call */
+            XMEMCPY(aes->reg, in + sz - AES_BLOCK_SIZE, AES_BLOCK_SIZE);
 
-    	}
+            ret = sendmsg(aes->rdFd, &(aes->msg), 0);
+            if (ret < 0) {
+                return ret;
+            }
+            ret = read(aes->rdFd, out, sz);
+            if (ret < 0) {
+                return ret;
+            }
+
+        }
 
         return 0;
     }
@@ -422,11 +424,11 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
                    byte* authTag, word32 authTagSz,
                    const byte* authIn, word32 authInSz)
 {
-	struct cmsghdr* cmsg;
-	struct iovec    iov[3];
-	int ret;
-  struct msghdr* msg;
-  byte scratch[16];
+    struct cmsghdr* cmsg;
+    struct iovec    iov[3];
+    int ret;
+    struct msghdr* msg;
+    byte scratch[16];
 
     /* argument checks */
     if (aes == NULL || authTagSz > AES_BLOCK_SIZE) {
@@ -434,8 +436,8 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     }
 
     if (ivSz != WC_SYSTEM_AESGCM_IV || authTagSz > WOLFSSL_MAX_AUTH_TAG_SZ) {
-	WOLFSSL_MSG("IV/AAD size not supported on system");
-	return BAD_FUNC_ARG;
+        WOLFSSL_MSG("IV/AAD size not supported on system");
+        return BAD_FUNC_ARG;
     }
 
     if (authTagSz < WOLFSSL_MIN_AUTH_TAG_SZ) {
@@ -443,93 +445,95 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         return BAD_FUNC_ARG;
     }
 
-	if (aes->rdFd == WC_SOCK_NOTSET) {
-	    aes->dir = AES_ENCRYPTION;
-            if ((ret = wc_AesSetup(aes, WC_TYPE_AEAD, WC_NAME_AESGCM, ivSz, authInSz)) != 0) {
-		    WOLFSSL_MSG("Error with first time setup of AF_ALG socket");
-		    return ret;
-	    }
+    if (aes->rdFd == WC_SOCK_NOTSET) {
+        aes->dir = AES_ENCRYPTION;
+        if ((ret = wc_AesSetup(aes, WC_TYPE_AEAD, WC_NAME_AESGCM, ivSz,
+                        authInSz)) != 0) {
+            WOLFSSL_MSG("Error with first time setup of AF_ALG socket");
+            return ret;
+        }
 
-	    /* note that if the ivSz was to change, the msg_controllen would need reset */
+        /* note that if the ivSz was to change, the msg_controllen would need
+           reset */
 
-	/* set auth tag
-	 * @TODO case where tag size changes between calls? */
-	ret = setsockopt(aes->alFd, SOL_ALG, ALG_SET_AEAD_AUTHSIZE, NULL, authTagSz);
+        /* set auth tag
+         * @TODO case where tag size changes between calls? */
+        ret = setsockopt(aes->alFd, SOL_ALG, ALG_SET_AEAD_AUTHSIZE, NULL,
+                authTagSz);
         if (ret != 0) {
-		perror("set tag");
+        perror("set tag");
             WOLFSSL_MSG("Unable to set AF_ALG tag size ");
             return WC_AFALG_SOCK_E;
         }
-	}
+    }
 
-  	msg = &(aes->msg);
+    msg = &(aes->msg);
     cmsg = CMSG_FIRSTHDR(msg);
     cmsg = CMSG_NXTHDR(msg, cmsg);
 
-	/* set IV and AAD size */
-    	ret = wc_Afalg_SetIv(cmsg, (byte*)iv, ivSz);
-	if (ret < 0) {
-		WOLFSSL_MSG("Error setting IV");
-		return ret;
+    /* set IV and AAD size */
+    ret = wc_Afalg_SetIv(cmsg, (byte*)iv, ivSz);
+    if (ret < 0) {
+        WOLFSSL_MSG("Error setting IV");
+        return ret;
 
-	}
+    }
 
-	if (authInSz > 0) {
-    	cmsg = CMSG_NXTHDR(msg, cmsg);
-	ret = wc_Afalg_SetAad(cmsg, authInSz);
-	if (ret < 0) {
-		WOLFSSL_MSG("Unable to set AAD size");
-		return ret;
-	}
-	}
+    if (authInSz > 0) {
+        cmsg = CMSG_NXTHDR(msg, cmsg);
+        ret = wc_Afalg_SetAad(cmsg, authInSz);
+        if (ret < 0) {
+            WOLFSSL_MSG("Unable to set AAD size");
+            return ret;
+        }
+    }
 
-    	/* set data to be encrypted*/
-    	iov[0].iov_base = (byte*)authIn;
-    	iov[0].iov_len  = authInSz;
+    /* set data to be encrypted*/
+    iov[0].iov_base = (byte*)authIn;
+    iov[0].iov_len  = authInSz;
 
-    	iov[1].iov_base = (byte*)in;
-    	iov[1].iov_len  = sz;
+    iov[1].iov_base = (byte*)in;
+    iov[1].iov_len  = sz;
 
-    	aes->msg.msg_iov    = iov;
-    	aes->msg.msg_iovlen = 2; /* # of iov structures */
+    aes->msg.msg_iov    = iov;
+    aes->msg.msg_iovlen = 2; /* # of iov structures */
 
-    	ret = sendmsg(aes->rdFd, &(aes->msg), 0);
-	if (ret < 0) {
-		perror("sendmsg error");
-		return ret;
-	}
+    ret = sendmsg(aes->rdFd, &(aes->msg), 0);
+    if (ret < 0) {
+        perror("sendmsg error");
+        return ret;
+    }
 
-	/* first 16 bytes was all 0's */
-    	iov[0].iov_base = scratch;
-    	iov[0].iov_len  = authInSz;
+    /* first 16 bytes was all 0's */
+    iov[0].iov_base = scratch;
+    iov[0].iov_len  = authInSz;
 
-    	iov[1].iov_base = out;
-    	iov[1].iov_len  = sz;
+    iov[1].iov_base = out;
+    iov[1].iov_len  = sz;
 
-    	iov[2].iov_base = authTag;
-    	iov[2].iov_len  = authTagSz;
+    iov[2].iov_base = authTag;
+    iov[2].iov_len  = authTagSz;
 
-	ret = readv(aes->rdFd, iov, 3);
-	if (ret < 0) {
-		perror("read error");
-		return ret;
-	}
+    ret = readv(aes->rdFd, iov, 3);
+    if (ret < 0) {
+        perror("read error");
+        return ret;
+    }
 
-	return 0;
+    return 0;
 }
 
-#include <errno.h>
 #if defined(HAVE_AES_DECRYPT) || defined(HAVE_AESGCM_DECRYPT)
 int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
                      const byte* iv, word32 ivSz,
                      const byte* authTag, word32 authTagSz,
                      const byte* authIn, word32 authInSz)
 {
-	struct cmsghdr* cmsg;
-	struct iovec    iov[3];
-	int ret;
-  struct msghdr* msg;
-  byte scratch[16];
+    struct cmsghdr* cmsg;
+    struct iovec    iov[3];
+    int ret;
+    struct msghdr* msg;
+    byte scratch[16];
 
     /* argument checks */
     if (aes == NULL || authTagSz > AES_BLOCK_SIZE) {
@@ -537,8 +541,8 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     }
 
     if (ivSz != WC_SYSTEM_AESGCM_IV || authTagSz > WOLFSSL_MAX_AUTH_TAG_SZ) {
-	WOLFSSL_MSG("IV/AAD size not supported on system");
-	return BAD_FUNC_ARG;
+        WOLFSSL_MSG("IV/AAD size not supported on system");
+        return BAD_FUNC_ARG;
     }
 
     if (authTagSz < WOLFSSL_MIN_AUTH_TAG_SZ) {
@@ -546,74 +550,72 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         return BAD_FUNC_ARG;
     }
 
-	if (aes->rdFd == WC_SOCK_NOTSET) {
-	    aes->dir = AES_DECRYPTION;
-            if ((ret = wc_AesSetup(aes, WC_TYPE_AEAD, WC_NAME_AESGCM, ivSz, authInSz)) != 0) {
-		    WOLFSSL_MSG("Error with first time setup of AF_ALG socket");
-		    return ret;
-	    }
+    if (aes->rdFd == WC_SOCK_NOTSET) {
+        aes->dir = AES_DECRYPTION;
+        if ((ret = wc_AesSetup(aes, WC_TYPE_AEAD, WC_NAME_AESGCM, ivSz,
+                        authInSz)) != 0) {
+            WOLFSSL_MSG("Error with first time setup of AF_ALG socket");
+            return ret;
+        }
 
-	/* set auth tag
-	 * @TODO case where tag size changes between calls? */
-	ret = setsockopt(aes->alFd, SOL_ALG, ALG_SET_AEAD_AUTHSIZE, NULL, authTagSz);
+        /* set auth tag
+         * @TODO case where tag size changes between calls? */
+        ret = setsockopt(aes->alFd, SOL_ALG, ALG_SET_AEAD_AUTHSIZE, NULL,
+                authTagSz);
         if (ret != 0) {
-		perror("set tag");
             WOLFSSL_MSG("Unable to set AF_ALG tag size ");
             return WC_AFALG_SOCK_E;
         }
-	}
+    }
 
 
-	/* set IV and AAD size */
-	msg = &(aes->msg);
-    	cmsg = CMSG_FIRSTHDR(msg);
-    	cmsg = CMSG_NXTHDR(msg, cmsg);
-    	ret = wc_Afalg_SetIv(cmsg, (byte*)iv, ivSz);
-	if (ret < 0) {
-		return ret;
+    /* set IV and AAD size */
+    msg = &(aes->msg);
+    cmsg = CMSG_FIRSTHDR(msg);
+    cmsg = CMSG_NXTHDR(msg, cmsg);
+    ret = wc_Afalg_SetIv(cmsg, (byte*)iv, ivSz);
+    if (ret < 0) {
+        return ret;
+    }
 
-	}
+    if (authInSz > 0) {
+        cmsg = CMSG_NXTHDR(msg, cmsg);
+        ret = wc_Afalg_SetAad(cmsg, authInSz);
+        if (ret < 0) {
+            return ret;
+        }
+    }
 
-	if (authInSz > 0) {
-    	cmsg = CMSG_NXTHDR(msg, cmsg);
-	ret = wc_Afalg_SetAad(cmsg, authInSz);
-	if (ret < 0) {
-		return ret;
-	}
-	}
-    
-    	/* set data to be decrypted*/
-    	iov[0].iov_base = (byte*)authIn;
-    	iov[0].iov_len  = authInSz;
+    /* set data to be decrypted*/
+    iov[0].iov_base = (byte*)authIn;
+    iov[0].iov_len  = authInSz;
 
-    	iov[1].iov_base = (byte*)in;
-    	iov[1].iov_len  = sz;
+    iov[1].iov_base = (byte*)in;
+    iov[1].iov_len  = sz;
 
-    	iov[2].iov_base = (byte*)authTag;
-    	iov[2].iov_len  = authTagSz;
+    iov[2].iov_base = (byte*)authTag;
+    iov[2].iov_len  = authTagSz;
 
-    	aes->msg.msg_iov    = iov;
-    	aes->msg.msg_iovlen = 3; /* # of iov structures */
+    aes->msg.msg_iov    = iov;
+    aes->msg.msg_iovlen = 3; /* # of iov structures */
 
-    	ret = sendmsg(aes->rdFd, &(aes->msg), 0);
-	if (ret < 0) {
-		perror("send msg");
-		return ret;
-	}
+    ret = sendmsg(aes->rdFd, &(aes->msg), 0);
+    if (ret < 0) {
+        return ret;
+    }
 
-    	iov[0].iov_base = scratch;
-    	iov[0].iov_len  = authInSz;
+    iov[0].iov_base = scratch;
+    iov[0].iov_len  = authInSz;
 
-    	iov[1].iov_base = out;
-    	iov[1].iov_len  = sz;
+    iov[1].iov_base = out;
+    iov[1].iov_len  = sz;
 
-	ret = readv(aes->rdFd, iov, 2);
-	if (ret < 0) {
-		perror("read msg");
-                return AES_GCM_AUTH_E;
-	}
+    ret = readv(aes->rdFd, iov, 2);
+    if (ret < 0) {
+        return AES_GCM_AUTH_E;
+    }
 
-	return 0;
+    return 0;
 }
 #endif /* HAVE_AES_DECRYPT || HAVE_AESGCM_DECRYPT */
 #endif /* HAVE_AESGCM */
