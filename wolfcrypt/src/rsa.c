@@ -43,6 +43,10 @@
 
 #include <wolfssl/wolfcrypt/rsa.h>
 
+#ifdef WOLFSSL_AFALG_RSA
+#include <wolfssl/wolfcrypt/port/af_alg/wc_afalg.h>
+#endif
+
 #ifdef WOLFSSL_HAVE_SP_RSA
 #include <wolfssl/wolfcrypt/sp.h>
 #endif
@@ -215,7 +219,7 @@ enum {
     RSA_STATE_DECRYPT_RES,
 };
 
-#ifdef WOLFSSL_AFALG
+#ifdef WOLFSSL_AFALG_RSA
     static const char WC_TYPE_ASYMKEY[] = "akcipher";
     static const char WC_NAME_RSA[] = "rsa";
 #endif /* WOLFSSL_AFALG */
@@ -293,7 +297,7 @@ int wc_InitRsaKey_ex(RsaKey* key, void* heap, int devId)
     key->mod    = NULL;
 #endif
 
-#ifdef WOLFSSL_AFALG
+#ifdef WOLFSSL_AFALG_RSA
     key->alFd = wc_Afalg_Socket();
     if (key->alFd < 0) {
          WOLFSSL_MSG("Unable to open an AF_ALG socket");
@@ -431,7 +435,7 @@ int wc_FreeRsaKey(RsaKey* key)
     key->mod = NULL;
 #endif
 
-#ifdef WOLFSSL_AFALG
+#ifdef WOLFSSL_AFALG_RSA
     close(key->alFd);
     close(key->rdFd);
 #endif
@@ -1317,21 +1321,22 @@ static int wc_RsaFunctionXil(const byte* in, word32 inLen, byte* out,
 }
 #endif /* WOLFSSL_XILINX_CRYPT */
 
-#ifdef WOLFSSL_AFALG
+#ifdef WOLFSSL_AFALG_RSA
 /* AF_ALG implementation of RSA */
 static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
                           word32* outLen, int type, RsaKey* key, WC_RNG* rng)
 {
     byte*  keyBuf = NULL;
-    word32 keyBufSz;
+    word32 keyBufSz = 0;
     struct cmsghdr* cmsg;
     struct msghdr*  msg;
 
-    mp_int tmp;
     int    ret = 0;
     int    op  = 0; /* decryption vs encryption flag */
-    word32 keyLen, len;
+    word32 keyLen;
 
+
+    (void)rng;
 
     keyLen = wc_RsaEncryptSize(key);
     if (keyLen > *outLen) {
@@ -1343,29 +1348,29 @@ static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
         ERROR_OUT(MEMORY_E);
     }
 
-    if (mp_to_unsigned_bin(key->n, keyBuf) != keyLen) {
-        ERROR_OUT(FATAL_ERROR);
+    if (mp_to_unsigned_bin(&key->n, keyBuf) != (int)keyLen) {
+        ERROR_OUT(MP_TO_E);
     }
 
     switch(type) {
     case RSA_PRIVATE_DECRYPT:
-        op = 1; /* set as decrypt */ 
+        op = 1; /* set as decrypt */
         FALL_THROUGH;
 
     case RSA_PRIVATE_ENCRYPT:
     {
-        if ((keyBufSz = mp_to_unsigned_bin(key->d, keyBuf + keyLen)) <= 0) {
-            ERROR_OUT(FATAL_ERROR);
+        if ((keyBufSz = mp_to_unsigned_bin(&key->d, keyBuf + keyLen)) <= 0) {
+            ERROR_OUT(MP_TO_E);
         }
         break;
     }
     case RSA_PUBLIC_DECRYPT:
-        op = 1; /* set as decrypt */ 
+        op = 1; /* set as decrypt */
         FALL_THROUGH;
 
     case RSA_PUBLIC_ENCRYPT:
-        if ((keyBufSz = mp_to_unsigned_bin(key->e, keyBuf + keyLen)) <= 0) {
-            ERROR_OUT(FATAL_ERROR);
+        if ((keyBufSz = mp_to_unsigned_bin(&key->e, keyBuf + keyLen)) <= 0) {
+            ERROR_OUT(MP_TO_E);
         }
         break;
     default:
@@ -1383,11 +1388,11 @@ static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
 
     ret = setsockopt(key->alFd, SOL_ALG, ALG_SET_KEY, keyBuf, keyBufSz);
     if (ret < 0) {
-        ERROR_OUT(FATAL_ERROR);
+        ERROR_OUT()WC_AFALG_SOCK_E;
     }
 
 
-    ret = send(key->rdFd, in, sz);
+    ret = send(key->rdFd, in, inLen, 0);
     if (ret != 0) {
         ERROR_OUT(WC_AFALG_SOCK_E);
     }

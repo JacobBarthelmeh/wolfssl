@@ -66,6 +66,11 @@
 #include "xsecure_rsa.h"
 #endif
 
+#ifdef WOLFSSL_AFALG_RSA
+/* included for struct msghdr */
+#include <sys/socket.h>
+#endif
+
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -137,7 +142,7 @@ struct RsaKey {
     XSecure_Rsa xRsa;
 #endif
     byte   dataIsAlloc;
-#ifdef WOLFSSL_AFALG
+#ifdef WOLFSSL_AFALG_RSA
     int alFd;
     int rdFd;
     struct msghdr msg;

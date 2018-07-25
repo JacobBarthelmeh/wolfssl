@@ -50,7 +50,7 @@ int wc_Afalg_Accept(struct sockaddr_alg* in, int inSz, int sock)
 {
     if (bind(sock, (const struct sockaddr*)in, inSz) < 0) {
         WOLFSSL_MSG("Failed to bind with AF_ALG");
-	    return WC_AFALG_SOCK_E;
+        return WC_AFALG_SOCK_E;
     }
 
     return accept(sock, NULL, 0);
@@ -75,47 +75,47 @@ int wc_Afalg_Socket(void)
 /* binds and creates the read fd */
 int wc_Afalg_CreateRead(int sock, const char* type, const char* name)
 {
-            struct sockaddr_alg sa = {};
-	    wc_Afalg_SockAddr(&sa, type, name);
-	    return wc_Afalg_Accept(&sa, sizeof(sa), sock);
+    struct sockaddr_alg sa = {};
+    wc_Afalg_SockAddr(&sa, type, name);
+    return wc_Afalg_Accept(&sa, sizeof(sa), sock);
 }
 
 
 /* sets the IV in CMSG structure, returns 0 on success */
 int wc_Afalg_SetIv(struct cmsghdr* cmsg, byte* iv, word32 ivSz)
 {
-	struct af_alg_iv* afIv;
+    struct af_alg_iv* afIv;
 
-	if (cmsg == NULL || iv == NULL) {
-		WOLFSSL_MSG("Null cmsg or iv passed in");
-		return BAD_FUNC_ARG;
-	}
+    if (cmsg == NULL || iv == NULL) {
+        WOLFSSL_MSG("Null cmsg or iv passed in");
+        return BAD_FUNC_ARG;
+    }
 
-	cmsg->cmsg_level = SOL_ALG;
-	cmsg->cmsg_type  = ALG_SET_IV;
-        cmsg->cmsg_len   = CMSG_LEN(sizeof(struct af_alg_iv) + ivSz);
-        afIv = (void*)CMSG_DATA(cmsg);
-	afIv->ivlen = ivSz;
-	XMEMCPY(afIv->iv, iv, ivSz);
+    cmsg->cmsg_level = SOL_ALG;
+    cmsg->cmsg_type  = ALG_SET_IV;
+    cmsg->cmsg_len   = CMSG_LEN(sizeof(struct af_alg_iv) + ivSz);
+    afIv = (void*)CMSG_DATA(cmsg);
+    afIv->ivlen = ivSz;
+    XMEMCPY(afIv->iv, iv, ivSz);
 
-	return 0;
+    return 0;
 }
 
 
 /* sets the AAD size in CMSG structure, returns 0 on success */
 int wc_Afalg_SetAad(struct cmsghdr* cmsg, word32 sz)
 {
-	if (cmsg == NULL) {
-		WOLFSSL_MSG("Null cmsg passed in");
-		return BAD_FUNC_ARG;
-	}
+    if (cmsg == NULL) {
+        WOLFSSL_MSG("Null cmsg passed in");
+        return BAD_FUNC_ARG;
+    }
 
-	cmsg->cmsg_level = SOL_ALG;
-	cmsg->cmsg_type  = ALG_SET_AEAD_ASSOCLEN;
+    cmsg->cmsg_level = SOL_ALG;
+    cmsg->cmsg_type  = ALG_SET_AEAD_ASSOCLEN;
         cmsg->cmsg_len   = CMSG_LEN(sizeof(word32));
-	*((word32*)CMSG_DATA(cmsg)) = sz;
+    *((word32*)CMSG_DATA(cmsg)) = sz;
 
-	return 0;
+    return 0;
 }
 
 
@@ -125,16 +125,16 @@ int wc_Afalg_SetAad(struct cmsghdr* cmsg, word32 sz)
  */
 int wc_Afalg_SetOp(struct cmsghdr* cmsg, int dir)
 {
-	if (cmsg == NULL) {
-		return BAD_FUNC_ARG;
-	}
+    if (cmsg == NULL) {
+        return BAD_FUNC_ARG;
+    }
 
-	cmsg->cmsg_level = SOL_ALG;
-	cmsg->cmsg_type  = ALG_SET_OP;
-	cmsg->cmsg_len   = CMSG_LEN(4);
-	*((word32*)CMSG_DATA(cmsg)) = (dir == 1)? ALG_OP_DECRYPT : ALG_OP_ENCRYPT;
+    cmsg->cmsg_level = SOL_ALG;
+    cmsg->cmsg_type  = ALG_SET_OP;
+    cmsg->cmsg_len   = CMSG_LEN(4);
+    *((word32*)CMSG_DATA(cmsg)) = (dir == 1)? ALG_OP_DECRYPT : ALG_OP_ENCRYPT;
 
-	return 0;
+    return 0;
 }
 
 #endif /* !NO_AES && WOLFSSL_AFALG */
