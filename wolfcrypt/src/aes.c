@@ -3312,6 +3312,9 @@ int wc_AesSetIV(Aes* aes, const byte* iv)
     #elif defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_AES)
         /* implemented in wolfcrypt/src/port/caam/caam_aes.c */
 
+    #elif defined(WOLFSSL_AFALG)
+        /* implemented in wolfcrypt/src/port/af_alg/afalg_aes.c */
+
     #else
 
         /* Use software based AES counter */
@@ -9679,6 +9682,10 @@ int wc_AesGetKeySize(Aes* aes, word32* keySize)
 #ifdef HAVE_AES_ECB
 #if defined(WOLFSSL_IMX6_CAAM) && !defined(NO_IMX6_CAAM_AES)
     /* implemented in wolfcrypt/src/port/caam/caam_aes.c */
+
+#elif defined(WOLFSSL_AFALG)
+    /* implemented in wolfcrypt/src/port/af_alg/afalg_aes.c */
+
 #else
 
 /* software implementation */
