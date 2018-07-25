@@ -50,7 +50,7 @@ int wc_Afalg_Accept(struct sockaddr_alg* in, int inSz, int sock)
 {
     if (bind(sock, (const struct sockaddr*)in, inSz) < 0) {
         WOLFSSL_MSG("Failed to bind with AF_ALG");
-	return WC_AFALG_SOCK_E;
+	    return WC_AFALG_SOCK_E;
     }
 
     return accept(sock, NULL, 0);

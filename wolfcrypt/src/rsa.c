@@ -215,6 +215,11 @@ enum {
     RSA_STATE_DECRYPT_RES,
 };
 
+#ifdef WOLFSSL_AFALG
+    static const char WC_TYPE_ASYMKEY[] = "akcipher";
+    static const char WC_NAME_RSA[] = "rsa";
+#endif /* WOLFSSL_AFALG */
+
 static void wc_RsaCleanup(RsaKey* key)
 {
     if (key && key->data) {
@@ -286,6 +291,21 @@ int wc_InitRsaKey_ex(RsaKey* key, void* heap, int devId)
 #ifdef WOLFSSL_XILINX_CRYPT
     key->pubExp = 0;
     key->mod    = NULL;
+#endif
+
+#ifdef WOLFSSL_AFALG
+    key->alFd = wc_Afalg_Socket();
+    if (key->alFd < 0) {
+         WOLFSSL_MSG("Unable to open an AF_ALG socket");
+         return WC_AFALG_SOCK_E;
+    }
+
+    key->rdFd = wc_Afalg_CreateRead(key->alFd, WC_TYPE_ASYMKEY, WC_NAME_RSA);
+    if (key->rdFd < 0) {
+        WOLFSSL_MSG("Unable to accept and get AF_ALG read socket");
+        key->rdFd = WC_SOCK_NOTSET;
+        return key->rdFd;
+    }
 #endif
 
     return ret;
@@ -409,6 +429,11 @@ int wc_FreeRsaKey(RsaKey* key)
 #ifdef WOLFSSL_XILINX_CRYPT
     XFREE(key->mod, key->heap, DYNAMIC_TYPE_KEY);
     key->mod = NULL;
+#endif
+
+#ifdef WOLFSSL_AFALG
+    close(key->alFd);
+    close(key->rdFd);
 #endif
 
     return ret;
@@ -1292,6 +1317,97 @@ static int wc_RsaFunctionXil(const byte* in, word32 inLen, byte* out,
 }
 #endif /* WOLFSSL_XILINX_CRYPT */
 
+#ifdef WOLFSSL_AFALG
+/* AF_ALG implementation of RSA */
+static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
+                          word32* outLen, int type, RsaKey* key, WC_RNG* rng)
+{
+    byte*  keyBuf = NULL;
+    word32 keyBufSz;
+    struct cmsghdr* cmsg;
+    struct msghdr*  msg;
+
+    mp_int tmp;
+    int    ret = 0;
+    int    op  = 0; /* decryption vs encryption flag */
+    word32 keyLen, len;
+
+
+    keyLen = wc_RsaEncryptSize(key);
+    if (keyLen > *outLen) {
+        ERROR_OUT(RSA_BUFFER_E);
+    }
+
+    keyBuf = (byte*)XMALLOC(keyLen * 2, key->heap, DYNAMIC_TYPE_KEY);
+    if (keyBuf == NULL) {
+        ERROR_OUT(MEMORY_E);
+    }
+
+    if (mp_to_unsigned_bin(key->n, keyBuf) != keyLen) {
+        ERROR_OUT(FATAL_ERROR);
+    }
+
+    switch(type) {
+    case RSA_PRIVATE_DECRYPT:
+        op = 1; /* set as decrypt */ 
+        FALL_THROUGH;
+
+    case RSA_PRIVATE_ENCRYPT:
+    {
+        if ((keyBufSz = mp_to_unsigned_bin(key->d, keyBuf + keyLen)) <= 0) {
+            ERROR_OUT(FATAL_ERROR);
+        }
+        break;
+    }
+    case RSA_PUBLIC_DECRYPT:
+        op = 1; /* set as decrypt */ 
+        FALL_THROUGH;
+
+    case RSA_PUBLIC_ENCRYPT:
+        if ((keyBufSz = mp_to_unsigned_bin(key->e, keyBuf + keyLen)) <= 0) {
+            ERROR_OUT(FATAL_ERROR);
+        }
+        break;
+    default:
+        ERROR_OUT(RSA_WRONG_TYPE_E);
+    }
+    keyBufSz += keyLen; /* add size of modulus */
+
+
+    msg = &(key->msg);
+    cmsg = CMSG_FIRSTHDR(msg);
+    ret = wc_Afalg_SetOp(cmsg, op);
+    if (ret != 0) {
+        ERROR_OUT(WC_AFALG_SOCK_E);
+    }
+
+    ret = setsockopt(key->alFd, SOL_ALG, ALG_SET_KEY, keyBuf, keyBufSz);
+    if (ret < 0) {
+        ERROR_OUT(FATAL_ERROR);
+    }
+
+
+    ret = send(key->rdFd, in, sz);
+    if (ret != 0) {
+        ERROR_OUT(WC_AFALG_SOCK_E);
+    }
+
+    ret = read(key->rdFd, out, keyLen);
+    if (ret != 0) {
+        ERROR_OUT(WC_AFALG_SOCK_E);
+    }
+
+    *outLen = keyLen;
+
+done:
+    if (keyBuf != NULL) {
+        ForceZero(keyBuf, keyBufSz);
+    }
+    XFREE(keyBuf, key->heap, DYNAMIC_TYPE_KEY);
+    return ret;
+}
+
+#else
 static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
                           word32* outLen, int type, RsaKey* key, WC_RNG* rng)
 {
@@ -1495,6 +1611,7 @@ done:
     return ret;
 #endif
 }
+#endif
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_RSA)
 static int wc_RsaFunctionAsync(const byte* in, word32 inLen, byte* out,

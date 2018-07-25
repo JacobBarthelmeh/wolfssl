@@ -137,6 +137,11 @@ struct RsaKey {
     XSecure_Rsa xRsa;
 #endif
     byte   dataIsAlloc;
+#ifdef WOLFSSL_AFALG
+    int alFd;
+    int rdFd;
+    struct msghdr msg;
+#endif
 };
 
 #ifndef WC_RSAKEY_TYPE_DEFINED
