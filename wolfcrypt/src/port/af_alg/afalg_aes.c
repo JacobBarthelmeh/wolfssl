@@ -105,6 +105,10 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
     aes->keylen = keylen;
     aes->rounds = keylen/4 + 6;
 
+#ifdef WOLFSSL_AES_COUNTER
+    aes->left = 0;
+#endif
+
     aes->rdFd = WC_SOCK_NOTSET;
     aes->alFd = wc_Afalg_Socket();
     if (aes->alFd < 0) {
@@ -118,15 +122,6 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
 
     return wc_AesSetIV(aes, iv);
 }
-
-#if defined(WOLFSSL_AES_DIRECT) || defined(WOLFSSL_AES_COUNTER)
-    /* AES-CTR and AES-DIRECT need to use this for key setup, no aesni yet */
-    int wc_AesSetKeyDirect(Aes* aes, const byte* userKey, word32 keylen,
-                        const byte* iv, int dir)
-    {
-    return wc_AesSetKey(aes, userKey, keylen, iv, dir);
-    }
-#endif
 
 
 /* AES-CBC */
@@ -240,8 +235,7 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
 
 
 /* AES-DIRECT */
-#if defined(WOLFSSL_AES_DIRECT) || defined(WOLFSSL_AES_COUNTER) || \
-    defined(HAVE_AES_ECB)
+#if defined(WOLFSSL_AES_DIRECT) || defined(HAVE_AES_ECB)
 
 static const char WC_NAME_AESECB[] = "ecb(aes)";
 
@@ -253,8 +247,7 @@ static int wc_Afalg_AesDirect(Aes* aes, byte* out, const byte* in, word32 sz)
         int ret;
 
      if (aes == NULL || out == NULL || in == NULL) {
-         /* return BAD_FUNC_ARG; */
-         return;
+         return BAD_FUNC_ARG;
      }
 
         if (aes->rdFd == WC_SOCK_NOTSET) {
@@ -283,8 +276,10 @@ static int wc_Afalg_AesDirect(Aes* aes, byte* out, const byte* in, word32 sz)
 
         return 0;
 }
+#endif
 
 
+#if defined(WOLFSSL_AES_DIRECT)
 void wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
 {
     if (wc_Afalg_AesDirect(aes, out, in, AES_BLOCK_SIZE) != 0) {
@@ -301,10 +296,10 @@ void wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in)
 }
 
 
-int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
-                                const byte* iv, int dir)
+int wc_AesSetKeyDirect(Aes* aes, const byte* userKey, word32 keylen,
+                    const byte* iv, int dir)
 {
-     return wc_AesSetKey(aes, key, len, iv, dir);
+    return wc_AesSetKey(aes, userKey, keylen, iv, dir);
 }
 #endif
 
@@ -328,7 +323,8 @@ int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
         {
             struct cmsghdr* cmsg;
             struct iovec    iov[2];
-            int ret;
+            int   ret;
+            byte* tmp;
 
             if (aes == NULL || out == NULL || in == NULL) {
                 return BAD_FUNC_ARG;
@@ -351,11 +347,11 @@ int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
             }
 
             if (sz > 0) {
-                aes->left = AES_BLOCK_SIZE - (sz % AES_BLOCK_SIZE);
+                aes->left = sz % AES_BLOCK_SIZE;
 
                 /* clear previously leftover data */
-                tmp = (byte*)aes->tmp + AES_BLOCK_SIZE - aes->left;
-                XMEMSET(tmp, 0, aes->left);
+                tmp = (byte*)aes->tmp;
+                XMEMSET(tmp, 0, AES_BLOCK_SIZE);
 
                 /* update IV */
                 cmsg = CMSG_FIRSTHDR(&(aes->msg));
@@ -368,10 +364,16 @@ int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
 
                 /* set data to be encrypted */
                 iov[0].iov_base = (byte*)in;
-                iov[0].iov_len  = sz;
+                iov[0].iov_len  = sz - aes->left;
 
                 iov[1].iov_base = tmp;
-                iov[1].iov_len  = aes->left;
+                if (aes->left > 0) {
+                    XMEMCPY(tmp, in + sz - aes->left, aes->left);
+                    iov[1].iov_len  = AES_BLOCK_SIZE;
+                }
+                else {
+                    iov[1].iov_len  = 0;
+                }
 
                 aes->msg.msg_iov    = iov;
                 aes->msg.msg_iovlen = 2; /* # of iov structures */
@@ -384,21 +386,35 @@ int  wc_AesSetKeyDirect(Aes* aes, const byte* key, word32 len,
 
                 /* set buffers to hold result and left over stream */
                 iov[0].iov_base = (byte*)out;
-                iov[0].iov_len  = sz;
+                iov[0].iov_len  = sz - aes->left;
 
                 iov[1].iov_base = tmp;
-                iov[1].iov_len  = aes->left;
+                if (aes->left > 0) {
+                    iov[1].iov_len  = AES_BLOCK_SIZE;
+                }
+                else {
+                    iov[1].iov_len  = 0;
+                }
 
-                ret = readv(aes->rdFd, &(aes->msg), 0);
+                ret = readv(aes->rdFd, iov, 2);
                 if (ret < 0) {
                     return ret;
+                }
+
+                if (aes->left > 0) {
+                    XMEMCPY(out + sz - aes->left, tmp, aes->left);
+                    aes->left = AES_BLOCK_SIZE - aes->left;
                 }
             }
 
             /* adjust counter after call to hardware */
-            while (sz >= 0) {
+            while (sz >= AES_BLOCK_SIZE) {
                 IncrementAesCounter((byte*)aes->reg);
                 sz  -= AES_BLOCK_SIZE;
+            }
+
+            if (aes->left > 0) {
+                IncrementAesCounter((byte*)aes->reg);
             }
 
             return 0;
