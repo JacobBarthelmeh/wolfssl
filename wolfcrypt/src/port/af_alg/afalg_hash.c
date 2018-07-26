@@ -43,6 +43,10 @@ static const char WC_NAME_SHA256[] = "sha256";
 /* create AF_ALG sockets for SHA256 operation */
 int wc_InitSha256_ex(wc_Sha256* sha, void* heap, int devId)
 {
+    if (sha == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
     (void)devId; /* no async for now */
     XMEMSET(sha, 0, sizeof(wc_Sha256));
     sha->heap = heap;
@@ -67,6 +71,10 @@ int wc_InitSha256_ex(wc_Sha256* sha, void* heap, int devId)
 
 int wc_Sha256Update(wc_Sha256* sha, const byte* in, word32 sz)
 {
+    if (sha == NULL || (sz > 0 && in == NULL)) {
+        return BAD_FUNC_ARG;
+    }
+
 #ifdef WOLFSSL_AFALG_HASH_KEEP
     /* keep full message to hash at end instead of incremental updates */
     if (sha->len < sha->used + sz) {
@@ -99,6 +107,10 @@ int wc_Sha256Final(wc_Sha256* sha, byte* hash)
 {
     int ret;
 
+    if (sha == NULL || hash == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
 #ifdef WOLFSSL_AFALG_HASH_KEEP
     /* keep full message to hash at end instead of incremental updates */
     if ((ret = send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
@@ -124,9 +136,14 @@ int wc_Sha256Final(wc_Sha256* sha, byte* hash)
 
 int wc_Sha256GetHash(wc_Sha256* sha, byte* hash)
 {
-#ifdef WOLFSSL_AFALG_HASH_KEEP
     int ret;
 
+    if (sha == NULL || hash == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    (void)ret;
+#ifdef WOLFSSL_AFALG_HASH_KEEP
     if ((ret = send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
         return ret;
     }
@@ -147,6 +164,10 @@ int wc_Sha256GetHash(wc_Sha256* sha, byte* hash)
 
 int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
 {
+    if (src == NULL || dst == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
     XMEMCPY(dst, src, sizeof(wc_Sha256));
     dst->rdFd = accept(src->rdFd, NULL, 0);
     dst->alFd = accept(src->alFd, NULL, 0);
