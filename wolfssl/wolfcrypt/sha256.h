@@ -113,6 +113,8 @@ enum {
     #include "wolfssl/wolfcrypt/port/ti/ti-hash.h"
 #elif defined(WOLFSSL_IMX6_CAAM)
     #include "wolfssl/wolfcrypt/port/caam/wolfcaam_sha.h"
+#elif defined(WOLFSSL_AFALG_HASH)
+    #include "wolfssl/wolfcrypt/port/af_alg/afalg_hash.h"
 #else
 /* wc_Sha256 digest */
 typedef struct wc_Sha256 {
@@ -137,10 +139,6 @@ typedef struct wc_Sha256 {
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
 #endif /* WOLFSSL_ASYNC_CRYPT */
-#ifdef WOLFSSL_AFALG_HASH
-    int  alFd; /* file descriptors for reading/writing */
-    int  rdFd;
-#endif
 #endif
 } wc_Sha256;
 

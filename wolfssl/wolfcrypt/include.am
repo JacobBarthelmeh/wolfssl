@@ -77,6 +77,7 @@ noinst_HEADERS+= \
                          wolfssl/wolfcrypt/port/caam/wolfcaam.h \
                          wolfssl/wolfcrypt/port/caam/wolfcaam_sha.h \
                          wolfssl/wolfcrypt/port/st/stm32.h \
+                         wolfssl/wolfcrypt/port/af_alg/afalg_hash.h \
                          wolfssl/wolfcrypt/port/af_alg/wc_afalg.h
 
 if BUILD_ASYNCCRYPT

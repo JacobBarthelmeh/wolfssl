@@ -43,97 +43,119 @@ static const char WC_NAME_SHA256[] = "sha256";
 /* create AF_ALG sockets for SHA256 operation */
 int wc_InitSha256_ex(wc_Sha256* sha, void* heap, int devId)
 {
-	(void)devId; /* no async for now */
-	XMEMSET(sha, 0, sizeof(wc_Sha256));
-	sha->heap = heap;
+    (void)devId; /* no async for now */
+    XMEMSET(sha, 0, sizeof(wc_Sha256));
+    sha->heap = heap;
 
-	sha->alFd = wc_Afalg_Socket();
-	if (sha->alFd < 0) {
-		return WC_AFALG_SOCK_E;
-	}
+    sha->len  = 0;
+    sha->used = 0;
+    sha->msg  = NULL;
 
-	sha->rdFd = wc_Afalg_CreateRead(sha->alFd, WC_TYPE_HASH, WC_NAME_SHA256);
-	if (sha->rdFd < 0) {
-		return WC_AFALG_SOCK_E;
-	}
+    sha->alFd = wc_Afalg_Socket();
+    if (sha->alFd < 0) {
+        return WC_AFALG_SOCK_E;
+    }
 
-	return 0;
+    sha->rdFd = wc_Afalg_CreateRead(sha->alFd, WC_TYPE_HASH, WC_NAME_SHA256);
+    if (sha->rdFd < 0) {
+        return WC_AFALG_SOCK_E;
+    }
+
+    return 0;
 }
 
 
 int wc_Sha256Update(wc_Sha256* sha, const byte* in, word32 sz)
 {
-	int ret;
+#ifdef WOLFSSL_AFALG_HASH_KEEP
+    /* keep full message to hash at end instead of incremental updates */
+    if (sha->len < sha->used + sz) {
+        if (sha->msg == NULL) {
+            sha->msg = (byte*)XMALLOC(sha->used + sz, sha->heap,
+                    DYNAMIC_TYPE_TMP_BUFFER);
+        } else {
+            sha->msg = (byte*)XREALLOC(sha->msg, sha->used + sz, sha->heap,
+                    DYNAMIC_TYPE_TMP_BUFFER);
+        }
+        if (sha->msg == NULL) {
+            return MEMORY_E;
+        }
+        sha->len = sha->used + sz;
+    }
+    XMEMCPY(sha->msg + sha->used, in, sz);
+    sha->used += sz;
+#else
+    int ret;
 
-	if ((ret = send(sha->rdFd, in, sz, MSG_MORE)) < 0) {
-		perror("error");
-		return ret;
-	}
-	return 0;	
-}
-
-
-int wc_Sha256FinalRaw(wc_Sha256* sha, byte* raw)
-{
-	(void)sha;
-	(void)raw;
-	return 0;
+    if ((ret = send(sha->rdFd, in, sz, MSG_MORE)) < 0) {
+        return ret;
+    }
+#endif
+    return 0;
 }
 
 
 int wc_Sha256Final(wc_Sha256* sha, byte* hash)
 {
-	int ret;
+    int ret;
 
-	if ((ret = send(sha->rdFd, NULL, 0, 0)) < 0) {
-		return ret;
-	}
+#ifdef WOLFSSL_AFALG_HASH_KEEP
+    /* keep full message to hash at end instead of incremental updates */
+    if ((ret = send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
+        return ret;
+    }
+    XFREE(sha->msg, sha->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    sha->msg = NULL;
+#else
+    if ((ret = send(sha->rdFd, NULL, 0, 0)) < 0) {
+        return ret;
+    }
+#endif
 
-	if ((ret = read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
-			WC_SHA256_DIGEST_SIZE) {
-		return ret;
-	}
+    if ((ret = read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
+            WC_SHA256_DIGEST_SIZE) {
+        return ret;
+    }
 
-	return wc_InitSha256_ex(sha, sha->heap, 0);
+    wc_Sha256Free(sha);
+    return wc_InitSha256_ex(sha, sha->heap, 0);
 }
 
 
 int wc_Sha256GetHash(wc_Sha256* sha, byte* hash)
 {
-	int ret;
+#ifdef WOLFSSL_AFALG_HASH_KEEP
+    int ret;
 
-	if ((ret = read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
-			WC_SHA256_DIGEST_SIZE) {
-		return ret;
-	}
+    if ((ret = send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
+        return ret;
+    }
 
-	{
-		int i;
-		printf("hash get = ");
-		for (i = 0; i < 32; i++) printf("%02X", hash[i]);
-		printf("\n");
-	}
+    if ((ret = read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
+            WC_SHA256_DIGEST_SIZE) {
+        return ret;
+    }
+    return 0;
+#else
+    (void)sha;
+    (void)hash;
 
-	printf("ret of send = %ld\n", send(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE, 0));
-	return 0;
+    WOLFSSL_MSG("Compile with WOLFSSL_AFALG_HASH_KEEP for this feature");
+    return NOT_COMPILED_IN;
+#endif
 }
 
 int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
 {
-	printf("copying sha256\n");
-//	wc_InitSha256_ex(dst, src->heap, 0);
-//	dst->rdFd = accept(src->rdFd, NULL, 0);
-//	dst->alFd = accept(src->alFd, NULL, 0);
-//	
-//	printf("dst rdfd = %d, src fd = %d\n", dst->rdFd, src->rdFd);
-//	printf("dst alfd = %d, src fd = %d\n", dst->alFd, src->alFd);
-//
-//	if (dst->rdFd == -1 || dst->alFd == -1) {
-//		perror("error getting copy");
-//		return -1;
-//	}
+    XMEMCPY(dst, src, sizeof(wc_Sha256));
+    dst->rdFd = accept(src->rdFd, NULL, 0);
+    dst->alFd = accept(src->alFd, NULL, 0);
 
-	return 0;
+    if (dst->rdFd == -1 || dst->alFd == -1) {
+        return -1;
+    }
+
+    return 0;
 }
 
 #endif /* !NO_SHA256 */
