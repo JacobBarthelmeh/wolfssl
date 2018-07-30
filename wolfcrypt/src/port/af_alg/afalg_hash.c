@@ -54,6 +54,8 @@ int wc_InitSha256_ex(wc_Sha256* sha, void* heap, int devId)
     sha->len  = 0;
     sha->used = 0;
     sha->msg  = NULL;
+    sha->alFd = -1;
+    sha->rdFd = -1;
 
     sha->alFd = wc_Afalg_Socket();
     if (sha->alFd < 0) {
@@ -82,8 +84,12 @@ int wc_Sha256Update(wc_Sha256* sha, const byte* in, word32 sz)
             sha->msg = (byte*)XMALLOC(sha->used + sz, sha->heap,
                     DYNAMIC_TYPE_TMP_BUFFER);
         } else {
-            sha->msg = (byte*)XREALLOC(sha->msg, sha->used + sz, sha->heap,
+            byte* pt = (byte*)XREALLOC(sha->msg, sha->used + sz, sha->heap,
                     DYNAMIC_TYPE_TMP_BUFFER);
+            if (pt == NULL) {
+                return MEMORY_E;
+	    }
+            sha->msg = pt;
         }
         if (sha->msg == NULL) {
             return MEMORY_E;
@@ -95,7 +101,7 @@ int wc_Sha256Update(wc_Sha256* sha, const byte* in, word32 sz)
 #else
     int ret;
 
-    if ((ret = send(sha->rdFd, in, sz, MSG_MORE)) < 0) {
+    if ((ret = (int)send(sha->rdFd, in, sz, MSG_MORE)) < 0) {
         return ret;
     }
 #endif
@@ -113,18 +119,18 @@ int wc_Sha256Final(wc_Sha256* sha, byte* hash)
 
 #ifdef WOLFSSL_AFALG_HASH_KEEP
     /* keep full message to hash at end instead of incremental updates */
-    if ((ret = send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
+    if ((ret = (int)send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
         return ret;
     }
     XFREE(sha->msg, sha->heap, DYNAMIC_TYPE_TMP_BUFFER);
     sha->msg = NULL;
 #else
-    if ((ret = send(sha->rdFd, NULL, 0, 0)) < 0) {
+    if ((ret = (int)send(sha->rdFd, NULL, 0, 0)) < 0) {
         return ret;
     }
 #endif
 
-    if ((ret = read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
+    if ((ret = (int)read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
             WC_SHA256_DIGEST_SIZE) {
         return ret;
     }
@@ -144,11 +150,11 @@ int wc_Sha256GetHash(wc_Sha256* sha, byte* hash)
 
     (void)ret;
 #ifdef WOLFSSL_AFALG_HASH_KEEP
-    if ((ret = send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
+    if ((ret = (int)send(sha->rdFd, sha->msg, sha->used, 0)) < 0) {
         return ret;
     }
 
-    if ((ret = read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
+    if ((ret = (int)read(sha->rdFd, hash, WC_SHA256_DIGEST_SIZE)) !=
             WC_SHA256_DIGEST_SIZE) {
         return ret;
     }

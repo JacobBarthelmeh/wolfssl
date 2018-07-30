@@ -9629,6 +9629,11 @@ int wc_AesInit(Aes* aes, void* heap, int devId)
     (void)devId;
 #endif /* WOLFSSL_ASYNC_CRYPT */
 
+#ifdef WOLFSSL_AFALG
+    aes->alFd = -1;
+    aes->rdFd = -1;
+#endif
+
     return ret;
 }
 
@@ -9642,8 +9647,12 @@ void wc_AesFree(Aes* aes)
     wolfAsync_DevCtxFree(&aes->asyncDev, WOLFSSL_ASYNC_MARKER_AES);
 #endif /* WOLFSSL_ASYNC_CRYPT */
 #ifdef WOLFSSL_AFALG
-    close(aes->alFd);
-    close(aes->rdFd);
+    if (aes->rdFd > 0) { /* negative is error case */
+        close(aes->rdFd);
+    }
+    if (aes->alFd > 0) {
+        close(aes->alFd);
+    }
 #endif /* WOLFSSL_AFALG */
 }
 

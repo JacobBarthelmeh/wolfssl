@@ -2712,8 +2712,19 @@ void wc_Sha256Free(wc_Sha256* sha256)
     wolfAsync_DevCtxFree(&sha256->asyncDev, WOLFSSL_ASYNC_MARKER_SHA256);
 #endif /* WOLFSSL_ASYNC_CRYPT */
 #if defined(WOLFSSL_AFALG_HASH)
-    close(sha256->alFd);
-    close(sha256->rdFd);
+    if (sha256->alFd > 0) {
+        close(sha256->alFd);
+    }
+    if (sha256->rdFd > 0) {
+        close(sha256->rdFd);
+    }
+
+    #if defined(WOLFSSL_AFALG_HASH_KEEP)
+    if (sha256->msg != NULL) {
+        XFREE(sha256->msg, sha256->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        sha256->msg = NULL;
+    }
+    #endif
 #endif /* WOLFSSL_AFALG_HASH */
 }
 

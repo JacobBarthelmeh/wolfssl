@@ -767,6 +767,7 @@ int wc_Sha224Hash(const byte* data, word32 len, byte* hash)
         else if ((ret = wc_Sha256Final(sha256, hash)) != 0) {
             WOLFSSL_MSG("Sha256Final failed");
         }
+	wc_Sha256Free(sha256);
 
     #ifdef WOLFSSL_SMALL_STACK
         XFREE(sha256, NULL, DYNAMIC_TYPE_TMP_BUFFER);
