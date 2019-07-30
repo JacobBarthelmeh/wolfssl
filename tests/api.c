@@ -20046,6 +20046,16 @@ static void test_generate_cookie(void)
 #endif
 }
 
+#if !defined(NO_OLD_TLS) && defined(HAVE_IO_TESTS_DEPENDENCIES) && \
+    !defined(SINGLE_THREADED) && defined(OPENSSL_EXTRA) && \
+    !defined(NO_CERTS) && !defined(NO_FILESYSTEM) && !defined(NO_RSA)
+static void optionsNoTLS2_3(WOLFSSL* ctx)
+{
+    SSL_set_options(ctx, SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3);
+}
+#endif
+
+
 static void test_wolfSSL_set_options(void)
 {
     #if defined(OPENSSL_EXTRA) && !defined(NO_CERTS) && \
@@ -20059,6 +20069,16 @@ static void test_wolfSSL_set_options(void)
         8, 'h', 't', 't', 'p', '/', '1', '.', '1'
     };
     unsigned int len = sizeof(protos);
+
+#if !defined(NO_OLD_TLS) && defined(HAVE_IO_TESTS_DEPENDENCIES) && \
+    !defined(SINGLE_THREADED)
+    SOCKET_T sockfd = 0;
+    callback_functions callbacks;
+    tcp_ready ready;
+    func_args server_args;
+    THREAD_TYPE serverThread;
+    int err, ret;
+#endif
 
     void *arg = (void *)TEST_ARG;
 
@@ -20122,6 +20142,123 @@ static void test_wolfSSL_set_options(void)
 
     SSL_free(ssl);
     SSL_CTX_free(ctx);
+
+#if !defined(NO_OLD_TLS) && defined(HAVE_IO_TESTS_DEPENDENCIES) && \
+    !defined(SINGLE_THREADED)
+    /* testing downgrade mechanism with set options */
+#ifdef WOLFSSL_TIRTOS
+    fdOpenSession(Task_self());
+#endif
+    StartTCP();
+    InitTcpReady(&ready);
+
+#if defined(USE_WINDOWS_API)
+    /* use RNG to get random port if using windows */
+    ready.port = GetRandomPort();
+#endif
+
+    server_args.signal = &ready;
+    XMEMSET(&callbacks, 0, sizeof(callbacks));
+    callbacks.ssl_ready = optionsNoTLS2_3;
+    server_args.callbacks = &callbacks;
+
+    start_thread(test_server_nofail, &server_args, &serverThread);
+    wait_tcp_ready(&server_args);
+
+    /* client connection */
+    AssertNotNull(ctx = SSL_CTX_new(wolfSSLv23_client_method()));
+    AssertIntEQ(wolfSSL_CTX_load_verify_locations(ctx, caCertFile, 0),
+            WOLFSSL_SUCCESS);
+    AssertIntEQ(wolfSSL_CTX_use_certificate_file(ctx, cliCertFile,
+                                     WOLFSSL_FILETYPE_PEM), WOLFSSL_SUCCESS);
+    AssertIntEQ(wolfSSL_CTX_use_PrivateKey_file(ctx, cliKeyFile,
+                                     WOLFSSL_FILETYPE_PEM), WOLFSSL_SUCCESS);
+    ssl = wolfSSL_new(ctx);
+    tcp_connect(&sockfd, wolfSSLIP, ready.port, 0, 0, ssl);
+    AssertIntEQ(wolfSSL_set_fd(ssl, sockfd), SSL_SUCCESS);
+
+    do {
+#ifdef WOLFSSL_ASYNC_CRYPT
+        if (err == WC_PENDING_E) {
+            ret = wolfSSL_AsyncPoll(ssl, WOLF_POLL_FLAG_CHECK_HW);
+            if (ret < 0) { break; } else if (ret == 0) { continue; }
+        }
+#endif
+
+        err = 0; /* Reset error */
+        ret = wolfSSL_connect(ssl);
+        if (ret != SSL_SUCCESS) {
+            err = wolfSSL_get_error(ssl, 0);
+        }
+    } while (ret != SSL_SUCCESS && err == WC_PENDING_E);
+    AssertIntEQ(ret, SSL_SUCCESS);
+    AssertIntEQ(XMEMCMP(wolfSSL_get_version(ssl), "TLSv1.1",
+                sizeof("TLSv1.1")), 0);
+    wolfSSL_shutdown(ssl);
+    wolfSSL_free(ssl);
+    wolfSSL_CTX_free(ctx);
+
+    join_thread(serverThread);
+
+    FreeTcpReady(&ready);
+    CloseSocket(sockfd);
+
+    /* now try with options putting restriction on client side */
+#ifdef WOLFSSL_TIRTOS
+    fdOpenSession(Task_self());
+#endif
+    StartTCP();
+    InitTcpReady(&ready);
+
+#if defined(USE_WINDOWS_API)
+    /* use RNG to get random port if using windows */
+    ready.port = GetRandomPort();
+#endif
+
+    server_args.signal = &ready;
+    server_args.callbacks = NULL;
+    start_thread(test_server_nofail, &server_args, &serverThread);
+    wait_tcp_ready(&server_args);
+
+    /* client connection */
+    AssertNotNull(ctx = SSL_CTX_new(wolfSSLv23_client_method()));
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3);
+    AssertIntEQ(wolfSSL_CTX_load_verify_locations(ctx, caCertFile, 0),
+            WOLFSSL_SUCCESS);
+    AssertIntEQ(wolfSSL_CTX_use_certificate_file(ctx, cliCertFile,
+                                     WOLFSSL_FILETYPE_PEM), WOLFSSL_SUCCESS);
+    AssertIntEQ(wolfSSL_CTX_use_PrivateKey_file(ctx, cliKeyFile,
+                                     WOLFSSL_FILETYPE_PEM), WOLFSSL_SUCCESS);
+    ssl = wolfSSL_new(ctx);
+    tcp_connect(&sockfd, wolfSSLIP, ready.port, 0, 0, ssl);
+    AssertIntEQ(wolfSSL_set_fd(ssl, sockfd), SSL_SUCCESS);
+
+    do {
+#ifdef WOLFSSL_ASYNC_CRYPT
+        if (err == WC_PENDING_E) {
+            ret = wolfSSL_AsyncPoll(ssl, WOLF_POLL_FLAG_CHECK_HW);
+            if (ret < 0) { break; } else if (ret == 0) { continue; }
+        }
+#endif
+
+        err = 0; /* Reset error */
+        ret = wolfSSL_connect(ssl);
+        if (ret != SSL_SUCCESS) {
+            err = wolfSSL_get_error(ssl, 0);
+        }
+    } while (ret != SSL_SUCCESS && err == WC_PENDING_E);
+    AssertIntEQ(ret, SSL_SUCCESS);
+    AssertIntEQ(XMEMCMP(wolfSSL_get_version(ssl), "TLSv1.1",
+                sizeof("TLSv1.1")), 0);
+    wolfSSL_shutdown(ssl);
+    wolfSSL_free(ssl);
+    wolfSSL_CTX_free(ctx);
+
+    join_thread(serverThread);
+
+    FreeTcpReady(&ready);
+    CloseSocket(sockfd);
+#endif /* !NO_OLD_TLS && !SINGLETHREADDED */
 
     printf(resultFmt, passed);
     #endif /* defined(OPENSSL_EXTRA) && !defined(NO_CERTS) && \

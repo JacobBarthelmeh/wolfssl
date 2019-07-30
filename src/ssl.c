@@ -12144,6 +12144,47 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
 
         ctx->mask = wolf_set_options(ctx->mask, opt);
 
+        /* reset method version if downgraded by new options */
+        if ((ctx->mask & SSL_OP_NO_TLSv1_3) == SSL_OP_NO_TLSv1_3) {
+            if (ctx->method->version.minor == TLSv1_3_MINOR &&
+                    ctx->method->downgrade) {
+                ctx->method->version.minor = TLSv1_2_MINOR;
+            }
+            else {
+                WOLFSSL_MSG("Downgrade version not allowed");
+            }
+        }
+
+        if ((ctx->mask & SSL_OP_NO_TLSv1_2) == SSL_OP_NO_TLSv1_2) {
+            if (ctx->method->version.minor == TLSv1_2_MINOR &&
+                    ctx->method->downgrade) {
+                ctx->method->version.minor = TLSv1_1_MINOR;
+            }
+            else {
+                WOLFSSL_MSG("Downgrade version not allowed");
+            }
+        }
+
+        if ((ctx->mask & SSL_OP_NO_TLSv1_1) == SSL_OP_NO_TLSv1_1) {
+            if (ctx->method->version.minor == TLSv1_1_MINOR &&
+                    ctx->method->downgrade) {
+                ctx->method->version.minor = TLSv1_MINOR;
+            }
+            else {
+                WOLFSSL_MSG("Downgrade version not allowed");
+            }
+        }
+
+        if ((ctx->mask & SSL_OP_NO_TLSv1) == SSL_OP_NO_TLSv1) {
+            if (ctx->method->version.minor == TLSv1_MINOR &&
+                    ctx->method->downgrade) {
+                ctx->method->version.minor = SSLv3_MINOR;
+            }
+            else {
+                WOLFSSL_MSG("Downgrade version not allowed");
+            }
+        }
+
         return ctx->mask;
     }
 

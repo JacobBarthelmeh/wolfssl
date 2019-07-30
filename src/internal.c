@@ -18246,6 +18246,29 @@ exit_dpk:
     }
 #endif /* WOLFSSL_TLS13 */
 
+    /* returns 1 if capable of doing TLS 1.2 */
+    static int TLSv1_2_Capable(WOLFSSL* ssl)
+    {
+    #ifdef WOLFSSL_NO_TLS12
+        return 0;
+    #else
+        int ret = 0;
+
+        if (ssl->ctx->method->version.major == SSLv3_MAJOR &&
+            ssl->ctx->method->version.minor >= TLSv1_2_MINOR) {
+            ret = 1;
+        }
+
+        #ifdef OPENSSL_EXTRA
+        if ((wolfSSL_get_options(ssl) & SSL_OP_NO_TLSv1_2)) {
+            /* option set at run time to disable TLS 1.2 */
+            ret = 0;
+        }
+        #endif
+        return ret;
+    #endif
+    }
+
     int CompleteServerHello(WOLFSSL* ssl)
     {
         int ret;
@@ -18268,8 +18291,7 @@ exit_dpk:
             }
             else
     #endif
-            if (ssl->ctx->method->version.major == SSLv3_MAJOR &&
-                             ssl->ctx->method->version.minor == TLSv1_2_MINOR) {
+            if (TLSv1_2_Capable(ssl)) {
                 /* TLS v1.2 capable client not allowed to downgrade when
                  * connecting to TLS v1.2 capable server.
                  */
@@ -21742,7 +21764,7 @@ static int DoSessionTicket(WOLFSSL* ssl, const byte* input, word32* inOutIdx,
                 return ret;
 
 #ifdef WOLFSSL_TLS13
-            if (IsAtLeastTLSv1_3(ssl->ctx->method->version)) {
+            if (TLSv1_3_Capable(ssl)) {
                 /* TLS v1.3 capable server downgraded. */
                 XMEMCPY(output + idx + RAN_LEN - (TLS13_DOWNGRADE_SZ + 1),
                         tls13Downgrade, TLS13_DOWNGRADE_SZ);
@@ -21750,9 +21772,7 @@ static int DoSessionTicket(WOLFSSL* ssl, const byte* input, word32* inOutIdx,
             }
             else
 #endif
-            if (ssl->ctx->method->version.major == SSLv3_MAJOR &&
-                          ssl->ctx->method->version.minor == TLSv1_2_MINOR &&
-                                                       !IsAtLeastTLSv1_2(ssl)) {
+            if (TLSv1_2_Capable(ssl) && !IsAtLeastTLSv1_2(ssl)) {
                 /* TLS v1.2 capable server downgraded. */
                 XMEMCPY(output + idx + RAN_LEN - (TLS13_DOWNGRADE_SZ + 1),
                         tls13Downgrade, TLS13_DOWNGRADE_SZ);
