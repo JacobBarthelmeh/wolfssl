@@ -177,7 +177,7 @@ struct Hmac {
 #endif /* HAVE_FIPS */
 
 /* does init */
-WOLFSSL_API int wc_HmacSetKey(Hmac*, int type, const byte* key, word32 keySz);
+WOLFSSL_API int wc_HmacSetKey(Hmac* hmac, int type, const byte* key, word32 length);
 WOLFSSL_API int wc_HmacUpdate(Hmac*, const byte*, word32);
 WOLFSSL_API int wc_HmacFinal(Hmac*, byte*);
 WOLFSSL_API int wc_HmacSizeByType(int type);

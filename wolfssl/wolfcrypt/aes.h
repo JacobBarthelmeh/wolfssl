@@ -139,7 +139,7 @@ struct Aes {
     /* AESNI needs key first, rounds 2nd, not sure why yet */
     ALIGN16 word32 key[60];
     word32  rounds;
-    int     keylen;
+    word32  keylen;
 
     ALIGN16 word32 reg[AES_BLOCK_SIZE / sizeof(word32)];      /* for CBC mode */
     ALIGN16 word32 tmp[AES_BLOCK_SIZE / sizeof(word32)];      /* same         */
@@ -246,7 +246,7 @@ typedef int (*wc_AesAuthDecryptFunc)(Aes* aes, byte* out,
                                    const byte* authIn, word32 authInSz);
 
 /* AES-CBC */
-WOLFSSL_API int  wc_AesSetKey(Aes* aes, const byte* key, word32 len,
+WOLFSSL_API int  wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
                               const byte* iv, int dir);
 WOLFSSL_API int  wc_AesSetIV(Aes* aes, const byte* iv);
 

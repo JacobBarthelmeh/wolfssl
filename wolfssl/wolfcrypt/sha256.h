@@ -136,8 +136,8 @@ struct wc_Sha256 {
     STM32_HASH_Context stmCtx;
 #else
     /* alignment on digest and buffer speeds up ARMv8 crypto operations */
-    ALIGN16 word32  digest[WC_SHA256_DIGEST_SIZE / sizeof(word32)];
-    ALIGN16 word32  buffer[WC_SHA256_BLOCK_SIZE  / sizeof(word32)];
+    ALIGN16 word32  digest[(unsigned)WC_SHA256_DIGEST_SIZE / sizeof(word32)];
+    ALIGN16 word32  buffer[(unsigned)WC_SHA256_BLOCK_SIZE  / sizeof(word32)];
     word32  buffLen;   /* in bytes          */
     word32  loLen;     /* length in bytes   */
     word32  hiLen;     /* length in bytes   */
@@ -183,18 +183,18 @@ struct wc_Sha256 {
 
 #endif /* HAVE_FIPS */
 
-WOLFSSL_API int wc_InitSha256(wc_Sha256*);
-WOLFSSL_API int wc_InitSha256_ex(wc_Sha256*, void*, int);
-WOLFSSL_API int wc_Sha256Update(wc_Sha256*, const byte*, word32);
-WOLFSSL_API int wc_Sha256FinalRaw(wc_Sha256*, byte*);
-WOLFSSL_API int wc_Sha256Final(wc_Sha256*, byte*);
-WOLFSSL_API void wc_Sha256Free(wc_Sha256*);
+WOLFSSL_API int wc_InitSha256(wc_Sha256* sha256);
+WOLFSSL_API int wc_InitSha256_ex(wc_Sha256* sha256, void* heap, int devId);
+WOLFSSL_API int wc_Sha256Update(wc_Sha256* sha256, const byte* data, word32 len);
+WOLFSSL_API int wc_Sha256FinalRaw(wc_Sha256* sha256, byte* hash);
+WOLFSSL_API int wc_Sha256Final(wc_Sha256* sha256, byte* hash);
+WOLFSSL_API void wc_Sha256Free(wc_Sha256* sha256);
 
-WOLFSSL_API int wc_Sha256GetHash(wc_Sha256*, byte*);
+WOLFSSL_API int wc_Sha256GetHash(wc_Sha256* sha256, byte* hash);
 WOLFSSL_API int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst);
 
 #ifdef WOLFSSL_PIC32MZ_HASH
-WOLFSSL_API void wc_Sha256SizeSet(wc_Sha256*, word32);
+WOLFSSL_API void wc_Sha256SizeSet(wc_Sha256* sha256, word32 size);
 #endif
 
 #if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
@@ -230,13 +230,13 @@ enum {
 #endif
 #endif /* HAVE_FIPS */
 
-WOLFSSL_API int wc_InitSha224(wc_Sha224*);
-WOLFSSL_API int wc_InitSha224_ex(wc_Sha224*, void*, int);
-WOLFSSL_API int wc_Sha224Update(wc_Sha224*, const byte*, word32);
-WOLFSSL_API int wc_Sha224Final(wc_Sha224*, byte*);
-WOLFSSL_API void wc_Sha224Free(wc_Sha224*);
+WOLFSSL_API int wc_InitSha224(wc_Sha224* sha224);
+WOLFSSL_API int wc_InitSha224_ex(wc_Sha224* sha225, void* heap, int devId);
+WOLFSSL_API int wc_Sha224Update(wc_Sha224* sha224, const byte* data, word32 len);
+WOLFSSL_API int wc_Sha224Final(wc_Sha224* sha224, byte* hash);
+WOLFSSL_API void wc_Sha224Free(wc_Sha224* sha224);
 
-WOLFSSL_API int wc_Sha224GetHash(wc_Sha224*, byte*);
+WOLFSSL_API int wc_Sha224GetHash(wc_Sha224* sha224, byte* hash);
 WOLFSSL_API int wc_Sha224Copy(wc_Sha224* src, wc_Sha224* dst);
 
 #if defined(WOLFSSL_HASH_FLAGS) || defined(WOLF_CRYPTO_CB)
