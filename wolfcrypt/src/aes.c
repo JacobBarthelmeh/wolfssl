@@ -3469,9 +3469,11 @@ int wc_AesSetIV(Aes* aes, const byte* iv)
 static WC_INLINE void IncCtr(byte* ctr, word32 ctrSz)
 {
     int i;
-    for (i = ctrSz-1; i >= 0; i--) {
-        if (++ctr[i])
+    for (i = (int)ctrSz-1; i >= 0; i--) {
+        ctr[i] = ctr[i] + 1U;
+        if (ctr[i] != 0U) {
             break;
+        }
     }
 }
 #endif /* HAVE_AESGCM || HAVE_AESCCM */
@@ -3505,8 +3507,10 @@ static WC_INLINE void IncrementGcmCounter(byte* inOutCtr)
 
     /* in network byte order so start at end and work back */
     for (i = AES_BLOCK_SIZE - 1; i >= AES_BLOCK_SIZE - CTR_SZ; i--) {
-        if (++inOutCtr[i])  /* we're done unless we overflow */
+        inOutCtr[i] = inOutCtr[i] + 1U;
+        if (inOutCtr[i] != 0U) {  /* we're done unless we overflow */
             return;
+        }
     }
 }
 #ifdef STM32_CRYPTO_AES_GCM
@@ -3610,8 +3614,9 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
         }
     #endif
 
-    if (!((len == 16) || (len == 24) || (len == 32)))
+    if (!((len == 16U) || (len == 24U) || (len == 32U))) {
         return BAD_FUNC_ARG;
+    }
 
 #ifdef OPENSSL_EXTRA
     if (aes != NULL) {
@@ -5068,22 +5073,22 @@ static void GMULT(word64* X, word64* Y)
         word64 y = Y[i];
         for (j = 0; j < 64; j++)
         {
-            if (y & 0x8000000000000000ULL) {
+            if ((y & 0x8000000000000000ULL) != 0ULL) {
                 Z[0] ^= V[0];
                 Z[1] ^= V[1];
             }
 
-            if (V[1] & 0x0000000000000001) {
+            if ((V[1] & 0x0000000000000001ULL) != 0ULL) {
                 V[1] >>= 1;
-                V[1] |= ((V[0] & 0x0000000000000001) ?
-                    0x8000000000000000ULL : 0);
+                V[1] |= (((V[0] & 0x0000000000000001ULL) != 0ULL)?
+                    0x8000000000000000ULL : 0ULL);
                 V[0] >>= 1;
                 V[0] ^= 0xE100000000000000ULL;
             }
             else {
                 V[1] >>= 1;
-                V[1] |= ((V[0] & 0x0000000000000001) ?
-                    0x8000000000000000ULL : 0);
+                V[1] |= (((V[0] & 0x0000000000000001ULL) != 0ULL)?
+                    0x8000000000000000ULL : 0ULL);
                 V[0] >>= 1;
             }
             y <<= 1;
@@ -5107,11 +5112,12 @@ void GHASH(Aes* aes, const byte* a, word32 aSz, const byte* c,
     #endif
 
     /* Hash in A, the Additional Authentication Data */
-    if (aSz != 0 && a != NULL) {
+    if ((aSz != 0U) && (a != NULL)) {
         word64 bigA[2];
-        blocks = aSz / AES_BLOCK_SIZE;
-        partial = aSz % AES_BLOCK_SIZE;
-        while (blocks--) {
+        blocks = aSz / (word32)AES_BLOCK_SIZE;
+        partial = aSz % (word32)AES_BLOCK_SIZE;
+        while (blocks > 0U) {
+            blocks = blocks - 1U;
             XMEMCPY(bigA, a, AES_BLOCK_SIZE);
             #ifdef LITTLE_ENDIAN_ORDER
                 ByteReverseWords64(bigA, bigA, AES_BLOCK_SIZE);
@@ -5121,7 +5127,7 @@ void GHASH(Aes* aes, const byte* a, word32 aSz, const byte* c,
             GMULT(x, bigH);
             a += AES_BLOCK_SIZE;
         }
-        if (partial != 0) {
+        if (partial != 0U) {
             XMEMSET(bigA, 0, AES_BLOCK_SIZE);
             XMEMCPY(bigA, a, partial);
             #ifdef LITTLE_ENDIAN_ORDER
@@ -5133,18 +5139,18 @@ void GHASH(Aes* aes, const byte* a, word32 aSz, const byte* c,
         }
 #ifdef OPENSSL_EXTRA
         /* store AAD partial tag for next call */
-        aes->aadH[0] = (word32)((x[0] & 0xFFFFFFFF00000000) >> 32);
-        aes->aadH[1] = (word32)(x[0] & 0xFFFFFFFF);
-        aes->aadH[2] = (word32)((x[1] & 0xFFFFFFFF00000000) >> 32);
-        aes->aadH[3] = (word32)(x[1] & 0xFFFFFFFF);
+        aes->aadH[0] = (word32)((x[0] & 0xFFFFFFFF00000000U) >> 32);
+        aes->aadH[1] = (word32)(x[0] & 0xFFFFFFFFU);
+        aes->aadH[2] = (word32)((x[1] & 0xFFFFFFFF00000000U) >> 32);
+        aes->aadH[3] = (word32)(x[1] & 0xFFFFFFFFU);
 #endif
     }
 
     /* Hash in C, the Ciphertext */
-    if (cSz != 0 && c != NULL) {
+    if ((cSz != 0U) && (c != NULL)) {
         word64 bigC[2];
-        blocks = cSz / AES_BLOCK_SIZE;
-        partial = cSz % AES_BLOCK_SIZE;
+        blocks = cSz / (word32)AES_BLOCK_SIZE;
+        partial = cSz % (word32)AES_BLOCK_SIZE;
 #ifdef OPENSSL_EXTRA
         /* Start from last AAD partial tag */
         if(aes->aadLen) {
@@ -5152,7 +5158,8 @@ void GHASH(Aes* aes, const byte* a, word32 aSz, const byte* c,
             x[1] = ((word64)aes->aadH[2]) << 32 | aes->aadH[3];
          }
 #endif
-        while (blocks--) {
+        while (blocks > 0U) {
+            blocks = blocks - 1U;
             XMEMCPY(bigC, c, AES_BLOCK_SIZE);
             #ifdef LITTLE_ENDIAN_ORDER
                 ByteReverseWords64(bigC, bigC, AES_BLOCK_SIZE);
@@ -5162,7 +5169,7 @@ void GHASH(Aes* aes, const byte* a, word32 aSz, const byte* c,
             GMULT(x, bigH);
             c += AES_BLOCK_SIZE;
         }
-        if (partial != 0) {
+        if (partial != 0U) {
             XMEMSET(bigC, 0, AES_BLOCK_SIZE);
             XMEMCPY(bigC, c, partial);
             #ifdef LITTLE_ENDIAN_ORDER
@@ -5183,8 +5190,8 @@ void GHASH(Aes* aes, const byte* a, word32 aSz, const byte* c,
             len[0] = (word64)aes->aadLen;
 #endif
         /* Lengths are in bytes. Convert to bits. */
-        len[0] *= 8;
-        len[1] *= 8;
+        len[0] *= 8UL;
+        len[1] *= 8UL;
 
         x[0] ^= len[0];
         x[1] ^= len[1];
@@ -5570,8 +5577,8 @@ int AES_GCM_encrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
                       const byte* authIn, word32 authInSz)
 {
     int ret = 0;
-    word32 blocks = sz / AES_BLOCK_SIZE;
-    word32 partial = sz % AES_BLOCK_SIZE;
+    word32 blocks = sz / (word32)AES_BLOCK_SIZE;
+    word32 partial = sz % (word32)AES_BLOCK_SIZE;
     const byte* p = in;
     byte* c = out;
     byte counter[AES_BLOCK_SIZE];
@@ -5583,7 +5590,7 @@ int AES_GCM_encrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
 #endif
     ctr = counter;
     XMEMSET(initialCounter, 0, AES_BLOCK_SIZE);
-    if (ivSz == GCM_NONCE_MID_SZ) {
+    if (ivSz == (word32)GCM_NONCE_MID_SZ) {
         XMEMCPY(initialCounter, iv, ivSz);
         initialCounter[AES_BLOCK_SIZE - 1] = 1;
     }
@@ -5633,7 +5640,8 @@ int AES_GCM_encrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
     else
 #endif /* HAVE_AES_ECB && !WOLFSSL_PIC32MZ_CRYPT */
 
-    while (blocks--) {
+    while (blocks > 0U) {
+        blocks = blocks - 1U;
         IncrementGcmCounter(ctr);
     #if !defined(WOLFSSL_PIC32MZ_CRYPT)
         wc_AesEncrypt(aes, ctr, scratch);
@@ -5644,13 +5652,13 @@ int AES_GCM_encrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
         c += AES_BLOCK_SIZE;
     }
 
-    if (partial != 0) {
+    if (partial != 0U) {
         IncrementGcmCounter(ctr);
         wc_AesEncrypt(aes, ctr, scratch);
         xorbuf(scratch, p, partial);
         XMEMCPY(c, scratch, partial);
     }
-    if (authTag) {
+    if (authTag != NULL) {
         GHASH(aes, authIn, authInSz, out, sz, authTag, authTagSz);
         wc_AesEncrypt(aes, initialCounter, scratch);
         xorbuf(authTag, scratch, authTagSz);
@@ -5671,11 +5679,11 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
                    const byte* authIn, word32 authInSz)
 {
     /* argument checks */
-    if (aes == NULL || authTagSz > AES_BLOCK_SIZE) {
+    if ((aes == NULL) || (authTagSz > (word32)AES_BLOCK_SIZE)) {
         return BAD_FUNC_ARG;
     }
 
-    if (authTagSz < WOLFSSL_MIN_AUTH_TAG_SZ) {
+    if (authTagSz < (word32)WOLFSSL_MIN_AUTH_TAG_SZ) {
         WOLFSSL_MSG("GcmEncrypt authTagSz too small error");
         return BAD_FUNC_ARG;
     }
@@ -5996,8 +6004,8 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
                       const byte* authIn, word32 authInSz)
 {
     int ret = 0;
-    word32 blocks = sz / AES_BLOCK_SIZE;
-    word32 partial = sz % AES_BLOCK_SIZE;
+    word32 blocks = sz / (word32)AES_BLOCK_SIZE;
+    word32 partial = sz % (word32)AES_BLOCK_SIZE;
     const byte* c = in;
     byte* p = out;
     byte counter[AES_BLOCK_SIZE];
@@ -6010,8 +6018,8 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
     word32 aadTemp;
 #endif
     ctr = counter;
-    XMEMSET(initialCounter, 0, AES_BLOCK_SIZE);
-    if (ivSz == GCM_NONCE_MID_SZ) {
+    XMEMSET(initialCounter, 0, (size_t)AES_BLOCK_SIZE);
+    if (ivSz == (word32)GCM_NONCE_MID_SZ) {
         XMEMCPY(initialCounter, iv, ivSz);
         initialCounter[AES_BLOCK_SIZE - 1] = 1;
     }
@@ -6028,9 +6036,9 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
     XMEMCPY(ctr, initialCounter, AES_BLOCK_SIZE);
 
     /* Calc the authTag again using the received auth data and the cipher text */
-    GHASH(aes, authIn, authInSz, in, sz, Tprime, sizeof(Tprime));
+    GHASH(aes, authIn, authInSz, in, sz, Tprime, (word32)sizeof(Tprime));
     wc_AesEncrypt(aes, ctr, EKY0);
-    xorbuf(Tprime, EKY0, sizeof(Tprime));
+    xorbuf(Tprime, EKY0, (word32)sizeof(Tprime));
 
 #ifdef OPENSSL_EXTRA
     if (!out) {
@@ -6039,7 +6047,7 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
         aes->aadLen = authInSz;
     }
 #endif
-    if (ConstantCompare(authTag, Tprime, authTagSz) != 0) {
+    if (ConstantCompare(authTag, Tprime, (int)authTagSz) != 0) {
         return AES_GCM_AUTH_E;
     }
 
@@ -6076,7 +6084,8 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
     }
     else
 #endif /* HAVE_AES_ECB && !PIC32MZ */
-    while (blocks--) {
+    while (blocks > 0U) {
+        blocks = blocks - 1U;
         IncrementGcmCounter(ctr);
     #if !defined(WOLFSSL_PIC32MZ_CRYPT)
         wc_AesEncrypt(aes, ctr, scratch);
@@ -6087,7 +6096,7 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
         c += AES_BLOCK_SIZE;
     }
 
-    if (partial != 0) {
+    if (partial != 0U) {
         IncrementGcmCounter(ctr);
         wc_AesEncrypt(aes, ctr, scratch);
         xorbuf(scratch, c, partial);
@@ -6110,8 +6119,9 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     /* argument checks */
     /* If the sz is non-zero, both in and out must be set. If sz is 0,
      * in and out are don't cares, as this is is the GMAC case. */
-    if (aes == NULL || iv == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
-        authTag == NULL || authTagSz > AES_BLOCK_SIZE || authTagSz == 0) {
+    if ((aes == NULL) || (iv == NULL) || ((sz != 0U) && ((in == NULL) ||
+        (out == NULL))) || (authTag == NULL) ||
+        (authTagSz > (word32)AES_BLOCK_SIZE) || (authTagSz == 0U)) {
 
         return BAD_FUNC_ARG;
     }
@@ -6224,8 +6234,8 @@ int wc_AesGcmSetExtIV(Aes* aes, const byte* iv, word32 ivSz)
     int ret = 0;
 
     if (aes == NULL || iv == NULL ||
-        (ivSz != GCM_NONCE_MIN_SZ && ivSz != GCM_NONCE_MID_SZ &&
-         ivSz != GCM_NONCE_MAX_SZ)) {
+        (ivSz != (word32)GCM_NONCE_MIN_SZ && ivSz != (word32)GCM_NONCE_MID_SZ &&
+         ivSz != (word32)GCM_NONCE_MAX_SZ)) {
 
         ret = BAD_FUNC_ARG;
     }
@@ -6236,8 +6246,9 @@ int wc_AesGcmSetExtIV(Aes* aes, const byte* iv, word32 ivSz)
         /* If the IV is 96, allow for a 2^64 invocation counter.
          * For any other size for the nonce, limit the invocation
          * counter to 32-bits. (SP 800-38D 8.3) */
-        aes->invokeCtr[0] = 0;
-        aes->invokeCtr[1] = (ivSz == GCM_NONCE_MID_SZ) ? 0 : 0xFFFFFFFF;
+        aes->invokeCtr[0] = 0U;
+        aes->invokeCtr[1] = (ivSz == (word32)GCM_NONCE_MID_SZ) ? 0U :
+                                                                 0xFFFFFFFFU;
         aes->nonceSz = ivSz;
     }
 
@@ -6252,10 +6263,10 @@ int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
     int ret = 0;
 
     if (aes == NULL || rng == NULL ||
-        (ivSz != GCM_NONCE_MIN_SZ && ivSz != GCM_NONCE_MID_SZ &&
-         ivSz != GCM_NONCE_MAX_SZ) ||
-        (ivFixed == NULL && ivFixedSz != 0) ||
-        (ivFixed != NULL && ivFixedSz != AES_IV_FIXED_SZ)) {
+        (ivSz != (word32)GCM_NONCE_MIN_SZ && ivSz != (word32)GCM_NONCE_MID_SZ &&
+         ivSz != (word32)GCM_NONCE_MAX_SZ) ||
+        (ivFixed == NULL && ivFixedSz != 0U) ||
+        (ivFixed != NULL && ivFixedSz != (word32)AES_IV_FIXED_SZ)) {
 
         ret = BAD_FUNC_ARG;
     }
@@ -6263,8 +6274,9 @@ int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
     if (ret == 0) {
         byte* iv = (byte*)aes->reg;
 
-        if (ivFixedSz)
+        if (ivFixedSz != 0U) {
             XMEMCPY(iv, ivFixed, ivFixedSz);
+        }
 
         ret = wc_RNG_GenerateBlock(rng, iv + ivFixedSz, ivSz - ivFixedSz);
     }
@@ -6273,8 +6285,9 @@ int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
         /* If the IV is 96, allow for a 2^64 invocation counter.
          * For any other size for the nonce, limit the invocation
          * counter to 32-bits. (SP 800-38D 8.3) */
-        aes->invokeCtr[0] = 0;
-        aes->invokeCtr[1] = (ivSz == GCM_NONCE_MID_SZ) ? 0 : 0xFFFFFFFF;
+        aes->invokeCtr[0] = 0U;
+        aes->invokeCtr[1] = (ivSz == (word32)GCM_NONCE_MID_SZ) ? 0U :
+                                                                 0xFFFFFFFFU;
         aes->nonceSz = ivSz;
     }
 
@@ -6289,19 +6302,20 @@ int wc_AesGcmEncrypt_ex(Aes* aes, byte* out, const byte* in, word32 sz,
 {
     int ret = 0;
 
-    if (aes == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
-        ivOut == NULL || ivOutSz != aes->nonceSz ||
-        (authIn == NULL && authInSz != 0)) {
+    if ((aes == NULL) || ((sz != 0U) && ((in == NULL) || (out == NULL))) ||
+        (ivOut == NULL) || (ivOutSz != aes->nonceSz) ||
+        ((authIn == NULL) && (authInSz != 0U))) {
 
         ret = BAD_FUNC_ARG;
     }
 
     if (ret == 0) {
         aes->invokeCtr[0]++;
-        if (aes->invokeCtr[0] == 0) {
+        if (aes->invokeCtr[0] == 0U) {
             aes->invokeCtr[1]++;
-            if (aes->invokeCtr[1] == 0)
+            if (aes->invokeCtr[1] == 0U) {
                 ret = AES_GCM_OVERFLOW_E;
+            }
         }
     }
 
@@ -6311,8 +6325,9 @@ int wc_AesGcmEncrypt_ex(Aes* aes, byte* out, const byte* in, word32 sz,
                                (byte*)aes->reg, ivOutSz,
                                authTag, authTagSz,
                                authIn, authInSz);
-        if (ret == 0)
+        if (ret == 0) {
             IncCtr((byte*)aes->reg, ivOutSz);
+        }
     }
 
     return ret;
@@ -6325,8 +6340,8 @@ int wc_Gmac(const byte* key, word32 keySz, byte* iv, word32 ivSz,
     Aes aes;
     int ret;
 
-    if (key == NULL || iv == NULL || (authIn == NULL && authInSz != 0) ||
-        authTag == NULL || authTagSz == 0 || rng == NULL) {
+    if ((key == NULL) || (iv == NULL) || ((authIn == NULL) && (authInSz != 0U)) ||
+        (authTag == NULL) || (authTagSz == 0U) || (rng == NULL)) {
 
         return BAD_FUNC_ARG;
     }
@@ -6334,14 +6349,16 @@ int wc_Gmac(const byte* key, word32 keySz, byte* iv, word32 ivSz,
     ret = wc_AesInit(&aes, NULL, INVALID_DEVID);
     if (ret == 0) {
         ret = wc_AesGcmSetKey(&aes, key, keySz);
-        if (ret == 0)
+        if (ret == 0) {
             ret = wc_AesGcmSetIV(&aes, ivSz, NULL, 0, rng);
-        if (ret == 0)
+        }
+        if (ret == 0) {
             ret = wc_AesGcmEncrypt_ex(&aes, NULL, NULL, 0, iv, ivSz,
                                   authTag, authTagSz, authIn, authInSz);
+        }
         wc_AesFree(&aes);
     }
-    ForceZero(&aes, sizeof(aes));
+    ForceZero(&aes, (word32)sizeof(aes));
 
     return ret;
 }
@@ -6355,8 +6372,9 @@ int wc_GmacVerify(const byte* key, word32 keySz,
 #ifndef NO_AES_DECRYPT
     Aes aes;
 
-    if (key == NULL || iv == NULL || (authIn == NULL && authInSz != 0) ||
-        authTag == NULL || authTagSz == 0 || authTagSz > AES_BLOCK_SIZE) {
+    if ((key == NULL) || (iv == NULL) || ((authIn == NULL) &&
+        (authInSz != 0U)) || (authTag == NULL) || (authTagSz == 0U) ||
+        (authTagSz > (word32)AES_BLOCK_SIZE)) {
 
         return BAD_FUNC_ARG;
     }
@@ -6364,12 +6382,13 @@ int wc_GmacVerify(const byte* key, word32 keySz,
     ret = wc_AesInit(&aes, NULL, INVALID_DEVID);
     if (ret == 0) {
         ret = wc_AesGcmSetKey(&aes, key, keySz);
-        if (ret == 0)
+        if (ret == 0) {
             ret = wc_AesGcmDecrypt(&aes, NULL, NULL, 0, iv, ivSz,
                                   authTag, authTagSz, authIn, authInSz);
+        }
         wc_AesFree(&aes);
     }
-    ForceZero(&aes, sizeof(aes));
+    ForceZero(&aes, (word32)sizeof(aes));
 #else
     (void)key;
     (void)keySz;
@@ -6748,7 +6767,7 @@ int wc_AesCcmSetNonce(Aes* aes, const byte* nonce, word32 nonceSz)
 
         /* Invocation counter should be 2^61 */
         aes->invokeCtr[0] = 0;
-        aes->invokeCtr[1] = 0xE0000000;
+        aes->invokeCtr[1] = 0xE0000000U;
     }
 
     return ret;
