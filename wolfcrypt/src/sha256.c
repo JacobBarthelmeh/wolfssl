@@ -175,14 +175,14 @@ static int InitSha256(wc_Sha256* sha256)
     }
 
     XMEMSET(sha256->digest, 0, sizeof(sha256->digest));
-    sha256->digest[0] = 0x6A09E667UL;
-    sha256->digest[1] = 0xBB67AE85UL;
-    sha256->digest[2] = 0x3C6EF372UL;
-    sha256->digest[3] = 0xA54FF53AUL;
-    sha256->digest[4] = 0x510E527FUL;
-    sha256->digest[5] = 0x9B05688CUL;
-    sha256->digest[6] = 0x1F83D9ABUL;
-    sha256->digest[7] = 0x5BE0CD19UL;
+    sha256->digest[0] = 0x6A09E667U;
+    sha256->digest[1] = 0xBB67AE85U;
+    sha256->digest[2] = 0x3C6EF372U;
+    sha256->digest[3] = 0xA54FF53AU;
+    sha256->digest[4] = 0x510E527FU;
+    sha256->digest[5] = 0x9B05688CU;
+    sha256->digest[6] = 0x1F83D9ABU;
+    sha256->digest[7] = 0x5BE0CD19U;
 
     sha256->buffLen = 0;
     sha256->loLen   = 0;
@@ -617,19 +617,19 @@ static int InitSha256(wc_Sha256* sha256)
 #ifdef NEED_SOFT_SHA256
 
     static const ALIGN32 word32 K[64 + 8] = {
-        0x428A2F98UL, 0x71374491UL, 0xB5C0FBCFUL, 0xE9B5DBA5UL, 0x3956C25BUL,
-        0x59F111F1UL, 0x923F82A4UL, 0xAB1C5ED5UL, 0xD807AA98UL, 0x12835B01UL,
-        0x243185BEUL, 0x550C7DC3UL, 0x72BE5D74UL, 0x80DEB1FEUL, 0x9BDC06A7UL,
-        0xC19BF174UL, 0xE49B69C1UL, 0xEFBE4786UL, 0x0FC19DC6UL, 0x240CA1CCUL,
-        0x2DE92C6FUL, 0x4A7484AAUL, 0x5CB0A9DCUL, 0x76F988DAUL, 0x983E5152UL,
-        0xA831C66DUL, 0xB00327C8UL, 0xBF597FC7UL, 0xC6E00BF3UL, 0xD5A79147UL,
-        0x06CA6351UL, 0x14292967UL, 0x27B70A85UL, 0x2E1B2138UL, 0x4D2C6DFCUL,
-        0x53380D13UL, 0x650A7354UL, 0x766A0ABBUL, 0x81C2C92EUL, 0x92722C85UL,
-        0xA2BFE8A1UL, 0xA81A664BUL, 0xC24B8B70UL, 0xC76C51A3UL, 0xD192E819UL,
-        0xD6990624UL, 0xF40E3585UL, 0x106AA070UL, 0x19A4C116UL, 0x1E376C08UL,
-        0x2748774CUL, 0x34B0BCB5UL, 0x391C0CB3UL, 0x4ED8AA4AUL, 0x5B9CCA4FUL,
-        0x682E6FF3UL, 0x748F82EEUL, 0x78A5636FUL, 0x84C87814UL, 0x8CC70208UL,
-        0x90BEFFFAUL, 0xA4506CEBUL, 0xBEF9A3F7UL, 0xC67178F2UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL
+        0x428A2F98U, 0x71374491U, 0xB5C0FBCFU, 0xE9B5DBA5U, 0x3956C25BU,
+        0x59F111F1U, 0x923F82A4U, 0xAB1C5ED5U, 0xD807AA98U, 0x12835B01U,
+        0x243185BEU, 0x550C7DC3U, 0x72BE5D74U, 0x80DEB1FEU, 0x9BDC06A7U,
+        0xC19BF174U, 0xE49B69C1U, 0xEFBE4786U, 0x0FC19DC6U, 0x240CA1CCU,
+        0x2DE92C6FU, 0x4A7484AAU, 0x5CB0A9DCU, 0x76F988DAU, 0x983E5152U,
+        0xA831C66DU, 0xB00327C8U, 0xBF597FC7U, 0xC6E00BF3U, 0xD5A79147U,
+        0x06CA6351U, 0x14292967U, 0x27B70A85U, 0x2E1B2138U, 0x4D2C6DFCU,
+        0x53380D13U, 0x650A7354U, 0x766A0ABBU, 0x81C2C92EU, 0x92722C85U,
+        0xA2BFE8A1U, 0xA81A664BU, 0xC24B8B70U, 0xC76C51A3U, 0xD192E819U,
+        0xD6990624U, 0xF40E3585U, 0x106AA070U, 0x19A4C116U, 0x1E376C08U,
+        0x2748774CU, 0x34B0BCB5U, 0x391C0CB3U, 0x4ED8AA4AU, 0x5B9CCA4FU,
+        0x682E6FF3U, 0x748F82EEU, 0x78A5636FU, 0x84C87814U, 0x8CC70208U,
+        0x90BEFFFAU, 0xA4506CEBU, 0xBEF9A3F7U, 0xC67178F2U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U
     };
 
 /* Both versions of Ch and Maj are logically the same, but with the second set
@@ -666,10 +666,17 @@ static int InitSha256(wc_Sha256* sha256)
 
 #ifndef SHA256_MANY_REGISTERS
     #define RND(j) \
-         t0 = h(j) + Sigma1(e(j)) + Ch(e(j), f(j), g(j)) + K[i+j] + W[i+j]; \
-         t1 = Sigma0(a(j)) + Maj(a(j), b(j), c(j)); \
-         d(j) += t0; \
-         h(j)  = t0 + t1
+        t0 = S(e(j), 6); \
+        t0 = t0 ^ S(e(j), 11); \
+        t0 = t0 ^ S(e(j), 25); \
+        t0 = t0 + h(j); \
+        t0 = t0 + Ch(e(j), f(j), g(j)) + K[i+j] + W[i+j]; \
+        t1 = S(a(j), 2); \
+        t1 = t1 ^ S(a(j), 13); \
+        t1 = t1 ^ S(a(j), 22); \
+        t1 = t1 + Maj(a(j), b(j), c(j)); \
+        d(j) += t0; \
+        h(j)  = t0 + t1
 
     static int Transform_Sha256(wc_Sha256* sha256, const byte* data)
     {
@@ -970,11 +977,11 @@ static int InitSha256(wc_Sha256* sha256)
 
     int wc_Sha256Update(wc_Sha256* sha256, const byte* data, word32 len)
     {
-        if (sha256 == NULL || (data == NULL && len > 0)) {
+        if ((sha256 == NULL) || ((data == NULL) && (len > 0U))) {
             return BAD_FUNC_ARG;
         }
 
-        if (data == NULL && len == 0) {
+        if ((data == NULL) && (len == 0U)) {
             /* valid, but do nothing */
             return 0;
         }
@@ -1102,7 +1109,7 @@ static int InitSha256(wc_Sha256* sha256)
     int wc_Sha256FinalRaw(wc_Sha256* sha256, byte* hash)
     {
     #ifdef LITTLE_ENDIAN_ORDER
-        word32 digest[WC_SHA256_DIGEST_SIZE / sizeof(word32)];
+        word32 digest[(word32)WC_SHA256_DIGEST_SIZE / sizeof(word32)];
     #endif
 
         if (sha256 == NULL || hash == NULL) {
@@ -1270,14 +1277,16 @@ static int InitSha256(wc_Sha256* sha256)
     {
         int ret = 0;
 
-        if (sha224 == NULL)
+        if (sha224 == NULL) {
             return BAD_FUNC_ARG;
+        }
 
         sha224->heap = heap;
 
         ret = InitSha224(sha224);
-        if (ret != 0)
+        if (ret != 0) {
             return ret;
+        }
 
     #ifdef WOLFSSL_SMALL_STACK_CACHE
         sha224->W = NULL;
@@ -1297,7 +1306,7 @@ static int InitSha256(wc_Sha256* sha256)
     {
         int ret;
 
-        if (sha224 == NULL || (data == NULL && len > 0)) {
+        if ((sha224 == NULL) || ((data == NULL) && (len > 0U))) {
             return BAD_FUNC_ARG;
         }
 
@@ -1332,8 +1341,9 @@ static int InitSha256(wc_Sha256* sha256)
     #endif /* WOLFSSL_ASYNC_CRYPT */
 
         ret = Sha256Final((wc_Sha256*)sha224);
-        if (ret != 0)
+        if (ret != 0) {
             return ret;
+        }
 
     #if defined(LITTLE_ENDIAN_ORDER)
         ByteReverseWords(sha224->digest, sha224->digest, WC_SHA224_DIGEST_SIZE);
@@ -1351,8 +1361,9 @@ static int InitSha256(wc_Sha256* sha256)
 
     void wc_Sha224Free(wc_Sha224* sha224)
     {
-        if (sha224 == NULL)
+        if (sha224 == NULL) {
             return;
+        }
 
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     if (sha224->W != NULL) {
@@ -1431,8 +1442,9 @@ void wc_Sha256Free(wc_Sha256* sha256)
         int ret;
         wc_Sha224 tmpSha224;
 
-        if (sha224 == NULL || hash == NULL)
+        if ((sha224 == NULL) || (hash == NULL)) {
             return BAD_FUNC_ARG;
+        }
 
         ret = wc_Sha224Copy(sha224, &tmpSha224);
         if (ret == 0) {
@@ -1445,8 +1457,9 @@ void wc_Sha256Free(wc_Sha256* sha256)
     {
         int ret = 0;
 
-        if (src == NULL || dst == NULL)
+        if ((src == NULL) || (dst == NULL)) {
             return BAD_FUNC_ARG;
+        }
 
         XMEMCPY(dst, src, sizeof(wc_Sha224));
     #ifdef WOLFSSL_SMALL_STACK_CACHE
