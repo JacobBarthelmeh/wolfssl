@@ -306,15 +306,17 @@ WOLFSSL_API int  wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz,
 #define WC_RSA_PSS_PAD     2
 #define WC_RSA_NO_PAD      3
 
-WOLFSSL_API int  wc_RsaPublicEncrypt_ex(const byte* in, word32 inLen, byte* out,
-                   word32 outLen, RsaKey* key, WC_RNG* rng, int type,
-                   enum wc_HashType hash, int mgf, byte* label, word32 lableSz);
-WOLFSSL_API int  wc_RsaPrivateDecrypt_ex(const byte* in, word32 inLen,
-                   byte* out, word32 outLen, RsaKey* key, int type,
-                   enum wc_HashType hash, int mgf, byte* label, word32 lableSz);
-WOLFSSL_API int  wc_RsaPrivateDecryptInline_ex(byte* in, word32 inLen,
-                      byte** out, RsaKey* key, int type, enum wc_HashType hash,
-                      int mgf, byte* label, word32 lableSz);
+WOLFSSL_API int wc_RsaPublicEncrypt_ex(const byte* in, word32 inLen, byte* out,
+                    word32 outLen, RsaKey* key, WC_RNG* rng, int type,
+                    enum wc_HashType hash, int mgf, byte* label,
+                    word32 labelSz);
+WOLFSSL_API int wc_RsaPrivateDecrypt_ex(const byte* in, word32 inLen, byte* out,
+                            word32 outLen, RsaKey* key, int type,
+                            enum wc_HashType hash, int mgf, byte* label,
+                            word32 labelSz);
+WOLFSSL_API int wc_RsaPrivateDecryptInline_ex(byte* in, word32 inLen, byte** out,
+                                  RsaKey* key, int type, enum wc_HashType hash,
+                                  int mgf, byte* label, word32 labelSz);
 #if defined(WC_RSA_DIRECT) || defined(WC_RSA_NO_PADDING)
 WOLFSSL_API int wc_RsaDirect(byte* in, word32 inLen, byte* out, word32* outSz,
                    RsaKey* key, int type, WC_RNG* rng);

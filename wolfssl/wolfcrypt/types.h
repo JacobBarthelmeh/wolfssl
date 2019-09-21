@@ -311,7 +311,7 @@
                 #define XREALLOC(p, n, h, t) wolfSSL_Realloc((p), (n), (h), (t), __func__, __LINE__)
             #else
                 #define XMALLOC(s, h, t)     wolfSSL_Malloc((s), (h), (t))
-                #define XFREE(p, h, t)       {void* xp = (p); if((xp)) wolfSSL_Free((xp), (h), (t));}
+                #define XFREE(p, h, t)       {void* xp = (p); wolfSSL_Free((xp), (h), (t));}
                 #define XREALLOC(p, n, h, t) wolfSSL_Realloc((p), (n), (h), (t))
             #endif /* WOLFSSL_DEBUG_MEMORY */
         #elif !defined(FREERTOS) && !defined(FREERTOS_TCP)
