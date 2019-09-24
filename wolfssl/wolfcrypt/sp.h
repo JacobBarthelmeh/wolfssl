@@ -88,13 +88,13 @@ WOLFSSL_LOCAL int sp_DhExp_3072(mp_int* base, const byte* exp, word32 expLen,
 
 #ifdef WOLFSSL_HAVE_SP_ECC
 
-int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* rm, int map,
+int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
                       void* heap);
-int sp_ecc_mulmod_base_256(mp_int* km, ecc_point* rm, int map, void* heap);
+int sp_ecc_mulmod_base_256(mp_int* km, ecc_point* r, int map, void* heap);
 
 int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap);
 int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
-                          word32* outlen, void* heap);
+                          word32* outLen, void* heap);
 int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
                     mp_int* rm, mp_int* sm, void* heap);
 int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX, mp_int* pY,
