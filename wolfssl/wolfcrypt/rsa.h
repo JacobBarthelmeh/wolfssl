@@ -245,15 +245,15 @@ WOLFSSL_API int  wc_RsaPSS_Verify(byte* in, word32 inLen, byte* out,
 WOLFSSL_API int  wc_RsaPSS_Verify_ex(byte* in, word32 inLen, byte* out,
                                      word32 outLen, enum wc_HashType hash,
                                      int mgf, int saltLen, RsaKey* key);
-WOLFSSL_API int  wc_RsaPSS_CheckPadding(const byte* in, word32 inLen, byte* sig,
+WOLFSSL_API int  wc_RsaPSS_CheckPadding(const byte* in, word32 inSz, byte* sig,
                                         word32 sigSz,
                                         enum wc_HashType hashType);
-WOLFSSL_API int  wc_RsaPSS_CheckPadding_ex(const byte* in, word32 inLen,
+WOLFSSL_API int  wc_RsaPSS_CheckPadding_ex(const byte* in, word32 inSz,
                                            byte* sig, word32 sigSz,
                                            enum wc_HashType hashType,
                                            int saltLen, int bits);
 WOLFSSL_API int  wc_RsaPSS_VerifyCheckInline(byte* in, word32 inLen, byte** out,
-                               const byte* digest, word32 digentLen,
+                               const byte* digest, word32 digestLen,
                                enum wc_HashType hash, int mgf,
                                RsaKey* key);
 WOLFSSL_API int  wc_RsaPSS_VerifyCheck(byte* in, word32 inLen,
@@ -337,13 +337,13 @@ WOLFSSL_API int wc_RsaKeyToPublicDer(RsaKey*, byte* output, word32 inLen);
 
 #ifdef WOLFSSL_KEY_GEN
     WOLFSSL_API int wc_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng);
-    WOLFSSL_API int wc_CheckProbablePrime_ex(const byte* p, word32 pSz,
-                                          const byte* q, word32 qSz,
-                                          const byte* e, word32 eSz,
+    WOLFSSL_API int wc_CheckProbablePrime_ex(const byte* pRaw, word32 pRawSz,
+                                          const byte* qRaw, word32 qRawSz,
+                                          const byte* eRaw, word32 eRawSz,
                                           int nlen, int* isPrime, WC_RNG* rng);
-    WOLFSSL_API int wc_CheckProbablePrime(const byte* p, word32 pSz,
-                                          const byte* q, word32 qSz,
-                                          const byte* e, word32 eSz,
+    WOLFSSL_API int wc_CheckProbablePrime(const byte* pRaw, word32 pRawSz,
+                                          const byte* qRaw, word32 qRawSz,
+                                          const byte* eRaw, word32 eRawSz,
                                           int nlen, int* isPrime);
 #endif
 
