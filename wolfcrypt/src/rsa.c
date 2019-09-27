@@ -1066,9 +1066,9 @@ static int RsaPad_PSS(const byte* input, word32 inputLen, byte* pkcsBlock,
     m += saltLen;
 
     h = pkcsBlock + pkcsBlockLen - 1 - hLen;
-    /*lint -e923 deviate and allow cast of pointer to integer type*/
+    /*lint deviate and allow cast of pointer to integer type*/
     if ((ret = wc_Hash(hType, s, (word32)((size_t)m - (size_t)s), h,
-                    (word32)hLen)) != 0) {
+                    (word32)hLen)) != 0) { /*lint !e923*/
         return ret;
     }
     pkcsBlock[pkcsBlockLen - 1U] = RSA_PSS_PAD_TERM;
@@ -1078,8 +1078,8 @@ static int RsaPad_PSS(const byte* input, word32 inputLen, byte* pkcsBlock,
     if (ret != 0) {
         return ret;
     }
-    /*lint -e9029 -e9034 allow asign to byte type and use of int bits*/
-    pkcsBlock[0] &= (1 << ((bits - 1) & 0x7)) - 1;
+    /*lint allow asign to byte type and use of int bits*/
+    pkcsBlock[0] &= (1 << ((bits - 1) & 0x7)) - 1; /*lint !e9029 */
 
     m = pkcsBlock + pkcsBlockLen - 1U - saltLen - (word32)hLen - 1U;
     *(m++) ^= 0x01U;
@@ -1385,8 +1385,8 @@ static int RsaUnPad_PSS(byte *pkcsBlock, unsigned int pkcsBlockLen,
         return ret;
     }
 
-    /*lint -e9029 -e9034 allow asign to byte type and use of int bits*/
-    tmp[0] &= (1 << ((bits - 1) & 0x7)) - 1;
+    /*lint allow asign to byte type and use of int bits*/
+    tmp[0] &= (1 << ((bits - 1) & 0x7)) - 1; /*lint !e9029 */
     for (i = 0; i < (int)pkcsBlockLen - 1 - saltLen - hLen - 1; i++) {
         if (tmp[i] != pkcsBlock[i]) {
             XFREE(tmp, heap, DYNAMIC_TYPE_RSA_BUFFER);
@@ -2840,8 +2840,8 @@ static int RsaPrivateDecryptEx(const byte* in, word32 inLen, byte* out,
 #if !defined(WOLFSSL_RSA_VERIFY_ONLY) && !defined(WOLFSSL_RSA_VERIFY_INLINE)
                 word32 i, j;
 
-                /*lint -e923 deviate and allow cast of pointer to integer type*/
-                size_t start = ((size_t)pad - (size_t)key->data);
+                /*lint deviate and allow cast of pointer to integer type*/
+                size_t start = ((size_t)pad - (size_t)key->data);  /*lint !e923*/
                 for (i = 0U, j = 0U; j < key->dataLen; j++) {
                     out[i] = key->data[j];
                     d = (byte)ctMaskGTE((int)j, (int)start);

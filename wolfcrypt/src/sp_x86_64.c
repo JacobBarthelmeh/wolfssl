@@ -4787,8 +4787,8 @@ static void sp_256_proj_point_dbl_4(sp_point* r, const sp_point* p, sp_digit* t)
     /* When infinity don't double point passed in - constant time. */
     rp[0] = r;
 
-    /*lint -e9087 -e740 allow cast to different type of pointer*/
-    rp[1] = (sp_point*)t;
+    /*lint allow cast to different type of pointer*/
+    rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
     XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
@@ -4869,8 +4869,8 @@ static void sp_256_proj_point_dbl_n_4(sp_point* r, const sp_point* p, int n,
 
     rp[0] = r;
 
-    /*lint -e9087 -e740 allow cast to different type of pointer*/
-    rp[1] = (sp_point*)t;
+    /*lint allow cast to different type of pointer*/
+    rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
     XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
@@ -4974,8 +4974,8 @@ static void sp_256_proj_point_add_4(sp_point* r, const sp_point* p, const sp_poi
     else {
         rp[0] = r;
 
-        /*lint -e9087 -e740 allow cast to different type of pointer*/
-        rp[1] = (sp_point*)t;
+        /*lint allow cast to different type of pointer*/
+        rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
         XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;
@@ -5523,8 +5523,8 @@ static void sp_256_proj_point_dbl_avx2_4(sp_point* r, const sp_point* p, sp_digi
     /* When infinity don't double point passed in - constant time. */
     rp[0] = r;
 
-    /*lint -e9087 -e740 allow cast to different type of pointer*/
-    rp[1] = (sp_point*)t;
+    /*lint allow cast to different type of pointer*/
+    rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
     XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
@@ -5605,8 +5605,8 @@ static void sp_256_proj_point_dbl_n_avx2_4(sp_point* r, const sp_point* p, int n
 
     rp[0] = r;
 
-    /*lint -e9087 -e740 allow cast to different type of pointer*/
-    rp[1] = (sp_point*)t;
+    /*lint allow cast to different type of pointer*/
+    rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
     XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
@@ -5698,8 +5698,8 @@ static void sp_256_proj_point_add_avx2_4(sp_point* r, const sp_point* p, const s
     else {
         rp[0] = r;
 
-        /*lint -e9087 -e740 allow cast to different type of pointer*/
-        rp[1] = (sp_point*)t;
+        /*lint allow cast to different type of pointer*/
+        rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
         XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;
@@ -6062,8 +6062,8 @@ static void sp_256_proj_point_add_qz1_4(sp_point* r, const sp_point* p,
     else {
         rp[0] = r;
 
-        /*lint -e9087 -e740 allow cast to different type of pointer*/
-        rp[1] = (sp_point*)t;
+        /*lint allow cast to different type of pointer*/
+        rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
         XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;
@@ -6467,8 +6467,8 @@ static void sp_256_proj_point_add_qz1_avx2_4(sp_point* r, const sp_point* p,
     else {
         rp[0] = r;
 
-        /*lint -e9087 -e740 allow cast to different type of pointer*/
-        rp[1] = (sp_point*)t;
+        /*lint allow cast to different type of pointer*/
+        rp[1] = (sp_point*)t; /*lint !e9087 !e740*/
         XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;

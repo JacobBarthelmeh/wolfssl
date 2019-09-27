@@ -182,7 +182,7 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
 #ifdef HAVE_HASHDRBG
 
 #define OUTPUT_BLOCK_LEN  (WC_SHA256_DIGEST_SIZE)
-#define MAX_REQUEST_LEN   (0x10000)
+#define MAX_REQUEST_LEN   (0x10000L)
 #define RESEED_INTERVAL   WC_RESEED_INTERVAL
 
 
@@ -803,9 +803,10 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     #endif
 
 #if !defined(WOLFSSL_NO_MALLOC) || defined(WOLFSSL_STATIC_MEMORY)
+        /* lint allow cast to structure type */
         rng->drbg =
                 (struct DRBG*)XMALLOC(sizeof(DRBG), rng->heap,
-                                                          DYNAMIC_TYPE_RNG);
+                                             DYNAMIC_TYPE_RNG); /*lint !e9087*/
 #else
         /* compile-time validation of drbg_data size */
         typedef char drbg_data_test[sizeof(rng->drbg_data) >=

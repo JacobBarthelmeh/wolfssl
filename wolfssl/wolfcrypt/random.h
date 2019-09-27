@@ -48,9 +48,9 @@
  /* Maximum generate block length */
 #ifndef RNG_MAX_BLOCK_LEN
     #ifdef HAVE_INTEL_QA
-        #define RNG_MAX_BLOCK_LEN (0xFFFFl)
+        #define RNG_MAX_BLOCK_LEN (0xFFFFL)
     #else
-        #define RNG_MAX_BLOCK_LEN (0x10000l)
+        #define RNG_MAX_BLOCK_LEN (0x10000L)
     #endif
 #endif
 
@@ -222,19 +222,19 @@ WOLFSSL_API int  wc_FreeRng(WC_RNG* rng);
 
 
 #ifdef HAVE_HASHDRBG
-    WOLFSSL_LOCAL int wc_RNG_DRBG_Reseed(WC_RNG* rng, const byte* entropy,
-                                        word32 entropySz);
+    WOLFSSL_LOCAL int wc_RNG_DRBG_Reseed(WC_RNG* rng, const byte* seed,
+                                        word32 seedSz);
     WOLFSSL_API int wc_RNG_TestSeed(const byte* seed, word32 seedSz);
     WOLFSSL_API int wc_RNG_HealthTest(int reseed,
                                         const byte* entropyA_param, word32 entropyASz,
                                         const byte* entropyB_param, word32 entropyBSz,
                                         byte* output, word32 outputSz);
     WOLFSSL_API int wc_RNG_HealthTest_ex(int reseed,
-                                        const byte* nonce, word32 nonceSz,
-                                        const byte* entropyA, word32 entropyASz,
-                                        const byte* entropyB, word32 entropyBSz,
-                                        byte* output, word32 outputSz,
-                                        void* heap, int devId);
+                                  const byte* nonce, word32 nonceSz,
+                                  const byte* entropyA_param, word32 entropyASz,
+                                  const byte* entropyB_param, word32 entropyBSz,
+                                  byte* output, word32 outputSz,
+                                  void* heap, int devId);
 #endif /* HAVE_HASHDRBG */
 
 #ifdef __cplusplus
