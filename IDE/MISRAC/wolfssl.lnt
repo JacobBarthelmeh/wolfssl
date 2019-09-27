@@ -1,0 +1,14 @@
+--i"./wolfssl"
+--i"./wolfssl/wolfcrypt"
+
+-header(options.h)
++libh(options.h)
+
+-header(types.h)
+-header(random.h)
+-header(rsa.h)
+-header(sp.h)
+-header(sp_int.h)
+-header(aes.h)
+
+-e9090 -e9027 -e9034 -e9059 ./wolfcrypt/src/sp_c64.c ./wolfcrypt/src/rsa.c ./wolfcrypt/src/aes.c ./wolfcrypt/src/sha256.c ./wolfcrypt/src/random.c
