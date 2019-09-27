@@ -342,25 +342,31 @@ static int Hash_df(DRBG* drbg, byte* out, word32 outSz, byte type,
             break;
         }
 
-        if (ret == 0)
 #endif
+        if (ret == 0) { /*lint !e774 allow always true in build w/o cache */
             ret = wc_Sha256Update(sha, &ctr, sizeof(ctr));
-        if (ret == 0)
+        }
+        if (ret == 0) {
             ret = wc_Sha256Update(sha, (byte*)&bits, sizeof(bits));
+        }
 
         if (ret == 0) {
             /* churning V is the only string that doesn't have the type added */
-            if (type != drbgInitV)
+            if (type != (byte)drbgInitV) {
                 ret = wc_Sha256Update(sha, &type, sizeof(type));
+            }
         }
-        if (ret == 0)
-            ret = wc_Sha256Update(sha, inA, inASz);
         if (ret == 0) {
-            if (inB != NULL && inBSz > 0)
-                ret = wc_Sha256Update(sha, inB, inBSz);
+            ret = wc_Sha256Update(sha, inA, inASz);
         }
-        if (ret == 0)
+        if (ret == 0) {
+            if (inB != NULL && inBSz > 0U) {
+                ret = wc_Sha256Update(sha, inB, inBSz);
+            }
+        }
+        if (ret == 0) {
             ret = wc_Sha256Final(sha, digest);
+        }
 
 #ifndef WOLFSSL_SMALL_STACK_CACHE
         wc_Sha256Free(sha);
@@ -656,14 +662,15 @@ static int Hash_DRBG_Instantiate(DRBG* drbg, const byte* seed, word32 seedSz,
 #endif
 
     if (Hash_df(drbg, drbg->V, sizeof(drbg->V), drbgInitV, seed, seedSz,
-                                              nonce, nonceSz) == DRBG_SUCCESS &&
-        Hash_df(drbg, drbg->C, sizeof(drbg->C), drbgInitC, drbg->V,
+                                              nonce, nonceSz) == DRBG_SUCCESS) {
+        if (Hash_df(drbg, drbg->C, sizeof(drbg->C), drbgInitC, drbg->V,
                                     sizeof(drbg->V), NULL, 0) == DRBG_SUCCESS) {
 
-        drbg->reseedCtr = 1;
-        drbg->lastBlock = 0;
-        drbg->matchCount = 0;
-        ret = DRBG_SUCCESS;
+            drbg->reseedCtr = 1;
+            drbg->lastBlock = 0;
+            drbg->matchCount = 0;
+            ret = DRBG_SUCCESS;
+        }
     }
 
     return ret;
@@ -699,16 +706,16 @@ int wc_RNG_TestSeed(const byte* seed, word32 seedSz)
 
     /* Check the seed for duplicate words. */
     word32 seedIdx = 0;
-    word32 scratchSz = min(SEED_BLOCK_SZ, seedSz - SEED_BLOCK_SZ);
+    word32 scratchSz = min(SEED_BLOCK_SZ, seedSz - (word32)SEED_BLOCK_SZ);
 
-    while (seedIdx < seedSz - SEED_BLOCK_SZ) {
+    while (seedIdx < seedSz - (word32)SEED_BLOCK_SZ) {
         if (ConstantCompare(seed + seedIdx,
                             seed + seedIdx + scratchSz,
                             scratchSz) == 0) {
 
             ret = DRBG_CONT_FAILURE;
         }
-        seedIdx += SEED_BLOCK_SZ;
+        seedIdx += (word32)SEED_BLOCK_SZ;
         scratchSz = min(SEED_BLOCK_SZ, (seedSz - seedIdx));
     }
 
@@ -732,7 +739,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     if (rng == NULL) {
         return BAD_FUNC_ARG;
     }
-    if (nonce == NULL && nonceSz != 0) {
+    if (nonce == NULL && nonceSz != 0U) {
         return BAD_FUNC_ARG;
     }
 
@@ -782,8 +789,9 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     ret = 0; /* success */
 #else
 #ifdef HAVE_HASHDRBG
-    if (nonceSz == 0)
+    if (nonceSz == 0U) {
         seedSz = MAX_SEED_SZ;
+    }
 
     if (wc_RNG_HealthTestLocal(0) == 0) {
     #ifdef WC_ASYNC_ENABLE_SHA256
@@ -820,7 +828,8 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
 
             if (ret == DRBG_SUCCESS) {
                  ret = Hash_DRBG_Instantiate(rng->drbg,
-                            seed + SEED_BLOCK_SZ, seedSz - SEED_BLOCK_SZ,
+                            seed + (word32)SEED_BLOCK_SZ,
+                            seedSz - (word32)SEED_BLOCK_SZ,
                             nonce, nonceSz, rng->heap, devId);
             }
 
@@ -1074,7 +1083,7 @@ int wc_RNG_HealthTest_ex(int reseed, const byte* nonce, word32 nonceSz,
         goto exit_rng_ht;
     }
 
-    if (reseed) {
+    if (reseed != 0) {
         if (Hash_DRBG_Reseed(drbg, entropyB_param, entropyBSz) != 0) {
             goto exit_rng_ht;
         }
@@ -1205,14 +1214,15 @@ static int wc_RNG_HealthTestLocal(int reseed)
          * byte 32, feed them into the health test separately. */
         if (ret == 0) {
             ret = wc_RNG_HealthTest_ex(0,
-                                    entropyB + 32, sizeof(entropyB) - 32,
-                                    entropyB, 32,
+                                    entropyB + 32U, sizeof(entropyB) - 32U,
+                                    entropyB, 32U,
                                     NULL, 0,
                                     check, RNG_HEALTH_TEST_CHECK_SIZE,
                                     NULL, INVALID_DEVID);
             if (ret == 0) {
-                if (ConstantCompare(check, outputB, sizeof(outputB)) != 0)
+                if (ConstantCompare(check, outputB, sizeof(outputB)) != 0) {
                     ret = -1;
+                }
             }
         }
     }
@@ -2394,12 +2404,12 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     #endif /* HAVE_INTEL_RDSEED */
 
     #ifndef NO_DEV_URANDOM /* way to disable use of /dev/urandom */
-        os->fd = open("/dev/urandom", O_RDONLY);
+        os->fd = open("/dev/urandom", O_RDONLY); /*lint !e9001 use octal*/
         if (os->fd == -1)
     #endif
         {
             /* may still have /dev/random */
-            os->fd = open("/dev/random", O_RDONLY);
+            os->fd = open("/dev/random", O_RDONLY); /*lint !e9001 use octal*/
             if (os->fd == -1) {
                 return OPEN_RAN_E;
             }
