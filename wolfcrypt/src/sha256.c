@@ -827,11 +827,12 @@ static int InitSha256(wc_Sha256* sha256)
     }
 
     /* do block size increments/updates */
-    static WC_INLINE int Sha256Update(wc_Sha256* sha256, const byte* data, word32 len)
+    static WC_INLINE int Sha256Update(wc_Sha256* sha256, const byte* data, word32 dataSz)
     {
         int ret = 0;
         word32 blocksLen;
         byte* local;
+        word32 len = dataSz;
 
         if ((sha256 == NULL) || ((data == NULL) && (len > 0U))) {
             return BAD_FUNC_ARG;

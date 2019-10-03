@@ -446,13 +446,14 @@ static WC_INLINE void array_add_one(byte* data, word32 dataSz)
 }
 
 /* Returns: DRBG_SUCCESS or DRBG_FAILURE */
-static int Hash_gen(DRBG* drbg, byte* out, word32 outSz, const byte* V)
+static int Hash_gen(DRBG* drbg, byte* out, word32 sz, const byte* V)
 {
     int ret = DRBG_FAILURE;
     byte data[DRBG_SEED_LEN];
     int i;
     int len;
     word32 checkBlock;
+    word32 outSz;;
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     wc_Sha256* sha = &drbg->sha256;
 #else
@@ -469,6 +470,7 @@ static int Hash_gen(DRBG* drbg, byte* out, word32 outSz, const byte* V)
     /* Special case: outSz is 0 and out is NULL. wc_Generate a block to save for
      * the continuous test. */
 
+    outSz = sz;
     if (outSz == 0U) {
         outSz = 1;
     }

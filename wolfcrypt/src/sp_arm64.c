@@ -14588,10 +14588,12 @@ static int sp_256_cmp_equal_4(const sp_digit* a, const sp_digit* b)
  * q  Second point to add.
  * t  Temporary ordinate data.
  */
-static void sp_256_proj_point_add_4(sp_point* r, const sp_point* p, const sp_point* q,
-        sp_digit* t)
+static void sp_256_proj_point_add_4(sp_point* r, const sp_point* pIn,
+        const sp_point* qIn, sp_digit* t)
 {
     const sp_point* ap[2];
+    const sp_point* q = qIn;
+    const sp_point* p = pIn;
     sp_point* rp[2];
     sp_digit* t1 = t;
     sp_digit* t2 = t + 2*4;
@@ -30017,6 +30019,7 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
     int err = MP_OKAY;
     int64_t c;
     int i;
+    word32 hashSz = hashLen;
 
     (void)heap;
 
@@ -30047,11 +30050,11 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
     kInv = k;
 
     if (err == MP_OKAY) {
-        if (hashLen > 32U) {
-            hashLen = 32U;
+        if (hashSz > 32U) {
+            hashSz = 32U;
         }
 
-        sp_256_from_bin(e, 4, hash, (int)hashLen);
+        sp_256_from_bin(e, 4, hash, (int)hashSz);
     }
 
     for (i = SP_ECC_MAX_SIG_GEN; err == MP_OKAY && i > 0; i--) {
@@ -30178,6 +30181,7 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
     sp_digit carry;
     int64_t c;
     int err;
+    word32 hashSz = hashLen;
 
     err = sp_ecc_point_new(heap, p1d, p1);
     if (err == MP_OKAY) {
@@ -30205,11 +30209,11 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
 #endif
 
     if (err == MP_OKAY) {
-        if (hashLen > 32U) {
-            hashLen = 32U;
+        if (hashSz > 32U) {
+            hashSz = 32U;
         }
 
-        sp_256_from_bin(u1, 4, hash, (int)hashLen);
+        sp_256_from_bin(u1, 4, hash, (int)hashSz);
         sp_256_from_mp(u2, 4, r);
         sp_256_from_mp(s, 4, sm);
         sp_256_from_mp(p2->x, 4, pX);
