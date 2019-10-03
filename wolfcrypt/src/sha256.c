@@ -709,7 +709,7 @@ static int InitSha256(wc_Sha256* sha256)
         }
 
         for (i = 0; i < 16; i++) {
-            W[i] = *((word32*)&data[i*sizeof(word32)]);
+            W[i] = *((const word32*)&data[i*sizeof(word32)]);
         }
 
         for (i = 16; i < WC_SHA256_BLOCK_SIZE; i++) {
@@ -1021,7 +1021,7 @@ static int InitSha256(wc_Sha256* sha256)
         /* pad with zeros */
         if (sha256->buffLen > (word32)WC_SHA256_PAD_SIZE) {
             XMEMSET(&local[sha256->buffLen], 0,
-                WC_SHA256_BLOCK_SIZE - sha256->buffLen);
+                (size_t)((word32)WC_SHA256_BLOCK_SIZE - sha256->buffLen));
             sha256->buffLen += (word32)WC_SHA256_BLOCK_SIZE - sha256->buffLen;
 
         #if defined(LITTLE_ENDIAN_ORDER) && !defined(FREESCALE_MMCAU_SHA)
@@ -1053,7 +1053,7 @@ static int InitSha256(wc_Sha256* sha256)
             sha256->buffLen = 0;
         }
         XMEMSET(&local[sha256->buffLen], 0,
-            (word32)WC_SHA256_PAD_SIZE - sha256->buffLen);
+            (size_t)((word32)WC_SHA256_PAD_SIZE - sha256->buffLen));
 
         /* put lengths in bits */
         sha256->hiLen = (sha256->loLen >> (8 * (int)sizeof(sha256->loLen) - 3)) +
