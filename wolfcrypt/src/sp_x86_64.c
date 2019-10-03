@@ -21216,7 +21216,7 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
             XMEMCPY(r, point->x, sizeof(sp_digit) * 4U);
             sp_256_norm_4(r);
             c = sp_256_cmp_4(r, p256_order);
-            sp_256_cond_sub_4(r, r, p256_order, 0L - (sp_digit)(c >= 0));
+            sp_256_cond_sub_4(r, r, p256_order, 0L - ((c >= 0) ? 1L : 0L));
             sp_256_norm_4(r);
 
             /* Conv k to Montgomery form (mod order) */
@@ -21254,7 +21254,7 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
             sp_256_cond_sub_4(s, s, p256_order, 0 - carry);
             sp_256_norm_4(s);
             c = sp_256_cmp_4(s, p256_order);
-            sp_256_cond_sub_4(s, s, p256_order, 0L - (sp_digit)(c >= 0));
+            sp_256_cond_sub_4(s, s, p256_order, 0L - ((c >= 0) ? 1L : 0L));
             sp_256_norm_4(s);
 
             /* s = s * k^-1 mod order */
@@ -21445,7 +21445,7 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
         /* u1 = r.z'.z' mod prime */
         sp_256_mont_sqr_4(p1->z, p1->z, p256_mod, p256_mp_mod);
         sp_256_mont_mul_4(u1, u2, p1->z, p256_mod, p256_mp_mod);
-        *res = (int)(sp_256_cmp_4(p1->x, u1) == 0);
+        *res = (sp_256_cmp_4(p1->x, u1) == 0) ? 1L : 0L;
         if (*res == 0) {
             /* Reload r and add order. */
             sp_256_from_mp(u2, 4, r);
@@ -21463,7 +21463,7 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
                         /* u1 = (r + 1*order).z'.z' mod prime */
                         sp_256_mont_mul_4(u1, u2, p1->z, p256_mod,
                                                                   p256_mp_mod);
-                        *res = (int)(sp_256_cmp_4(p1->x, u2) == 0);
+                        *res = (sp_256_cmp_4(p1->x, u2) == 0) ? 1L : 0L;
                     }
                 }
             }
