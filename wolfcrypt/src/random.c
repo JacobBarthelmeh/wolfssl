@@ -683,7 +683,8 @@ static int Hash_DRBG_Uninstantiate(DRBG* drbg)
 {
     word32 i;
     int    ret = DRBG_SUCCESS;
-    byte*  compareDrbg = (byte*)drbg, compareSum = 0;
+    const byte*  compareDrbg = (byte*)drbg;
+    byte compareSum = 0;
 
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     wc_Sha256Free(&drbg->sha256);

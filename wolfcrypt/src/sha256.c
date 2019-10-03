@@ -1131,7 +1131,7 @@ static int InitSha256(wc_Sha256* sha256)
     int wc_Sha256Final(wc_Sha256* sha256, byte* hash)
     {
         int ret;
-        void *tmp;
+        const void *tmp;
 
         if (sha256 == NULL || hash == NULL) {
             return BAD_FUNC_ARG;
