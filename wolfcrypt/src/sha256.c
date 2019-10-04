@@ -844,7 +844,7 @@ static int InitSha256(wc_Sha256* sha256)
         }
 
         /* check that internal buffLen is valid */
-        if (sha256->buffLen >= WC_SHA256_BLOCK_SIZE) {
+        if (sha256->buffLen >= (word32)WC_SHA256_BLOCK_SIZE) {
             return BUFFER_E;
         }
 
@@ -919,7 +919,7 @@ static int InitSha256(wc_Sha256* sha256)
     #endif /* XTRANSFORM_LEN */
     #if !defined(XTRANSFORM_LEN) || defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)
         {
-            while (len >= WC_SHA256_BLOCK_SIZE) {
+            while (len >= (word32)WC_SHA256_BLOCK_SIZE) {
                 word32* local32 = sha256->buffer;
                 /* optimization to avoid memcpy if data pointer is properly aligned */
                 /* Intel transform function requires use of sha256->buffer */
@@ -1057,7 +1057,7 @@ static int InitSha256(wc_Sha256* sha256)
             (size_t)((word32)WC_SHA256_PAD_SIZE - sha256->buffLen));
 
         /* put lengths in bits */
-        sha256->hiLen = (sha256->loLen >> (8 * (int)sizeof(sha256->loLen) - 3)) +
+        sha256->hiLen = (sha256->loLen >> ((8 * (int)sizeof(sha256->loLen)) - 3)) +
                                                          (sha256->hiLen << 3);
         sha256->loLen = sha256->loLen << 3;
 
@@ -1073,8 +1073,8 @@ static int InitSha256(wc_Sha256* sha256)
     #endif
         /* ! length ordering dependent on digest endian type ! */
         XMEMCPY(&local[WC_SHA256_PAD_SIZE], &sha256->hiLen, sizeof(word32));
-        XMEMCPY(&local[WC_SHA256_PAD_SIZE + sizeof(word32)], &sha256->loLen,
-                sizeof(word32));
+        XMEMCPY(&local[(word32)WC_SHA256_PAD_SIZE + sizeof(word32)],
+                &sha256->loLen, sizeof(word32));
 
     #if defined(FREESCALE_MMCAU_SHA) || defined(HAVE_INTEL_AVX1) || \
         defined(HAVE_INTEL_AVX2)
@@ -1113,7 +1113,7 @@ static int InitSha256(wc_Sha256* sha256)
         word32 digest[(word32)WC_SHA256_DIGEST_SIZE / sizeof(word32)];
     #endif
 
-        if (sha256 == NULL || hash == NULL) {
+        if ((sha256 == NULL) || (hash == NULL)) {
             return BAD_FUNC_ARG;
         }
 
@@ -1133,7 +1133,7 @@ static int InitSha256(wc_Sha256* sha256)
         int ret;
         const void *tmp;
 
-        if (sha256 == NULL || hash == NULL) {
+        if ((sha256 == NULL) || (hash == NULL)) {
             return BAD_FUNC_ARG;
         }
 
@@ -1328,7 +1328,7 @@ static int InitSha256(wc_Sha256* sha256)
     {
         int ret;
 
-        if (sha224 == NULL || hash == NULL) {
+        if ((sha224 == NULL) || (hash == NULL)) {
             return BAD_FUNC_ARG;
         }
 
@@ -1513,7 +1513,7 @@ int wc_Sha256GetHash(wc_Sha256* sha256, byte* hash)
     int ret;
     wc_Sha256 tmpSha256;
 
-    if (sha256 == NULL || hash == NULL) {
+    if ((sha256 == NULL) || (hash == NULL)) {
         return BAD_FUNC_ARG;
     }
 
@@ -1544,7 +1544,7 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
 {
     int ret = 0;
 
-    if (src == NULL || dst == NULL) {
+    if ((src == NULL) || (dst == NULL)) {
         return BAD_FUNC_ARG;
     }
 

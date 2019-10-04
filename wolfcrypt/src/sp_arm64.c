@@ -67,7 +67,7 @@ static void sp_2048_from_bin(sp_digit* r, int size, const byte* a, int n)
         if (s >= 56U) {
             r[j] &= 0xffffffffffffffffl;
             s = 64U - s;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             r[++j] = (sp_digit)a[i] >> s;
@@ -104,11 +104,11 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
     word32 s = 0;
 
     r[0] = 0;
-    for (i = 0; i < a->used && j < size; i++) {
+    for (i = 0; (i < a->used) && (j < size); i++) {
         r[j] |= ((sp_digit)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
-        if (j + 1 >= size) {
+        if ((j + 1) >= size) {
             break;
         }
         /* lint allow cast of mismatch word32 and mp_digit */
@@ -116,7 +116,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
         while ((s + 64U) <= (word32)DIGIT_BIT) {
             s += 64U;
             r[j] &= 0xffffffffffffffffl;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
@@ -141,7 +141,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
         r[j] |= ((sp_digit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             s = 64 - s;
@@ -175,9 +175,9 @@ static void sp_2048_to_bin(sp_digit* r, byte* a)
 {
     int i, j, s = 0, b;
 
-    j = 2048 / 8 - 1;
+    j = (2048 / 8) - 1;
     a[j] = 0;
-    for (i=0; i<32 && j>=0; i++) {
+    for (i=0; (i<32) && (j>=0); i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/
@@ -1884,10 +1884,10 @@ static void sp_2048_mont_setup(const sp_digit* a, sp_digit* rho)
 
     b = a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**32 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**64 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**8 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**16 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**32 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**64 */
 
     /* rho = -1/m mod b */
     *rho = -x;
@@ -3137,7 +3137,7 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 16);
-        for (; i>=0 || c>=4; ) {
+        for (; (i>=0) || (c>=4); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 60;
@@ -3283,7 +3283,7 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 16);
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 59;
@@ -4510,7 +4510,7 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 32);
-        for (; i>=0 || c>=4; ) {
+        for (; (i>=0) || (c>=4); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 60;
@@ -4656,7 +4656,7 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 32);
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 59;
@@ -4982,7 +4982,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = a[i] >> s;
-            while (s + DIGIT_BIT <= 64) {
+            while ((s + DIGIT_BIT) <= 64) {
                 s += DIGIT_BIT;
                 r->dp[j++] &= (1L << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
@@ -5002,8 +5002,8 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 32; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
-            if (s + 64 >= DIGIT_BIT) {
-    #if DIGIT_BIT != 32 && DIGIT_BIT != 64
+            if ((s + 64) >= DIGIT_BIT) {
+    #if (DIGIT_BIT != 32) && (DIGIT_BIT != 64)
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
@@ -5333,7 +5333,7 @@ static int sp_2048_mod_exp_2_32(sp_digit* r, const sp_digit* e, int bits,
     y = (int)(n >> c);
     n <<= 64 - c;
     sp_2048_lshift_32(r, norm, y);
-    for (; i>=0 || c>=6; ) {
+    for (; (i>=0) || (c>=6); ) {
         if (c == 0) {
             n = e[i--];
             y = n >> 58;
@@ -5525,7 +5525,7 @@ static void sp_3072_from_bin(sp_digit* r, int size, const byte* a, int n)
         if (s >= 56U) {
             r[j] &= 0xffffffffffffffffl;
             s = 64U - s;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             r[++j] = (sp_digit)a[i] >> s;
@@ -5562,11 +5562,11 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
     word32 s = 0;
 
     r[0] = 0;
-    for (i = 0; i < a->used && j < size; i++) {
+    for (i = 0; (i < a->used) && (j < size); i++) {
         r[j] |= ((sp_digit)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
-        if (j + 1 >= size) {
+        if ((j + 1) >= size) {
             break;
         }
         /* lint allow cast of mismatch word32 and mp_digit */
@@ -5574,7 +5574,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
         while ((s + 64U) <= (word32)DIGIT_BIT) {
             s += 64U;
             r[j] &= 0xffffffffffffffffl;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
@@ -5599,7 +5599,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
         r[j] |= ((sp_digit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             s = 64 - s;
@@ -5633,9 +5633,9 @@ static void sp_3072_to_bin(sp_digit* r, byte* a)
 {
     int i, j, s = 0, b;
 
-    j = 3072 / 8 - 1;
+    j = (3072 / 8) - 1;
     a[j] = 0;
-    for (i=0; i<48 && j>=0; i++) {
+    for (i=0; (i<48) && (j>=0); i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/
@@ -8548,10 +8548,10 @@ static void sp_3072_mont_setup(const sp_digit* a, sp_digit* rho)
 
     b = a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**32 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**64 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**8 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**16 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**32 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**64 */
 
     /* rho = -1/m mod b */
     *rho = -x;
@@ -10201,7 +10201,7 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 24);
-        for (; i>=0 || c>=4; ) {
+        for (; (i>=0) || (c>=4); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 60;
@@ -10347,7 +10347,7 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 24);
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 59;
@@ -11942,7 +11942,7 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 48);
-        for (; i>=0 || c>=4; ) {
+        for (; (i>=0) || (c>=4); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 60;
@@ -12088,7 +12088,7 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         y = (int)(n >> c);
         n <<= 64 - c;
         XMEMCPY(r, t[y], sizeof(sp_digit) * 48);
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c == 0) {
                 n = e[i--];
                 y = n >> 59;
@@ -12414,7 +12414,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = a[i] >> s;
-            while (s + DIGIT_BIT <= 64) {
+            while ((s + DIGIT_BIT) <= 64) {
                 s += DIGIT_BIT;
                 r->dp[j++] &= (1L << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
@@ -12434,8 +12434,8 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 48; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
-            if (s + 64 >= DIGIT_BIT) {
-    #if DIGIT_BIT != 32 && DIGIT_BIT != 64
+            if ((s + 64) >= DIGIT_BIT) {
+    #if (DIGIT_BIT != 32) && (DIGIT_BIT != 64)
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
@@ -12861,7 +12861,7 @@ static int sp_3072_mod_exp_2_48(sp_digit* r, const sp_digit* e, int bits,
     y = (int)(n >> c);
     n <<= 64 - c;
     sp_3072_lshift_48(r, norm, y);
-    for (; i>=0 || c>=6; ) {
+    for (; (i>=0) || (c>=6); ) {
         if (c == 0) {
             n = e[i--];
             y = n >> 58;
@@ -13242,11 +13242,11 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
     word32 s = 0;
 
     r[0] = 0;
-    for (i = 0; i < a->used && j < size; i++) {
+    for (i = 0; (i < a->used) && (j < size); i++) {
         r[j] |= ((sp_digit)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
-        if (j + 1 >= size) {
+        if ((j + 1) >= size) {
             break;
         }
         /* lint allow cast of mismatch word32 and mp_digit */
@@ -13254,7 +13254,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
         while ((s + 64U) <= (word32)DIGIT_BIT) {
             s += 64U;
             r[j] &= 0xffffffffffffffffl;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
@@ -13279,7 +13279,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
         r[j] |= ((sp_digit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             s = 64 - s;
@@ -13343,7 +13343,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = a[i] >> s;
-            while (s + DIGIT_BIT <= 64) {
+            while ((s + DIGIT_BIT) <= 64) {
                 s += DIGIT_BIT;
                 r->dp[j++] &= (1L << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
@@ -13363,8 +13363,8 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 4; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
-            if (s + 64 >= DIGIT_BIT) {
-    #if DIGIT_BIT != 32 && DIGIT_BIT != 64
+            if ((s + 64) >= DIGIT_BIT) {
+    #if (DIGIT_BIT != 32) && (DIGIT_BIT != 64)
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
@@ -28999,7 +28999,7 @@ static void sp_256_from_bin(sp_digit* r, int size, const byte* a, int n)
         if (s >= 56U) {
             r[j] &= 0xffffffffffffffffl;
             s = 64U - s;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             r[++j] = (sp_digit)a[i] >> s;
@@ -29136,9 +29136,9 @@ static void sp_256_to_bin(sp_digit* r, byte* a)
 {
     int i, j, s = 0, b;
 
-    j = 256 / 8 - 1;
+    j = (256 / 8) - 1;
     a[j] = 0;
-    for (i=0; i<4 && j>=0; i++) {
+    for (i=0; (i<4) && (j>=0); i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/

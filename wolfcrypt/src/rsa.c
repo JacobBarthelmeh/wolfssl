@@ -233,8 +233,8 @@ static void wc_RsaCleanup(RsaKey* key)
         /* make sure any allocated memory is free'd */
         if (key->dataIsAlloc != 0U) {
         #ifndef WOLFSSL_RSA_PUBLIC_ONLY
-            if (key->type == RSA_PRIVATE_DECRYPT ||
-                key->type == RSA_PRIVATE_ENCRYPT) {
+            if ((key->type == RSA_PRIVATE_DECRYPT) ||
+                (key->type == RSA_PRIVATE_ENCRYPT)) {
                 ForceZero(key->data, key->dataLen);
             }
         #endif
@@ -730,7 +730,7 @@ static int RsaMGF1(enum wc_HashType hType, byte* seed, word32 seedSz,
     }
 
     /* help out static analysis */
-    if (seedSz + 4U > tmpSz) {
+    if ((seedSz + 4U) > tmpSz) {
         return BUFFER_E;
     }
 
@@ -753,7 +753,7 @@ static int RsaMGF1(enum wc_HashType hType, byte* seed, word32 seedSz,
             return ret;
         }
 
-        for (i = 0; i < hLen && idx < outSz; i++) {
+        for (i = 0; (i < hLen) && (idx < outSz); i++) {
             out[idx++] = tmp[i];
         }
         counter++;
@@ -846,7 +846,7 @@ static int RsaPad_OAEP(const byte* input, word32 inputLen, byte* pkcsBlock,
     #endif
 
     /* no label is allowed, but catch if no label provided and length > 0 */
-    if (optLabel == NULL && labelLen > 0U) {
+    if ((optLabel == NULL) && (labelLen > 0U)) {
         return BUFFER_E;
     }
 
@@ -892,7 +892,7 @@ static int RsaPad_OAEP(const byte* input, word32 inputLen, byte* pkcsBlock,
        k = RSA key size
        hLen = hash digest size -- will always be >= 0 at this point
      */
-    if ((2U * (word32)hLen + 2U) > pkcsBlockLen) {
+    if (((2U * (word32)hLen) + 2U) > pkcsBlockLen) {
         WOLFSSL_MSG("OAEP pad error hash to big for RSA key size");
         #ifdef WOLFSSL_SMALL_STACK
             XFREE(lHash, heap, DYNAMIC_TYPE_RSA_BUFFER);
@@ -901,7 +901,7 @@ static int RsaPad_OAEP(const byte* input, word32 inputLen, byte* pkcsBlock,
         return BAD_FUNC_ARG;
     }
 
-    if (inputLen > (pkcsBlockLen - 2U * (word32)hLen - 2U)) {
+    if (inputLen > (pkcsBlockLen - (2U * (word32)hLen) - 2U)) {
         WOLFSSL_MSG("OAEP pad error message too long");
         #ifdef WOLFSSL_SMALL_STACK
             XFREE(lHash, heap, DYNAMIC_TYPE_RSA_BUFFER);
@@ -922,7 +922,7 @@ static int RsaPad_OAEP(const byte* input, word32 inputLen, byte* pkcsBlock,
     }
     XMEMCPY(pkcsBlock + (pkcsBlockLen - inputLen), input, inputLen);
     pkcsBlock[idx--] = 0x01; /* PS and M separator */
-    while (psLen > 0 && idx > 0U) {
+    while ((psLen > 0) && (idx > 0U)) {
         pkcsBlock[idx--] = 0x00;
         psLen--;
     }
@@ -964,7 +964,8 @@ static int RsaPad_OAEP(const byte* input, word32 inputLen, byte* pkcsBlock,
 
     i = 0;
     idx = (word32)hLen + 1U;
-    while (idx < pkcsBlockLen && (word32)i < (pkcsBlockLen - (word32)hLen -1U)) {
+    while ((idx < pkcsBlockLen) &&
+            ((word32)i < (pkcsBlockLen - (word32)hLen -1U))) {
         pkcsBlock[idx] = dbMask[i++] ^ pkcsBlock[idx];
         idx++;
     }
@@ -986,7 +987,7 @@ static int RsaPad_OAEP(const byte* input, word32 inputLen, byte* pkcsBlock,
 
     /* xor created seedMask with seed to make maskedSeed */
     i = 0;
-    while (idx < ((word32)hLen + 1U) && i < hLen) {
+    while ((idx < ((word32)hLen + 1U)) && (i < hLen)) {
         pkcsBlock[idx] = pkcsBlock[idx] ^ seed[i++];
         idx++;
     }
@@ -1094,8 +1095,8 @@ static int RsaPad_PSS(const byte* input, word32 inputLen, byte* pkcsBlock,
 static int RsaPad(const byte* input, word32 inputLen, byte* pkcsBlock,
                            word32 pkcsBlockLen, byte padValue, WC_RNG* rng)
 {
-    if (input == NULL || inputLen == 0U|| pkcsBlock == NULL ||
-                                                        pkcsBlockLen == 0U) {
+    if ((input == NULL) || (inputLen == 0U) || (pkcsBlock == NULL) ||
+                                                        (pkcsBlockLen == 0U)) {
         return BAD_FUNC_ARG;
     }
 
@@ -1104,7 +1105,7 @@ static int RsaPad(const byte* input, word32 inputLen, byte* pkcsBlock,
     pkcsBlock[0] = padValue;  /* insert padValue */
 
     if (padValue == (byte)RSA_BLOCK_TYPE_1) {
-        if (pkcsBlockLen < inputLen + 2U) {
+        if (pkcsBlockLen < (inputLen + 2U)) {
             WOLFSSL_MSG("RsaPad error, invalid length");
             return RSA_PAD_E;
         }
@@ -1119,7 +1120,7 @@ static int RsaPad(const byte* input, word32 inputLen, byte* pkcsBlock,
         word32 padLen, i;
         int    ret;
 
-        if (pkcsBlockLen < inputLen + 1U) {
+        if (pkcsBlockLen < (inputLen + 1U)) {
             WOLFSSL_MSG("RsaPad error, invalid length");
             return RSA_PAD_E;
         }
@@ -1240,12 +1241,12 @@ static int RsaUnPad_OAEP(byte *pkcsBlock, unsigned int pkcsBlockLen,
     word32 idx, check;
 
     /* no label is allowed, but catch if no label provided and length > 0 */
-    if (optLabel == NULL && labelLen > 0U) {
+    if ((optLabel == NULL) && (labelLen > 0U)) {
         return BUFFER_E;
     }
 
     hLen = wc_HashGetDigestSize(hType);
-    if ((hLen < 0) || (pkcsBlockLen < (2U * (word32)hLen + 2U))) {
+    if ((hLen < 0) || (pkcsBlockLen < ((2U * (word32)hLen) + 2U))) {
         return BAD_FUNC_ARG;
     }
 
@@ -1284,7 +1285,7 @@ static int RsaUnPad_OAEP(byte *pkcsBlock, unsigned int pkcsBlockLen,
 
     /* advance idx to index of PS and msg separator, account for PS size of 0*/
     idx = (word32)hLen + 1U + (word32)hLen;
-    while (idx < pkcsBlockLen && pkcsBlock[idx] == 0U) {idx++;}
+    while ((idx < pkcsBlockLen) && (pkcsBlock[idx] == 0U)) {idx++;}
 
     /* create hash of label for comparison with hash sent */
     if ((ret = wc_Hash(hType, optLabel, labelLen, h, (word32)hLen)) != 0) {
@@ -1423,7 +1424,7 @@ static int RsaUnPad(byte *pkcsBlock, unsigned int pkcsBlockLen,
     byte   invalid = 0U;
 #endif
 
-    if (output == NULL || pkcsBlockLen == 0U) {
+    if ((output == NULL) || (pkcsBlockLen == 0U)) {
         return BAD_FUNC_ARG;
     }
 
@@ -1444,7 +1445,7 @@ static int RsaUnPad(byte *pkcsBlock, unsigned int pkcsBlockLen,
         }
 
         /* Minimum of 11 bytes of pre-message data and must have separator. */
-        if (i < (word16)RSA_MIN_PAD_SZ || pkcsBlock[i-1U] != 0U) {
+        if ((i < (word16)RSA_MIN_PAD_SZ) || (pkcsBlock[i-1U] != 0U)) {
             WOLFSSL_MSG("RsaUnPad error, bad formatting");
             return RSA_PAD_E;
         }
@@ -1957,7 +1958,7 @@ static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
 
 #ifdef WC_RSA_BLINDING
     if (ret == 0) {
-        if (type == RSA_PRIVATE_DECRYPT || type == RSA_PRIVATE_ENCRYPT) {
+        if ((type == RSA_PRIVATE_DECRYPT) || (type == RSA_PRIVATE_ENCRYPT)) {
             if (mp_init_multi(rnd, rndi, NULL, NULL, NULL, NULL) != MP_OKAY) {
                 mp_clear(tmp);
                 ret = MP_INIT_E;
@@ -1974,7 +1975,7 @@ static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
     }
 
     if (ret == 0) {
-        if (type == RSA_PRIVATE_DECRYPT || type ==  RSA_PRIVATE_ENCRYPT) {
+        if ((type == RSA_PRIVATE_DECRYPT) || (type ==  RSA_PRIVATE_ENCRYPT)) {
         #ifndef WOLFSSL_RSA_PUBLIC_ONLY
         #if defined(WC_RSA_BLINDING) && !defined(WC_NO_RNG)
             /* blind */
@@ -2118,7 +2119,7 @@ static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
             ret = RSA_WRONG_TYPE_E;
         #endif
         }
-        else if (type == RSA_PUBLIC_ENCRYPT || type ==  RSA_PUBLIC_DECRYPT) {
+        else if ((type == RSA_PUBLIC_ENCRYPT) || (type ==  RSA_PUBLIC_DECRYPT)) {
         #ifdef WOLFSSL_XILINX_CRYPT
             ret = wc_RsaFunctionXil(in, inLen, out, outLen, type, key, rng);
         #else
@@ -2165,7 +2166,7 @@ static int wc_RsaFunctionSync(const byte* in, word32 inLen, byte* out,
     XFREE(tmp, key->heap, DYNAMIC_TYPE_RSA);
 #endif
 #ifdef WC_RSA_BLINDING
-    if (type == RSA_PRIVATE_DECRYPT || type == RSA_PRIVATE_ENCRYPT) {
+    if ((type == RSA_PRIVATE_DECRYPT) || (type == RSA_PRIVATE_ENCRYPT)) {
         mp_clear(rndi);
         mp_clear(rnd);
     }
@@ -2461,8 +2462,8 @@ int wc_RsaFunction(const byte* in, word32 inLen, byte* out,
 {
     int ret = 0;
 
-    if (key == NULL || in == NULL || inLen == 0U || out == NULL ||
-            outLen == NULL || *outLen == 0U || type == RSA_TYPE_UNKNOWN) {
+    if ((key == NULL) || (in == NULL) || (inLen == 0U) || (out == NULL) ||
+            (outLen == NULL) || (*outLen == 0U) || (type == RSA_TYPE_UNKNOWN)) {
         return BAD_FUNC_ARG;
     }
 
@@ -2478,8 +2479,8 @@ int wc_RsaFunction(const byte* in, word32 inLen, byte* out,
 
 #ifndef TEST_UNPAD_CONSTANT_TIME
 #ifndef NO_RSA_BOUNDS_CHECK
-    if (type == RSA_PRIVATE_DECRYPT &&
-        key->state == RSA_STATE_DECRYPT_EXPTMOD) {
+    if ((type == RSA_PRIVATE_DECRYPT) &&
+        (key->state == RSA_STATE_DECRYPT_EXPTMOD)) {
 
         /* Check that 1 < in < n-1. (Requirement of 800-56B.) */
 #ifdef WOLFSSL_SMALL_STACK
@@ -2551,9 +2552,9 @@ int wc_RsaFunction(const byte* in, word32 inLen, byte* out,
     }
 
     /* handle error */
-    if (ret < 0 && ret != WC_PENDING_E
+    if ((ret < 0) && (ret != WC_PENDING_E)
     #ifdef WC_RSA_NONBLOCK
-        && ret != FP_WOULDBLOCK
+        && (ret != FP_WOULDBLOCK)
     #endif
     ) {
         if (ret == MP_EXPTMOD_E) {
@@ -2598,7 +2599,7 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
 {
     int ret, sz;
 
-    if (in == NULL || inLen == 0U || out == NULL || key == NULL) {
+    if ((in == NULL) || (inLen == 0U) || (out == NULL) || (key == NULL)) {
         return BAD_FUNC_ARG;
     }
 
@@ -2611,7 +2612,7 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
         return WC_KEY_SIZE_E;
     }
 
-    if (inLen > (word32)sz - (word32)RSA_MIN_PAD_SZ) {
+    if (inLen > ((word32)sz - (word32)RSA_MIN_PAD_SZ)) {
 #ifdef WC_RSA_NO_PADDING
         /* In the case that no padding is used the input length can and should
          * be the same size as the RSA key. */
@@ -2668,7 +2669,7 @@ static int RsaPublicEncryptEx(const byte* in, word32 inLen, byte* out,
         key->dataLen = outLen;
         ret = wc_RsaFunction(out, (word32)sz, out, &key->dataLen, rsa_type, key, rng);
 
-        if (ret >= 0 || ret == WC_PENDING_E) {
+        if ((ret >= 0) || (ret == WC_PENDING_E)) {
             key->state = RSA_STATE_ENCRYPT_RES;
         }
         if (ret < 0) {
@@ -2729,7 +2730,7 @@ static int RsaPrivateDecryptEx(const byte* in, word32 inLen, byte* out,
 {
     int ret = RSA_WRONG_TYPE_E;
 
-    if (in == NULL || inLen == 0U || out == NULL || key == NULL) {
+    if ((in == NULL) || (inLen == 0U) || (out == NULL) || (key == NULL)) {
         return BAD_FUNC_ARG;
     }
 
@@ -2806,7 +2807,7 @@ static int RsaPrivateDecryptEx(const byte* in, word32 inLen, byte* out,
         ret = wc_RsaFunction(in, inLen, out, &key->dataLen, rsa_type, key, rng);
 #endif
 
-        if (ret >= 0 || ret == WC_PENDING_E) {
+        if ((ret >= 0) || (ret == WC_PENDING_E)) {
             key->state = RSA_STATE_DECRYPT_UNPAD;
         }
         if (ret < 0) {
@@ -2826,10 +2827,10 @@ static int RsaPrivateDecryptEx(const byte* in, word32 inLen, byte* out,
                              mgf, label, labelSz, saltLen,
                              mp_count_bits(&key->n), key->heap);
 #endif
-        if (rsa_type == RSA_PUBLIC_DECRYPT && ret > (int)outLen) {
+        if ((rsa_type == RSA_PUBLIC_DECRYPT) && (ret > (int)outLen)) {
             ret = RSA_BUFFER_E;
         }
-        else if (ret >= 0 && pad != NULL) {
+        else if ((ret >= 0) && (pad != NULL)) {
 #if !defined(WOLFSSL_RSA_VERIFY_ONLY) && !defined(WOLFSSL_RSA_VERIFY_INLINE)
             signed char   c;
             byte d;
@@ -3403,7 +3404,8 @@ int wc_RsaFlattenPublicKey(RsaKey* key, byte* e, word32* eSz, byte* n,
 {
     int sz, ret;
 
-    if (key == NULL || e == NULL || eSz == NULL || n == NULL || nSz == NULL) {
+    if ((key == NULL) || (e == NULL) || (eSz == NULL) || (n == NULL) ||
+            (nSz == NULL)) {
         return BAD_FUNC_ARG;
     }
 
@@ -3440,7 +3442,7 @@ static int RsaGetValue(mp_int* in, byte* out, word32* outSz)
     word32 sz;
     int ret = 0;
 
-    if (in == NULL || out == NULL || outSz == NULL) {
+    if ((in == NULL) || (out == NULL) || (outSz == NULL)) {
         return BAD_FUNC_ARG;
     }
 

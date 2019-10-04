@@ -1404,7 +1404,7 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
     word32 r = aes->rounds >> 1;
     const word32* rk = aes->key;
 
-    if (r > 7U || r == 0U) {
+    if ((r > 7U) || (r == 0U)) {
         WOLFSSL_MSG("AesEncrypt encountered improper key, set it up");
         return;  /* stop instead of seg-faulting, set up your keys! */
     }
@@ -1460,8 +1460,8 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
      */
     XMEMCPY(&s0, inBlock,                  sizeof(s0));
     XMEMCPY(&s1, inBlock + sizeof(s0),     sizeof(s1));
-    XMEMCPY(&s2, inBlock + 2U * sizeof(s0), sizeof(s2));
-    XMEMCPY(&s3, inBlock + 3U * sizeof(s0), sizeof(s3));
+    XMEMCPY(&s2, inBlock + (2U * sizeof(s0)), sizeof(s2));
+    XMEMCPY(&s3, inBlock + (3U * sizeof(s0)), sizeof(s3));
 
 #ifdef LITTLE_ENDIAN_ORDER
     s0 = ByteReverseWord32(s0);
@@ -1578,8 +1578,8 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
 
     XMEMCPY(outBlock,                  &s0, sizeof(s0));
     XMEMCPY(outBlock + sizeof(s0),     &s1, sizeof(s1));
-    XMEMCPY(outBlock + 2U * sizeof(s0), &s2, sizeof(s2));
-    XMEMCPY(outBlock + 3U * sizeof(s0), &s3, sizeof(s3));
+    XMEMCPY(outBlock + (2U * sizeof(s0)), &s2, sizeof(s2));
+    XMEMCPY(outBlock + (3U * sizeof(s0)), &s3, sizeof(s3));
 
 }
 #endif /* HAVE_AES_CBC || WOLFSSL_AES_DIRECT || HAVE_AESGCM */
@@ -1623,7 +1623,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
     word32 r = aes->rounds >> 1;
 
     const word32* rk = aes->key;
-    if (r > 7U || r == 0U) {
+    if ((r > 7U) || (r == 0U)) {
         WOLFSSL_MSG("AesDecrypt encountered improper key, set it up");
         return;  /* stop instead of seg-faulting, set up your keys! */
     }
@@ -1658,8 +1658,8 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
      */
     XMEMCPY(&s0, inBlock,                  sizeof(s0));
     XMEMCPY(&s1, inBlock + sizeof(s0),     sizeof(s1));
-    XMEMCPY(&s2, inBlock + 2U * sizeof(s0), sizeof(s2));
-    XMEMCPY(&s3, inBlock + 3U * sizeof(s0), sizeof(s3));
+    XMEMCPY(&s2, inBlock + (2U * sizeof(s0)), sizeof(s2));
+    XMEMCPY(&s3, inBlock + (3U * sizeof(s0)), sizeof(s3));
 
 #ifdef LITTLE_ENDIAN_ORDER
     s0 = ByteReverseWord32(s0);
@@ -1777,8 +1777,8 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
 
     XMEMCPY(outBlock,                  &s0, sizeof(s0));
     XMEMCPY(outBlock + sizeof(s0),     &s1, sizeof(s1));
-    XMEMCPY(outBlock + 2U * sizeof(s0), &s2, sizeof(s2));
-    XMEMCPY(outBlock + 3U * sizeof(s0), &s3, sizeof(s3));
+    XMEMCPY(outBlock + (2U * sizeof(s0)), &s2, sizeof(s2));
+    XMEMCPY(outBlock + (3U * sizeof(s0)), &s3, sizeof(s3));
 }
 #endif /* HAVE_AES_CBC || WOLFSSL_AES_DIRECT */
 #endif /* HAVE_AES_DECRYPT */
@@ -2287,7 +2287,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
             keylen = localSz;
         }
     #endif
-        if (aes == NULL ||
+        if ((aes == NULL) ||
                 !((keylen == 16U) || (keylen == 24U) || (keylen == 32U))) {
             return BAD_FUNC_ARG;
         }
@@ -2299,7 +2299,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
         }
     #endif
         aes->keylen = keylen;
-        aes->rounds = keylen/4U + 6U;
+        aes->rounds = (keylen/4U) + 6U;
 
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_AES)
         if (aes->asyncDev.marker == WOLFSSL_ASYNC_MARKER_AES) {
@@ -3028,7 +3028,7 @@ int wc_AesSetIV(Aes* aes, const byte* iv)
     {
         word32 blocks = (sz / (word32)AES_BLOCK_SIZE);
 
-        if (aes == NULL || out == NULL || in == NULL) {
+        if ((aes == NULL) || (out == NULL) || (in == NULL)) {
             return BAD_FUNC_ARG;
         }
 
@@ -3126,8 +3126,8 @@ int wc_AesSetIV(Aes* aes, const byte* iv)
     {
         word32 blocks;
 
-        if (aes == NULL || out == NULL || in == NULL
-                                       || sz % (word32)AES_BLOCK_SIZE != 0U) {
+        if ((aes == NULL) || (out == NULL) || (in == NULL)
+                                     || ((sz % (word32)AES_BLOCK_SIZE) != 0U)) {
             return BAD_FUNC_ARG;
         }
 
@@ -3506,7 +3506,7 @@ static WC_INLINE void IncrementGcmCounter(byte* inOutCtr)
     int i;
 
     /* in network byte order so start at end and work back */
-    for (i = AES_BLOCK_SIZE - 1; i >= AES_BLOCK_SIZE - CTR_SZ; i--) {
+    for (i = AES_BLOCK_SIZE - 1; i >= (AES_BLOCK_SIZE - CTR_SZ); i--) {
         inOutCtr[i] = inOutCtr[i] + 1U;
         if (inOutCtr[i] != 0U) {  /* we're done unless we overflow */
             return;
@@ -6233,9 +6233,10 @@ int wc_AesGcmSetExtIV(Aes* aes, const byte* iv, word32 ivSz)
 {
     int ret = 0;
 
-    if (aes == NULL || iv == NULL ||
-        (ivSz != (word32)GCM_NONCE_MIN_SZ && ivSz != (word32)GCM_NONCE_MID_SZ &&
-         ivSz != (word32)GCM_NONCE_MAX_SZ)) {
+    if ((aes == NULL) || (iv == NULL) ||
+        ((ivSz != (word32)GCM_NONCE_MIN_SZ) &&
+         (ivSz != (word32)GCM_NONCE_MID_SZ) &&
+         (ivSz != (word32)GCM_NONCE_MAX_SZ))) {
 
         ret = BAD_FUNC_ARG;
     }
@@ -6262,11 +6263,12 @@ int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
 {
     int ret = 0;
 
-    if (aes == NULL || rng == NULL ||
-        (ivSz != (word32)GCM_NONCE_MIN_SZ && ivSz != (word32)GCM_NONCE_MID_SZ &&
+    if ((aes == NULL) || (rng == NULL) ||
+        ((ivSz != (word32)GCM_NONCE_MIN_SZ) &&
+         (ivSz != (word32)GCM_NONCE_MID_SZ) &&
          ivSz != (word32)GCM_NONCE_MAX_SZ) ||
-        (ivFixed == NULL && ivFixedSz != 0U) ||
-        (ivFixed != NULL && ivFixedSz != (word32)AES_IV_FIXED_SZ)) {
+        ((ivFixed == NULL) && (ivFixedSz != 0U)) ||
+        ((ivFixed != NULL) && (ivFixedSz != (word32)AES_IV_FIXED_SZ))) {
 
         ret = BAD_FUNC_ARG;
     }
@@ -6408,7 +6410,7 @@ int wc_GmacVerify(const byte* key, word32 keySz,
 
 WOLFSSL_API int wc_GmacSetKey(Gmac* gmac, const byte* key, word32 len)
 {
-    if (gmac == NULL || key == NULL) {
+    if ((gmac == NULL) || (key == NULL)) {
         return BAD_FUNC_ARG;
     }
     return wc_AesGcmSetKey(&gmac->aes, key, len);
@@ -6914,7 +6916,7 @@ int wc_AesGetKeySize(Aes* aes, word32* keySize)
 {
     int ret = 0;
 
-    if (aes == NULL || keySize == NULL) {
+    if ((aes == NULL) || (keySize == NULL)) {
         return BAD_FUNC_ARG;
     }
 #if defined(WOLFSSL_CRYPTOCELL) && defined(WOLFSSL_CRYPTOCELL_AES)

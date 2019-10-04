@@ -77,7 +77,7 @@ static void sp_2048_from_bin(sp_digit* r, int size, const byte* a, int n)
         if (s >= 15U) {
             r[j] &= 0x7fffff;
             s = 23U - s;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             r[++j] = (sp_digit)a[i] >> s;
@@ -114,11 +114,11 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
     word32 s = 0;
 
     r[0] = 0;
-    for (i = 0; i < a->used && j < size; i++) {
+    for (i = 0; (i < a->used) && (j < size); i++) {
         r[j] |= ((sp_digit)a->dp[i] << s);
         r[j] &= 0x7fffff;
         s = 23U - s;
-        if (j + 1 >= size) {
+        if ((j + 1) >= size) {
             break;
         }
         /* lint allow cast of mismatch word32 and mp_digit */
@@ -126,7 +126,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
         while ((s + 23U) <= (word32)DIGIT_BIT) {
             s += 23U;
             r[j] &= 0x7fffff;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
@@ -151,7 +151,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
         r[j] |= ((sp_digit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 23) {
             r[j] &= 0x7fffff;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             s = 23 - s;
@@ -189,9 +189,9 @@ static void sp_2048_to_bin(sp_digit* r, byte* a)
         r[i+1] += r[i] >> 23;
         r[i] &= 0x7fffff;
     }
-    j = 2048 / 8 - 1;
+    j = (2048 / 8) - 1;
     a[j] = 0;
-    for (i=0; i<90 && j>=0; i++) {
+    for (i=0; (i<90) && (j>=0); i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/
@@ -224,231 +224,231 @@ static void sp_2048_to_bin(sp_digit* r, byte* a)
 SP_NOINLINE static void sp_2048_mul_15(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
 {
-    int64_t t0   = ((int64_t)a[ 0]) * b[ 0];
-    int64_t t1   = ((int64_t)a[ 0]) * b[ 1]
-                 + ((int64_t)a[ 1]) * b[ 0];
-    int64_t t2   = ((int64_t)a[ 0]) * b[ 2]
-                 + ((int64_t)a[ 1]) * b[ 1]
-                 + ((int64_t)a[ 2]) * b[ 0];
-    int64_t t3   = ((int64_t)a[ 0]) * b[ 3]
-                 + ((int64_t)a[ 1]) * b[ 2]
-                 + ((int64_t)a[ 2]) * b[ 1]
-                 + ((int64_t)a[ 3]) * b[ 0];
-    int64_t t4   = ((int64_t)a[ 0]) * b[ 4]
-                 + ((int64_t)a[ 1]) * b[ 3]
-                 + ((int64_t)a[ 2]) * b[ 2]
-                 + ((int64_t)a[ 3]) * b[ 1]
-                 + ((int64_t)a[ 4]) * b[ 0];
-    int64_t t5   = ((int64_t)a[ 0]) * b[ 5]
-                 + ((int64_t)a[ 1]) * b[ 4]
-                 + ((int64_t)a[ 2]) * b[ 3]
-                 + ((int64_t)a[ 3]) * b[ 2]
-                 + ((int64_t)a[ 4]) * b[ 1]
-                 + ((int64_t)a[ 5]) * b[ 0];
-    int64_t t6   = ((int64_t)a[ 0]) * b[ 6]
-                 + ((int64_t)a[ 1]) * b[ 5]
-                 + ((int64_t)a[ 2]) * b[ 4]
-                 + ((int64_t)a[ 3]) * b[ 3]
-                 + ((int64_t)a[ 4]) * b[ 2]
-                 + ((int64_t)a[ 5]) * b[ 1]
-                 + ((int64_t)a[ 6]) * b[ 0];
-    int64_t t7   = ((int64_t)a[ 0]) * b[ 7]
-                 + ((int64_t)a[ 1]) * b[ 6]
-                 + ((int64_t)a[ 2]) * b[ 5]
-                 + ((int64_t)a[ 3]) * b[ 4]
-                 + ((int64_t)a[ 4]) * b[ 3]
-                 + ((int64_t)a[ 5]) * b[ 2]
-                 + ((int64_t)a[ 6]) * b[ 1]
-                 + ((int64_t)a[ 7]) * b[ 0];
-    int64_t t8   = ((int64_t)a[ 0]) * b[ 8]
-                 + ((int64_t)a[ 1]) * b[ 7]
-                 + ((int64_t)a[ 2]) * b[ 6]
-                 + ((int64_t)a[ 3]) * b[ 5]
-                 + ((int64_t)a[ 4]) * b[ 4]
-                 + ((int64_t)a[ 5]) * b[ 3]
-                 + ((int64_t)a[ 6]) * b[ 2]
-                 + ((int64_t)a[ 7]) * b[ 1]
-                 + ((int64_t)a[ 8]) * b[ 0];
-    int64_t t9   = ((int64_t)a[ 0]) * b[ 9]
-                 + ((int64_t)a[ 1]) * b[ 8]
-                 + ((int64_t)a[ 2]) * b[ 7]
-                 + ((int64_t)a[ 3]) * b[ 6]
-                 + ((int64_t)a[ 4]) * b[ 5]
-                 + ((int64_t)a[ 5]) * b[ 4]
-                 + ((int64_t)a[ 6]) * b[ 3]
-                 + ((int64_t)a[ 7]) * b[ 2]
-                 + ((int64_t)a[ 8]) * b[ 1]
-                 + ((int64_t)a[ 9]) * b[ 0];
-    int64_t t10  = ((int64_t)a[ 0]) * b[10]
-                 + ((int64_t)a[ 1]) * b[ 9]
-                 + ((int64_t)a[ 2]) * b[ 8]
-                 + ((int64_t)a[ 3]) * b[ 7]
-                 + ((int64_t)a[ 4]) * b[ 6]
-                 + ((int64_t)a[ 5]) * b[ 5]
-                 + ((int64_t)a[ 6]) * b[ 4]
-                 + ((int64_t)a[ 7]) * b[ 3]
-                 + ((int64_t)a[ 8]) * b[ 2]
-                 + ((int64_t)a[ 9]) * b[ 1]
-                 + ((int64_t)a[10]) * b[ 0];
-    int64_t t11  = ((int64_t)a[ 0]) * b[11]
-                 + ((int64_t)a[ 1]) * b[10]
-                 + ((int64_t)a[ 2]) * b[ 9]
-                 + ((int64_t)a[ 3]) * b[ 8]
-                 + ((int64_t)a[ 4]) * b[ 7]
-                 + ((int64_t)a[ 5]) * b[ 6]
-                 + ((int64_t)a[ 6]) * b[ 5]
-                 + ((int64_t)a[ 7]) * b[ 4]
-                 + ((int64_t)a[ 8]) * b[ 3]
-                 + ((int64_t)a[ 9]) * b[ 2]
-                 + ((int64_t)a[10]) * b[ 1]
-                 + ((int64_t)a[11]) * b[ 0];
-    int64_t t12  = ((int64_t)a[ 0]) * b[12]
-                 + ((int64_t)a[ 1]) * b[11]
-                 + ((int64_t)a[ 2]) * b[10]
-                 + ((int64_t)a[ 3]) * b[ 9]
-                 + ((int64_t)a[ 4]) * b[ 8]
-                 + ((int64_t)a[ 5]) * b[ 7]
-                 + ((int64_t)a[ 6]) * b[ 6]
-                 + ((int64_t)a[ 7]) * b[ 5]
-                 + ((int64_t)a[ 8]) * b[ 4]
-                 + ((int64_t)a[ 9]) * b[ 3]
-                 + ((int64_t)a[10]) * b[ 2]
-                 + ((int64_t)a[11]) * b[ 1]
-                 + ((int64_t)a[12]) * b[ 0];
-    int64_t t13  = ((int64_t)a[ 0]) * b[13]
-                 + ((int64_t)a[ 1]) * b[12]
-                 + ((int64_t)a[ 2]) * b[11]
-                 + ((int64_t)a[ 3]) * b[10]
-                 + ((int64_t)a[ 4]) * b[ 9]
-                 + ((int64_t)a[ 5]) * b[ 8]
-                 + ((int64_t)a[ 6]) * b[ 7]
-                 + ((int64_t)a[ 7]) * b[ 6]
-                 + ((int64_t)a[ 8]) * b[ 5]
-                 + ((int64_t)a[ 9]) * b[ 4]
-                 + ((int64_t)a[10]) * b[ 3]
-                 + ((int64_t)a[11]) * b[ 2]
-                 + ((int64_t)a[12]) * b[ 1]
-                 + ((int64_t)a[13]) * b[ 0];
-    int64_t t14  = ((int64_t)a[ 0]) * b[14]
-                 + ((int64_t)a[ 1]) * b[13]
-                 + ((int64_t)a[ 2]) * b[12]
-                 + ((int64_t)a[ 3]) * b[11]
-                 + ((int64_t)a[ 4]) * b[10]
-                 + ((int64_t)a[ 5]) * b[ 9]
-                 + ((int64_t)a[ 6]) * b[ 8]
-                 + ((int64_t)a[ 7]) * b[ 7]
-                 + ((int64_t)a[ 8]) * b[ 6]
-                 + ((int64_t)a[ 9]) * b[ 5]
-                 + ((int64_t)a[10]) * b[ 4]
-                 + ((int64_t)a[11]) * b[ 3]
-                 + ((int64_t)a[12]) * b[ 2]
-                 + ((int64_t)a[13]) * b[ 1]
-                 + ((int64_t)a[14]) * b[ 0];
-    int64_t t15  = ((int64_t)a[ 1]) * b[14]
-                 + ((int64_t)a[ 2]) * b[13]
-                 + ((int64_t)a[ 3]) * b[12]
-                 + ((int64_t)a[ 4]) * b[11]
-                 + ((int64_t)a[ 5]) * b[10]
-                 + ((int64_t)a[ 6]) * b[ 9]
-                 + ((int64_t)a[ 7]) * b[ 8]
-                 + ((int64_t)a[ 8]) * b[ 7]
-                 + ((int64_t)a[ 9]) * b[ 6]
-                 + ((int64_t)a[10]) * b[ 5]
-                 + ((int64_t)a[11]) * b[ 4]
-                 + ((int64_t)a[12]) * b[ 3]
-                 + ((int64_t)a[13]) * b[ 2]
-                 + ((int64_t)a[14]) * b[ 1];
-    int64_t t16  = ((int64_t)a[ 2]) * b[14]
-                 + ((int64_t)a[ 3]) * b[13]
-                 + ((int64_t)a[ 4]) * b[12]
-                 + ((int64_t)a[ 5]) * b[11]
-                 + ((int64_t)a[ 6]) * b[10]
-                 + ((int64_t)a[ 7]) * b[ 9]
-                 + ((int64_t)a[ 8]) * b[ 8]
-                 + ((int64_t)a[ 9]) * b[ 7]
-                 + ((int64_t)a[10]) * b[ 6]
-                 + ((int64_t)a[11]) * b[ 5]
-                 + ((int64_t)a[12]) * b[ 4]
-                 + ((int64_t)a[13]) * b[ 3]
-                 + ((int64_t)a[14]) * b[ 2];
-    int64_t t17  = ((int64_t)a[ 3]) * b[14]
-                 + ((int64_t)a[ 4]) * b[13]
-                 + ((int64_t)a[ 5]) * b[12]
-                 + ((int64_t)a[ 6]) * b[11]
-                 + ((int64_t)a[ 7]) * b[10]
-                 + ((int64_t)a[ 8]) * b[ 9]
-                 + ((int64_t)a[ 9]) * b[ 8]
-                 + ((int64_t)a[10]) * b[ 7]
-                 + ((int64_t)a[11]) * b[ 6]
-                 + ((int64_t)a[12]) * b[ 5]
-                 + ((int64_t)a[13]) * b[ 4]
-                 + ((int64_t)a[14]) * b[ 3];
-    int64_t t18  = ((int64_t)a[ 4]) * b[14]
-                 + ((int64_t)a[ 5]) * b[13]
-                 + ((int64_t)a[ 6]) * b[12]
-                 + ((int64_t)a[ 7]) * b[11]
-                 + ((int64_t)a[ 8]) * b[10]
-                 + ((int64_t)a[ 9]) * b[ 9]
-                 + ((int64_t)a[10]) * b[ 8]
-                 + ((int64_t)a[11]) * b[ 7]
-                 + ((int64_t)a[12]) * b[ 6]
-                 + ((int64_t)a[13]) * b[ 5]
-                 + ((int64_t)a[14]) * b[ 4];
-    int64_t t19  = ((int64_t)a[ 5]) * b[14]
-                 + ((int64_t)a[ 6]) * b[13]
-                 + ((int64_t)a[ 7]) * b[12]
-                 + ((int64_t)a[ 8]) * b[11]
-                 + ((int64_t)a[ 9]) * b[10]
-                 + ((int64_t)a[10]) * b[ 9]
-                 + ((int64_t)a[11]) * b[ 8]
-                 + ((int64_t)a[12]) * b[ 7]
-                 + ((int64_t)a[13]) * b[ 6]
-                 + ((int64_t)a[14]) * b[ 5];
-    int64_t t20  = ((int64_t)a[ 6]) * b[14]
-                 + ((int64_t)a[ 7]) * b[13]
-                 + ((int64_t)a[ 8]) * b[12]
-                 + ((int64_t)a[ 9]) * b[11]
-                 + ((int64_t)a[10]) * b[10]
-                 + ((int64_t)a[11]) * b[ 9]
-                 + ((int64_t)a[12]) * b[ 8]
-                 + ((int64_t)a[13]) * b[ 7]
-                 + ((int64_t)a[14]) * b[ 6];
-    int64_t t21  = ((int64_t)a[ 7]) * b[14]
-                 + ((int64_t)a[ 8]) * b[13]
-                 + ((int64_t)a[ 9]) * b[12]
-                 + ((int64_t)a[10]) * b[11]
-                 + ((int64_t)a[11]) * b[10]
-                 + ((int64_t)a[12]) * b[ 9]
-                 + ((int64_t)a[13]) * b[ 8]
-                 + ((int64_t)a[14]) * b[ 7];
-    int64_t t22  = ((int64_t)a[ 8]) * b[14]
-                 + ((int64_t)a[ 9]) * b[13]
-                 + ((int64_t)a[10]) * b[12]
-                 + ((int64_t)a[11]) * b[11]
-                 + ((int64_t)a[12]) * b[10]
-                 + ((int64_t)a[13]) * b[ 9]
-                 + ((int64_t)a[14]) * b[ 8];
-    int64_t t23  = ((int64_t)a[ 9]) * b[14]
-                 + ((int64_t)a[10]) * b[13]
-                 + ((int64_t)a[11]) * b[12]
-                 + ((int64_t)a[12]) * b[11]
-                 + ((int64_t)a[13]) * b[10]
-                 + ((int64_t)a[14]) * b[ 9];
-    int64_t t24  = ((int64_t)a[10]) * b[14]
-                 + ((int64_t)a[11]) * b[13]
-                 + ((int64_t)a[12]) * b[12]
-                 + ((int64_t)a[13]) * b[11]
-                 + ((int64_t)a[14]) * b[10];
-    int64_t t25  = ((int64_t)a[11]) * b[14]
-                 + ((int64_t)a[12]) * b[13]
-                 + ((int64_t)a[13]) * b[12]
-                 + ((int64_t)a[14]) * b[11];
-    int64_t t26  = ((int64_t)a[12]) * b[14]
-                 + ((int64_t)a[13]) * b[13]
-                 + ((int64_t)a[14]) * b[12];
-    int64_t t27  = ((int64_t)a[13]) * b[14]
-                 + ((int64_t)a[14]) * b[13];
-    int64_t t28  = ((int64_t)a[14]) * b[14];
+    int64_t t0   = (((int64_t)a[ 0]) * b[ 0]);
+    int64_t t1   = (((int64_t)a[ 0]) * b[ 1])
+                 + (((int64_t)a[ 1]) * b[ 0]);
+    int64_t t2   = (((int64_t)a[ 0]) * b[ 2])
+                 + (((int64_t)a[ 1]) * b[ 1])
+                 + (((int64_t)a[ 2]) * b[ 0]);
+    int64_t t3   = (((int64_t)a[ 0]) * b[ 3])
+                 + (((int64_t)a[ 1]) * b[ 2])
+                 + (((int64_t)a[ 2]) * b[ 1])
+                 + (((int64_t)a[ 3]) * b[ 0]);
+    int64_t t4   = (((int64_t)a[ 0]) * b[ 4])
+                 + (((int64_t)a[ 1]) * b[ 3])
+                 + (((int64_t)a[ 2]) * b[ 2])
+                 + (((int64_t)a[ 3]) * b[ 1])
+                 + (((int64_t)a[ 4]) * b[ 0]);
+    int64_t t5   = (((int64_t)a[ 0]) * b[ 5])
+                 + (((int64_t)a[ 1]) * b[ 4])
+                 + (((int64_t)a[ 2]) * b[ 3])
+                 + (((int64_t)a[ 3]) * b[ 2])
+                 + (((int64_t)a[ 4]) * b[ 1])
+                 + (((int64_t)a[ 5]) * b[ 0]);
+    int64_t t6   = (((int64_t)a[ 0]) * b[ 6])
+                 + (((int64_t)a[ 1]) * b[ 5])
+                 + (((int64_t)a[ 2]) * b[ 4])
+                 + (((int64_t)a[ 3]) * b[ 3])
+                 + (((int64_t)a[ 4]) * b[ 2])
+                 + (((int64_t)a[ 5]) * b[ 1])
+                 + (((int64_t)a[ 6]) * b[ 0]);
+    int64_t t7   = (((int64_t)a[ 0]) * b[ 7])
+                 + (((int64_t)a[ 1]) * b[ 6])
+                 + (((int64_t)a[ 2]) * b[ 5])
+                 + (((int64_t)a[ 3]) * b[ 4])
+                 + (((int64_t)a[ 4]) * b[ 3])
+                 + (((int64_t)a[ 5]) * b[ 2])
+                 + (((int64_t)a[ 6]) * b[ 1])
+                 + (((int64_t)a[ 7]) * b[ 0]);
+    int64_t t8   = (((int64_t)a[ 0]) * b[ 8])
+                 + (((int64_t)a[ 1]) * b[ 7])
+                 + (((int64_t)a[ 2]) * b[ 6])
+                 + (((int64_t)a[ 3]) * b[ 5])
+                 + (((int64_t)a[ 4]) * b[ 4])
+                 + (((int64_t)a[ 5]) * b[ 3])
+                 + (((int64_t)a[ 6]) * b[ 2])
+                 + (((int64_t)a[ 7]) * b[ 1])
+                 + (((int64_t)a[ 8]) * b[ 0]);
+    int64_t t9   = (((int64_t)a[ 0]) * b[ 9])
+                 + (((int64_t)a[ 1]) * b[ 8])
+                 + (((int64_t)a[ 2]) * b[ 7])
+                 + (((int64_t)a[ 3]) * b[ 6])
+                 + (((int64_t)a[ 4]) * b[ 5])
+                 + (((int64_t)a[ 5]) * b[ 4])
+                 + (((int64_t)a[ 6]) * b[ 3])
+                 + (((int64_t)a[ 7]) * b[ 2])
+                 + (((int64_t)a[ 8]) * b[ 1])
+                 + (((int64_t)a[ 9]) * b[ 0]);
+    int64_t t10  = (((int64_t)a[ 0]) * b[10])
+                 + (((int64_t)a[ 1]) * b[ 9])
+                 + (((int64_t)a[ 2]) * b[ 8])
+                 + (((int64_t)a[ 3]) * b[ 7])
+                 + (((int64_t)a[ 4]) * b[ 6])
+                 + (((int64_t)a[ 5]) * b[ 5])
+                 + (((int64_t)a[ 6]) * b[ 4])
+                 + (((int64_t)a[ 7]) * b[ 3])
+                 + (((int64_t)a[ 8]) * b[ 2])
+                 + (((int64_t)a[ 9]) * b[ 1])
+                 + (((int64_t)a[10]) * b[ 0]);
+    int64_t t11  = (((int64_t)a[ 0]) * b[11])
+                 + (((int64_t)a[ 1]) * b[10])
+                 + (((int64_t)a[ 2]) * b[ 9])
+                 + (((int64_t)a[ 3]) * b[ 8])
+                 + (((int64_t)a[ 4]) * b[ 7])
+                 + (((int64_t)a[ 5]) * b[ 6])
+                 + (((int64_t)a[ 6]) * b[ 5])
+                 + (((int64_t)a[ 7]) * b[ 4])
+                 + (((int64_t)a[ 8]) * b[ 3])
+                 + (((int64_t)a[ 9]) * b[ 2])
+                 + (((int64_t)a[10]) * b[ 1])
+                 + (((int64_t)a[11]) * b[ 0]);
+    int64_t t12  = (((int64_t)a[ 0]) * b[12])
+                 + (((int64_t)a[ 1]) * b[11])
+                 + (((int64_t)a[ 2]) * b[10])
+                 + (((int64_t)a[ 3]) * b[ 9])
+                 + (((int64_t)a[ 4]) * b[ 8])
+                 + (((int64_t)a[ 5]) * b[ 7])
+                 + (((int64_t)a[ 6]) * b[ 6])
+                 + (((int64_t)a[ 7]) * b[ 5])
+                 + (((int64_t)a[ 8]) * b[ 4])
+                 + (((int64_t)a[ 9]) * b[ 3])
+                 + (((int64_t)a[10]) * b[ 2])
+                 + (((int64_t)a[11]) * b[ 1])
+                 + (((int64_t)a[12]) * b[ 0]);
+    int64_t t13  = (((int64_t)a[ 0]) * b[13])
+                 + (((int64_t)a[ 1]) * b[12])
+                 + (((int64_t)a[ 2]) * b[11])
+                 + (((int64_t)a[ 3]) * b[10])
+                 + (((int64_t)a[ 4]) * b[ 9])
+                 + (((int64_t)a[ 5]) * b[ 8])
+                 + (((int64_t)a[ 6]) * b[ 7])
+                 + (((int64_t)a[ 7]) * b[ 6])
+                 + (((int64_t)a[ 8]) * b[ 5])
+                 + (((int64_t)a[ 9]) * b[ 4])
+                 + (((int64_t)a[10]) * b[ 3])
+                 + (((int64_t)a[11]) * b[ 2])
+                 + (((int64_t)a[12]) * b[ 1])
+                 + (((int64_t)a[13]) * b[ 0]);
+    int64_t t14  = (((int64_t)a[ 0]) * b[14])
+                 + (((int64_t)a[ 1]) * b[13])
+                 + (((int64_t)a[ 2]) * b[12])
+                 + (((int64_t)a[ 3]) * b[11])
+                 + (((int64_t)a[ 4]) * b[10])
+                 + (((int64_t)a[ 5]) * b[ 9])
+                 + (((int64_t)a[ 6]) * b[ 8])
+                 + (((int64_t)a[ 7]) * b[ 7])
+                 + (((int64_t)a[ 8]) * b[ 6])
+                 + (((int64_t)a[ 9]) * b[ 5])
+                 + (((int64_t)a[10]) * b[ 4])
+                 + (((int64_t)a[11]) * b[ 3])
+                 + (((int64_t)a[12]) * b[ 2])
+                 + (((int64_t)a[13]) * b[ 1])
+                 + (((int64_t)a[14]) * b[ 0]);
+    int64_t t15  = (((int64_t)a[ 1]) * b[14])
+                 + (((int64_t)a[ 2]) * b[13])
+                 + (((int64_t)a[ 3]) * b[12])
+                 + (((int64_t)a[ 4]) * b[11])
+                 + (((int64_t)a[ 5]) * b[10])
+                 + (((int64_t)a[ 6]) * b[ 9])
+                 + (((int64_t)a[ 7]) * b[ 8])
+                 + (((int64_t)a[ 8]) * b[ 7])
+                 + (((int64_t)a[ 9]) * b[ 6])
+                 + (((int64_t)a[10]) * b[ 5])
+                 + (((int64_t)a[11]) * b[ 4])
+                 + (((int64_t)a[12]) * b[ 3])
+                 + (((int64_t)a[13]) * b[ 2])
+                 + (((int64_t)a[14]) * b[ 1]);
+    int64_t t16  = (((int64_t)a[ 2]) * b[14])
+                 + (((int64_t)a[ 3]) * b[13])
+                 + (((int64_t)a[ 4]) * b[12])
+                 + (((int64_t)a[ 5]) * b[11])
+                 + (((int64_t)a[ 6]) * b[10])
+                 + (((int64_t)a[ 7]) * b[ 9])
+                 + (((int64_t)a[ 8]) * b[ 8])
+                 + (((int64_t)a[ 9]) * b[ 7])
+                 + (((int64_t)a[10]) * b[ 6])
+                 + (((int64_t)a[11]) * b[ 5])
+                 + (((int64_t)a[12]) * b[ 4])
+                 + (((int64_t)a[13]) * b[ 3])
+                 + (((int64_t)a[14]) * b[ 2]);
+    int64_t t17  = (((int64_t)a[ 3]) * b[14])
+                 + (((int64_t)a[ 4]) * b[13])
+                 + (((int64_t)a[ 5]) * b[12])
+                 + (((int64_t)a[ 6]) * b[11])
+                 + (((int64_t)a[ 7]) * b[10])
+                 + (((int64_t)a[ 8]) * b[ 9])
+                 + (((int64_t)a[ 9]) * b[ 8])
+                 + (((int64_t)a[10]) * b[ 7])
+                 + (((int64_t)a[11]) * b[ 6])
+                 + (((int64_t)a[12]) * b[ 5])
+                 + (((int64_t)a[13]) * b[ 4])
+                 + (((int64_t)a[14]) * b[ 3]);
+    int64_t t18  = (((int64_t)a[ 4]) * b[14])
+                 + (((int64_t)a[ 5]) * b[13])
+                 + (((int64_t)a[ 6]) * b[12])
+                 + (((int64_t)a[ 7]) * b[11])
+                 + (((int64_t)a[ 8]) * b[10])
+                 + (((int64_t)a[ 9]) * b[ 9])
+                 + (((int64_t)a[10]) * b[ 8])
+                 + (((int64_t)a[11]) * b[ 7])
+                 + (((int64_t)a[12]) * b[ 6])
+                 + (((int64_t)a[13]) * b[ 5])
+                 + (((int64_t)a[14]) * b[ 4]);
+    int64_t t19  = (((int64_t)a[ 5]) * b[14])
+                 + (((int64_t)a[ 6]) * b[13])
+                 + (((int64_t)a[ 7]) * b[12])
+                 + (((int64_t)a[ 8]) * b[11])
+                 + (((int64_t)a[ 9]) * b[10])
+                 + (((int64_t)a[10]) * b[ 9])
+                 + (((int64_t)a[11]) * b[ 8])
+                 + (((int64_t)a[12]) * b[ 7])
+                 + (((int64_t)a[13]) * b[ 6])
+                 + (((int64_t)a[14]) * b[ 5]);
+    int64_t t20  = (((int64_t)a[ 6]) * b[14])
+                 + (((int64_t)a[ 7]) * b[13])
+                 + (((int64_t)a[ 8]) * b[12])
+                 + (((int64_t)a[ 9]) * b[11])
+                 + (((int64_t)a[10]) * b[10])
+                 + (((int64_t)a[11]) * b[ 9])
+                 + (((int64_t)a[12]) * b[ 8])
+                 + (((int64_t)a[13]) * b[ 7])
+                 + (((int64_t)a[14]) * b[ 6]);
+    int64_t t21  = (((int64_t)a[ 7]) * b[14])
+                 + (((int64_t)a[ 8]) * b[13])
+                 + (((int64_t)a[ 9]) * b[12])
+                 + (((int64_t)a[10]) * b[11])
+                 + (((int64_t)a[11]) * b[10])
+                 + (((int64_t)a[12]) * b[ 9])
+                 + (((int64_t)a[13]) * b[ 8])
+                 + (((int64_t)a[14]) * b[ 7]);
+    int64_t t22  = (((int64_t)a[ 8]) * b[14])
+                 + (((int64_t)a[ 9]) * b[13])
+                 + (((int64_t)a[10]) * b[12])
+                 + (((int64_t)a[11]) * b[11])
+                 + (((int64_t)a[12]) * b[10])
+                 + (((int64_t)a[13]) * b[ 9])
+                 + (((int64_t)a[14]) * b[ 8]);
+    int64_t t23  = (((int64_t)a[ 9]) * b[14])
+                 + (((int64_t)a[10]) * b[13])
+                 + (((int64_t)a[11]) * b[12])
+                 + (((int64_t)a[12]) * b[11])
+                 + (((int64_t)a[13]) * b[10])
+                 + (((int64_t)a[14]) * b[ 9]);
+    int64_t t24  = (((int64_t)a[10]) * b[14])
+                 + (((int64_t)a[11]) * b[13])
+                 + (((int64_t)a[12]) * b[12])
+                 + (((int64_t)a[13]) * b[11])
+                 + (((int64_t)a[14]) * b[10]);
+    int64_t t25  = (((int64_t)a[11]) * b[14])
+                 + (((int64_t)a[12]) * b[13])
+                 + (((int64_t)a[13]) * b[12])
+                 + (((int64_t)a[14]) * b[11]);
+    int64_t t26  = (((int64_t)a[12]) * b[14])
+                 + (((int64_t)a[13]) * b[13])
+                 + (((int64_t)a[14]) * b[12]);
+    int64_t t27  = (((int64_t)a[13]) * b[14])
+                 + (((int64_t)a[14]) * b[13]);
+    int64_t t28  = (((int64_t)a[14]) * b[14]);
 
     t1   += t0  >> 23; r[ 0] = t0  & 0x7fffff;
     t2   += t1  >> 23; r[ 1] = t1  & 0x7fffff;
@@ -1220,9 +1220,9 @@ static void sp_2048_mont_setup(const sp_digit* a, sp_digit* rho)
 
     b = a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**32 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**8 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**16 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**32 */
     x &= 0x7fffff;
 
     /* rho = -1/m mod b */
@@ -2149,7 +2149,7 @@ static int sp_2048_mod_exp_45(sp_digit* r, const sp_digit* a, const sp_digit* e,
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c < 5) {
                 n |= e[i--] << (9 - c);
                 c += 23;
@@ -3073,7 +3073,7 @@ static int sp_2048_mod_exp_90(sp_digit* r, const sp_digit* a, const sp_digit* e,
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c < 5) {
                 n |= e[i--] << (9 - c);
                 c += 23;
@@ -3676,7 +3676,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = a[i] >> s;
-            while (s + DIGIT_BIT <= 23) {
+            while ((s + DIGIT_BIT) <= 23) {
                 s += DIGIT_BIT;
                 r->dp[j++] &= (1L << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
@@ -3696,8 +3696,8 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 90; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
-            if (s + 23 >= DIGIT_BIT) {
-    #if DIGIT_BIT != 32 && DIGIT_BIT != 64
+            if ((s + 23) >= DIGIT_BIT) {
+    #if (DIGIT_BIT != 32) && (DIGIT_BIT != 64)
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
@@ -4116,7 +4116,7 @@ static int sp_2048_mod_exp_2_90(sp_digit* r, const sp_digit* e, int bitsIn,
     n <<= 4;
     c -= 4;
     sp_2048_lshift_90(r, norm, y);
-    for (; i>=0 || c>=4; ) {
+    for (; (i>=0) || (c>=4); ) {
         if (c < 4) {
             n |= e[i--] << (9 - c);
             c += 23;
@@ -4291,8 +4291,8 @@ int sp_DhExp_2048(mp_int* base, const byte* exp, word32 expLen,
         sp_2048_from_mp(m, 90, mod);
 
     #ifdef HAVE_FFDHE_2048
-        if (base->used == 1 && base->dp[0] == 2U &&
-                ((m[89] << 15) | (m[88] >> 8)) == 0xffffL) {
+        if ((base->used == 1) && (base->dp[0] == 2U) &&
+                (((m[89] << 15) | (m[88] >> 8)) == 0xffffL)) {
             err = sp_2048_mod_exp_2_90(r, e, expLen * 8U, m);
         }
         else {
@@ -4306,7 +4306,7 @@ int sp_DhExp_2048(mp_int* base, const byte* exp, word32 expLen,
     if (err == MP_OKAY) {
         sp_2048_to_bin(r, out);
         *outLen = 256;
-        for (i=0; i<256U && out[i] == 0U; i++) {
+        for (i=0; (i<256U) && (out[i] == 0U); i++) {
         }
         *outLen -= i;
         XMEMMOVE(out, out + i, *outLen);
@@ -4485,7 +4485,7 @@ static void sp_3072_from_bin(sp_digit* r, int size, const byte* a, int n)
         if (s >= 15U) {
             r[j] &= 0x7fffff;
             s = 23U - s;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             r[++j] = (sp_digit)a[i] >> s;
@@ -4522,11 +4522,11 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
     word32 s = 0;
 
     r[0] = 0;
-    for (i = 0; i < a->used && j < size; i++) {
+    for (i = 0; (i < a->used) && (j < size); i++) {
         r[j] |= ((sp_digit)a->dp[i] << s);
         r[j] &= 0x7fffff;
         s = 23U - s;
-        if (j + 1 >= size) {
+        if ((j + 1) >= size) {
             break;
         }
         /* lint allow cast of mismatch word32 and mp_digit */
@@ -4534,7 +4534,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
         while ((s + 23U) <= (word32)DIGIT_BIT) {
             s += 23U;
             r[j] &= 0x7fffff;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
@@ -4559,7 +4559,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
         r[j] |= ((sp_digit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 23) {
             r[j] &= 0x7fffff;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             s = 23 - s;
@@ -4597,9 +4597,9 @@ static void sp_3072_to_bin(sp_digit* r, byte* a)
         r[i+1] += r[i] >> 23;
         r[i] &= 0x7fffff;
     }
-    j = 3072 / 8 - 1;
+    j = (3072 / 8) - 1;
     a[j] = 0;
-    for (i=0; i<134 && j>=0; i++) {
+    for (i=0; (i<134) && (j>=0); i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/
@@ -5072,9 +5072,9 @@ static void sp_3072_mont_setup(const sp_digit* a, sp_digit* rho)
 
     b = a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
-    x *= 2 - b * x;               /* here x*a==1 mod 2**32 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**8 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**16 */
+    x *= 2 - (b * x);               /* here x*a==1 mod 2**32 */
     x &= 0x7fffff;
 
     /* rho = -1/m mod b */
@@ -5960,7 +5960,7 @@ static int sp_3072_mod_exp_67(sp_digit* r, const sp_digit* a, const sp_digit* e,
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c < 5) {
                 n |= e[i--] << (9 - c);
                 c += 23;
@@ -6920,7 +6920,7 @@ static int sp_3072_mod_exp_134(sp_digit* r, const sp_digit* a, const sp_digit* e
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
-        for (; i>=0 || c>=5; ) {
+        for (; (i>=0) || (c>=5); ) {
             if (c < 5) {
                 n |= e[i--] << (9 - c);
                 c += 23;
@@ -7521,7 +7521,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = a[i] >> s;
-            while (s + DIGIT_BIT <= 23) {
+            while ((s + DIGIT_BIT) <= 23) {
                 s += DIGIT_BIT;
                 r->dp[j++] &= (1L << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
@@ -7541,8 +7541,8 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 134; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
-            if (s + 23 >= DIGIT_BIT) {
-    #if DIGIT_BIT != 32 && DIGIT_BIT != 64
+            if ((s + 23) >= DIGIT_BIT) {
+    #if (DIGIT_BIT != 32) && (DIGIT_BIT != 64)
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
@@ -8049,7 +8049,7 @@ static int sp_3072_mod_exp_2_134(sp_digit* r, const sp_digit* e, int bitsIn,
     n <<= 4;
     c -= 4;
     sp_3072_lshift_134(r, norm, y);
-    for (; i>=0 || c>=4; ) {
+    for (; (i>=0) || (c>=4); ) {
         if (c < 4) {
             n |= e[i--] << (9 - c);
             c += 23;
@@ -8224,8 +8224,8 @@ int sp_DhExp_3072(mp_int* base, const byte* exp, word32 expLen,
         sp_3072_from_mp(m, 134, mod);
 
     #ifdef HAVE_FFDHE_3072
-        if (base->used == 1 && base->dp[0] == 2U &&
-                ((m[133] << 3) | (m[132] >> 20)) == 0xffffL) {
+        if ((base->used == 1) && (base->dp[0] == 2U) &&
+                (((m[133] << 3) | (m[132] >> 20)) == 0xffffL)) {
             err = sp_3072_mod_exp_2_134(r, e, expLen * 8U, m);
         }
         else {
@@ -8239,7 +8239,7 @@ int sp_DhExp_3072(mp_int* base, const byte* exp, word32 expLen,
     if (err == MP_OKAY) {
         sp_3072_to_bin(r, out);
         *outLen = 384;
-        for (i=0; i<384U && out[i] == 0U; i++) {
+        for (i=0; (i<384U) && (out[i] == 0U); i++) {
         }
         *outLen -= i;
         XMEMMOVE(out, out + i, *outLen);
@@ -8673,11 +8673,11 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
     word32 s = 0;
 
     r[0] = 0;
-    for (i = 0; i < a->used && j < size; i++) {
+    for (i = 0; (i < a->used) && (j < size); i++) {
         r[j] |= ((sp_digit)a->dp[i] << s);
         r[j] &= 0x3ffffff;
         s = 26U - s;
-        if (j + 1 >= size) {
+        if ((j + 1) >= size) {
             break;
         }
         /* lint allow cast of mismatch word32 and mp_digit */
@@ -8685,7 +8685,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
         while ((s + 26U) <= (word32)DIGIT_BIT) {
             s += 26U;
             r[j] &= 0x3ffffff;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
@@ -8710,7 +8710,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
         r[j] |= ((sp_digit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 26) {
             r[j] &= 0x3ffffff;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             s = 26 - s;
@@ -8774,7 +8774,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = a[i] >> s;
-            while (s + DIGIT_BIT <= 26) {
+            while ((s + DIGIT_BIT) <= 26) {
                 s += DIGIT_BIT;
                 r->dp[j++] &= (1L << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
@@ -8794,8 +8794,8 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 10; i++) {
             r->dp[j] |= ((mp_digit)a[i]) << s;
-            if (s + 26 >= DIGIT_BIT) {
-    #if DIGIT_BIT != 32 && DIGIT_BIT != 64
+            if ((s + 26) >= DIGIT_BIT) {
+    #if (DIGIT_BIT != 32) && (DIGIT_BIT != 64)
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
@@ -9107,106 +9107,106 @@ SP_NOINLINE static void sp_256_mul_10(sp_digit* r, const sp_digit* a,
 SP_NOINLINE static void sp_256_mul_10(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
 {
-    int64_t t0   = ((int64_t)a[ 0]) * b[ 0];
-    int64_t t1   = ((int64_t)a[ 0]) * b[ 1]
-                 + ((int64_t)a[ 1]) * b[ 0];
-    int64_t t2   = ((int64_t)a[ 0]) * b[ 2]
-                 + ((int64_t)a[ 1]) * b[ 1]
-                 + ((int64_t)a[ 2]) * b[ 0];
-    int64_t t3   = ((int64_t)a[ 0]) * b[ 3]
-                 + ((int64_t)a[ 1]) * b[ 2]
-                 + ((int64_t)a[ 2]) * b[ 1]
-                 + ((int64_t)a[ 3]) * b[ 0];
-    int64_t t4   = ((int64_t)a[ 0]) * b[ 4]
-                 + ((int64_t)a[ 1]) * b[ 3]
-                 + ((int64_t)a[ 2]) * b[ 2]
-                 + ((int64_t)a[ 3]) * b[ 1]
-                 + ((int64_t)a[ 4]) * b[ 0];
-    int64_t t5   = ((int64_t)a[ 0]) * b[ 5]
-                 + ((int64_t)a[ 1]) * b[ 4]
-                 + ((int64_t)a[ 2]) * b[ 3]
-                 + ((int64_t)a[ 3]) * b[ 2]
-                 + ((int64_t)a[ 4]) * b[ 1]
-                 + ((int64_t)a[ 5]) * b[ 0];
-    int64_t t6   = ((int64_t)a[ 0]) * b[ 6]
-                 + ((int64_t)a[ 1]) * b[ 5]
-                 + ((int64_t)a[ 2]) * b[ 4]
-                 + ((int64_t)a[ 3]) * b[ 3]
-                 + ((int64_t)a[ 4]) * b[ 2]
-                 + ((int64_t)a[ 5]) * b[ 1]
-                 + ((int64_t)a[ 6]) * b[ 0];
-    int64_t t7   = ((int64_t)a[ 0]) * b[ 7]
-                 + ((int64_t)a[ 1]) * b[ 6]
-                 + ((int64_t)a[ 2]) * b[ 5]
-                 + ((int64_t)a[ 3]) * b[ 4]
-                 + ((int64_t)a[ 4]) * b[ 3]
-                 + ((int64_t)a[ 5]) * b[ 2]
-                 + ((int64_t)a[ 6]) * b[ 1]
-                 + ((int64_t)a[ 7]) * b[ 0];
-    int64_t t8   = ((int64_t)a[ 0]) * b[ 8]
-                 + ((int64_t)a[ 1]) * b[ 7]
-                 + ((int64_t)a[ 2]) * b[ 6]
-                 + ((int64_t)a[ 3]) * b[ 5]
-                 + ((int64_t)a[ 4]) * b[ 4]
-                 + ((int64_t)a[ 5]) * b[ 3]
-                 + ((int64_t)a[ 6]) * b[ 2]
-                 + ((int64_t)a[ 7]) * b[ 1]
-                 + ((int64_t)a[ 8]) * b[ 0];
-    int64_t t9   = ((int64_t)a[ 0]) * b[ 9]
-                 + ((int64_t)a[ 1]) * b[ 8]
-                 + ((int64_t)a[ 2]) * b[ 7]
-                 + ((int64_t)a[ 3]) * b[ 6]
-                 + ((int64_t)a[ 4]) * b[ 5]
-                 + ((int64_t)a[ 5]) * b[ 4]
-                 + ((int64_t)a[ 6]) * b[ 3]
-                 + ((int64_t)a[ 7]) * b[ 2]
-                 + ((int64_t)a[ 8]) * b[ 1]
-                 + ((int64_t)a[ 9]) * b[ 0];
-    int64_t t10  = ((int64_t)a[ 1]) * b[ 9]
-                 + ((int64_t)a[ 2]) * b[ 8]
-                 + ((int64_t)a[ 3]) * b[ 7]
-                 + ((int64_t)a[ 4]) * b[ 6]
-                 + ((int64_t)a[ 5]) * b[ 5]
-                 + ((int64_t)a[ 6]) * b[ 4]
-                 + ((int64_t)a[ 7]) * b[ 3]
-                 + ((int64_t)a[ 8]) * b[ 2]
-                 + ((int64_t)a[ 9]) * b[ 1];
-    int64_t t11  = ((int64_t)a[ 2]) * b[ 9]
-                 + ((int64_t)a[ 3]) * b[ 8]
-                 + ((int64_t)a[ 4]) * b[ 7]
-                 + ((int64_t)a[ 5]) * b[ 6]
-                 + ((int64_t)a[ 6]) * b[ 5]
-                 + ((int64_t)a[ 7]) * b[ 4]
-                 + ((int64_t)a[ 8]) * b[ 3]
-                 + ((int64_t)a[ 9]) * b[ 2];
-    int64_t t12  = ((int64_t)a[ 3]) * b[ 9]
-                 + ((int64_t)a[ 4]) * b[ 8]
-                 + ((int64_t)a[ 5]) * b[ 7]
-                 + ((int64_t)a[ 6]) * b[ 6]
-                 + ((int64_t)a[ 7]) * b[ 5]
-                 + ((int64_t)a[ 8]) * b[ 4]
-                 + ((int64_t)a[ 9]) * b[ 3];
-    int64_t t13  = ((int64_t)a[ 4]) * b[ 9]
-                 + ((int64_t)a[ 5]) * b[ 8]
-                 + ((int64_t)a[ 6]) * b[ 7]
-                 + ((int64_t)a[ 7]) * b[ 6]
-                 + ((int64_t)a[ 8]) * b[ 5]
-                 + ((int64_t)a[ 9]) * b[ 4];
-    int64_t t14  = ((int64_t)a[ 5]) * b[ 9]
-                 + ((int64_t)a[ 6]) * b[ 8]
-                 + ((int64_t)a[ 7]) * b[ 7]
-                 + ((int64_t)a[ 8]) * b[ 6]
-                 + ((int64_t)a[ 9]) * b[ 5];
-    int64_t t15  = ((int64_t)a[ 6]) * b[ 9]
-                 + ((int64_t)a[ 7]) * b[ 8]
-                 + ((int64_t)a[ 8]) * b[ 7]
-                 + ((int64_t)a[ 9]) * b[ 6];
-    int64_t t16  = ((int64_t)a[ 7]) * b[ 9]
-                 + ((int64_t)a[ 8]) * b[ 8]
-                 + ((int64_t)a[ 9]) * b[ 7];
-    int64_t t17  = ((int64_t)a[ 8]) * b[ 9]
-                 + ((int64_t)a[ 9]) * b[ 8];
-    int64_t t18  = ((int64_t)a[ 9]) * b[ 9];
+    int64_t t0   = (((int64_t)a[ 0]) * b[ 0]);
+    int64_t t1   = (((int64_t)a[ 0]) * b[ 1])
+                 + (((int64_t)a[ 1]) * b[ 0]);
+    int64_t t2   = (((int64_t)a[ 0]) * b[ 2])
+                 + (((int64_t)a[ 1]) * b[ 1])
+                 + (((int64_t)a[ 2]) * b[ 0]);
+    int64_t t3   = (((int64_t)a[ 0]) * b[ 3])
+                 + (((int64_t)a[ 1]) * b[ 2])
+                 + (((int64_t)a[ 2]) * b[ 1])
+                 + (((int64_t)a[ 3]) * b[ 0]);
+    int64_t t4   = (((int64_t)a[ 0]) * b[ 4])
+                 + (((int64_t)a[ 1]) * b[ 3])
+                 + (((int64_t)a[ 2]) * b[ 2])
+                 + (((int64_t)a[ 3]) * b[ 1])
+                 + (((int64_t)a[ 4]) * b[ 0]);
+    int64_t t5   = (((int64_t)a[ 0]) * b[ 5])
+                 + (((int64_t)a[ 1]) * b[ 4])
+                 + (((int64_t)a[ 2]) * b[ 3])
+                 + (((int64_t)a[ 3]) * b[ 2])
+                 + (((int64_t)a[ 4]) * b[ 1])
+                 + (((int64_t)a[ 5]) * b[ 0]);
+    int64_t t6   = (((int64_t)a[ 0]) * b[ 6])
+                 + (((int64_t)a[ 1]) * b[ 5])
+                 + (((int64_t)a[ 2]) * b[ 4])
+                 + (((int64_t)a[ 3]) * b[ 3])
+                 + (((int64_t)a[ 4]) * b[ 2])
+                 + (((int64_t)a[ 5]) * b[ 1])
+                 + (((int64_t)a[ 6]) * b[ 0]);
+    int64_t t7   = (((int64_t)a[ 0]) * b[ 7])
+                 + (((int64_t)a[ 1]) * b[ 6])
+                 + (((int64_t)a[ 2]) * b[ 5])
+                 + (((int64_t)a[ 3]) * b[ 4])
+                 + (((int64_t)a[ 4]) * b[ 3])
+                 + (((int64_t)a[ 5]) * b[ 2])
+                 + (((int64_t)a[ 6]) * b[ 1])
+                 + (((int64_t)a[ 7]) * b[ 0]);
+    int64_t t8   = (((int64_t)a[ 0]) * b[ 8])
+                 + (((int64_t)a[ 1]) * b[ 7])
+                 + (((int64_t)a[ 2]) * b[ 6])
+                 + (((int64_t)a[ 3]) * b[ 5])
+                 + (((int64_t)a[ 4]) * b[ 4])
+                 + (((int64_t)a[ 5]) * b[ 3])
+                 + (((int64_t)a[ 6]) * b[ 2])
+                 + (((int64_t)a[ 7]) * b[ 1])
+                 + (((int64_t)a[ 8]) * b[ 0]);
+    int64_t t9   = (((int64_t)a[ 0]) * b[ 9])
+                 + (((int64_t)a[ 1]) * b[ 8])
+                 + (((int64_t)a[ 2]) * b[ 7])
+                 + (((int64_t)a[ 3]) * b[ 6])
+                 + (((int64_t)a[ 4]) * b[ 5])
+                 + (((int64_t)a[ 5]) * b[ 4])
+                 + (((int64_t)a[ 6]) * b[ 3])
+                 + (((int64_t)a[ 7]) * b[ 2])
+                 + (((int64_t)a[ 8]) * b[ 1])
+                 + (((int64_t)a[ 9]) * b[ 0]);
+    int64_t t10  = (((int64_t)a[ 1]) * b[ 9])
+                 + (((int64_t)a[ 2]) * b[ 8])
+                 + (((int64_t)a[ 3]) * b[ 7])
+                 + (((int64_t)a[ 4]) * b[ 6])
+                 + (((int64_t)a[ 5]) * b[ 5])
+                 + (((int64_t)a[ 6]) * b[ 4])
+                 + (((int64_t)a[ 7]) * b[ 3])
+                 + (((int64_t)a[ 8]) * b[ 2])
+                 + (((int64_t)a[ 9]) * b[ 1]);
+    int64_t t11  = (((int64_t)a[ 2]) * b[ 9])
+                 + (((int64_t)a[ 3]) * b[ 8])
+                 + (((int64_t)a[ 4]) * b[ 7])
+                 + (((int64_t)a[ 5]) * b[ 6])
+                 + (((int64_t)a[ 6]) * b[ 5])
+                 + (((int64_t)a[ 7]) * b[ 4])
+                 + (((int64_t)a[ 8]) * b[ 3])
+                 + (((int64_t)a[ 9]) * b[ 2]);
+    int64_t t12  = (((int64_t)a[ 3]) * b[ 9])
+                 + (((int64_t)a[ 4]) * b[ 8])
+                 + (((int64_t)a[ 5]) * b[ 7])
+                 + (((int64_t)a[ 6]) * b[ 6])
+                 + (((int64_t)a[ 7]) * b[ 5])
+                 + (((int64_t)a[ 8]) * b[ 4])
+                 + (((int64_t)a[ 9]) * b[ 3]);
+    int64_t t13  = (((int64_t)a[ 4]) * b[ 9])
+                 + (((int64_t)a[ 5]) * b[ 8])
+                 + (((int64_t)a[ 6]) * b[ 7])
+                 + (((int64_t)a[ 7]) * b[ 6])
+                 + (((int64_t)a[ 8]) * b[ 5])
+                 + (((int64_t)a[ 9]) * b[ 4]);
+    int64_t t14  = (((int64_t)a[ 5]) * b[ 9])
+                 + (((int64_t)a[ 6]) * b[ 8])
+                 + (((int64_t)a[ 7]) * b[ 7])
+                 + (((int64_t)a[ 8]) * b[ 6])
+                 + (((int64_t)a[ 9]) * b[ 5]);
+    int64_t t15  = (((int64_t)a[ 6]) * b[ 9])
+                 + (((int64_t)a[ 7]) * b[ 8])
+                 + (((int64_t)a[ 8]) * b[ 7])
+                 + (((int64_t)a[ 9]) * b[ 6]);
+    int64_t t16  = (((int64_t)a[ 7]) * b[ 9])
+                 + (((int64_t)a[ 8]) * b[ 8])
+                 + (((int64_t)a[ 9]) * b[ 7]);
+    int64_t t17  = (((int64_t)a[ 8]) * b[ 9])
+                 + (((int64_t)a[ 9]) * b[ 8]);
+    int64_t t18  = (((int64_t)a[ 9]) * b[ 9]);
 
     t1   += t0  >> 26; r[ 0] = t0  & 0x3ffffff;
     t2   += t1  >> 26; r[ 1] = t1  & 0x3ffffff;
@@ -12224,7 +12224,7 @@ static void sp_256_from_bin(sp_digit* r, int size, const byte* a, int n)
         if (s >= 18U) {
             r[j] &= 0x3ffffff;
             s = 26U - s;
-            if (j + 1 >= size) {
+            if ((j + 1) >= size) {
                 break;
             }
             r[++j] = (sp_digit)a[i] >> s;
@@ -12365,9 +12365,9 @@ static void sp_256_to_bin(sp_digit* r, byte* a)
         r[i+1] += r[i] >> 26;
         r[i] &= 0x3ffffff;
     }
-    j = 256 / 8 - 1;
+    j = (256 / 8) - 1;
     a[j] = 0;
-    for (i=0; i<10 && j>=0; i++) {
+    for (i=0; (i<10) && (j>=0); i++) {
         b = 0;
         /* lint allow cast of mismatch sp_digit and int */
         a[j--] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/

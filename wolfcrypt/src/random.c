@@ -360,7 +360,7 @@ static int Hash_df(DRBG* drbg, byte* out, word32 outSz, byte type,
             ret = wc_Sha256Update(sha, inA, inASz);
         }
         if (ret == 0) {
-            if (inB != NULL && inBSz > 0U) {
+            if ((inB != NULL) && (inBSz > 0U)) {
                 ret = wc_Sha256Update(sha, inB, inBSz);
             }
         }
@@ -425,7 +425,7 @@ static int Hash_DRBG_Reseed(DRBG* drbg, const byte* seed, word32 seedSz)
 /* Returns: DRBG_SUCCESS and DRBG_FAILURE or BAD_FUNC_ARG on fail */
 int wc_RNG_DRBG_Reseed(WC_RNG* rng, const byte* seed, word32 seedSz)
 {
-    if (rng == NULL || seed == NULL) {
+    if ((rng == NULL) || (seed == NULL)) {
         return BAD_FUNC_ARG;
     }
 
@@ -711,7 +711,7 @@ int wc_RNG_TestSeed(const byte* seed, word32 seedSz)
     word32 seedIdx = 0;
     word32 scratchSz = min(SEED_BLOCK_SZ, seedSz - (word32)SEED_BLOCK_SZ);
 
-    while (seedIdx < seedSz - (word32)SEED_BLOCK_SZ) {
+    while (seedIdx < (seedSz - (word32)SEED_BLOCK_SZ)) {
         if (ConstantCompare(seed + seedIdx,
                             seed + seedIdx + scratchSz,
                             scratchSz) == 0) {
@@ -742,7 +742,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     if (rng == NULL) {
         return BAD_FUNC_ARG;
     }
-    if (nonce == NULL && nonceSz != 0U) {
+    if ((nonce == NULL) && (nonceSz != 0U)) {
         return BAD_FUNC_ARG;
     }
 
@@ -906,7 +906,7 @@ int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz)
 {
     int ret;
 
-    if (rng == NULL || output == NULL) {
+    if ((rng == NULL) || (output == NULL)) {
         return BAD_FUNC_ARG;
     }
 
@@ -1061,11 +1061,11 @@ int wc_RNG_HealthTest_ex(int reseed, const byte* nonce, word32 nonceSz,
     DRBG  drbg_var;
 #endif
 
-    if (entropyA_param == NULL || output == NULL) {
+    if ((entropyA_param == NULL) || (output == NULL)) {
         return BAD_FUNC_ARG;
     }
 
-    if (reseed != 0 && entropyB_param == NULL) {
+    if ((reseed != 0) && (entropyB_param == NULL)) {
         return BAD_FUNC_ARG;
     }
 
