@@ -1017,7 +1017,8 @@ static int InitSha256(wc_Sha256* sha256)
         }
 
         local = (byte*)sha256->buffer;
-        local[sha256->buffLen++] = 0x80; /* add 1 */
+        local[sha256->buffLen] = 0x80; /* add 1 */
+        sha256->buffLen = sha256->buffLen + 1;
 
         /* pad with zeros */
         if (sha256->buffLen > (word32)WC_SHA256_PAD_SIZE) {

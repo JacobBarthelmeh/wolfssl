@@ -244,7 +244,7 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
  * test, and an additional half of the seed size. This additional half
  * is in case the user does not supply a nonce. A nonce will be obtained
  * from the NDRNG. */
-#define MAX_SEED_SZ    (SEED_SZ + SEED_SZ/2 + SEED_BLOCK_SZ)
+#define MAX_SEED_SZ    (SEED_SZ + (SEED_SZ/2) + SEED_BLOCK_SZ)
 
 
 /* Internal return codes */
@@ -331,7 +331,7 @@ static int Hash_df(DRBG* drbg, byte* out, word32 outSz, byte type,
         len++;
     }
 
-    for (i = 0, ctr = 1; i < len; i++, ctr++) {
+    for (i = 0, ctr = 1; i < len; i = i + 1, ctr = ctr + 1) {
 #ifndef WOLFSSL_SMALL_STACK_CACHE
     #if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
         ret = wc_InitSha256_ex(sha, drbg->heap, drbg->devId);
@@ -550,7 +550,7 @@ static WC_INLINE void array_add(byte* d, word32 dLen, const byte* s, word32 sLen
     if ((dLen > 0U) && (sLen > 0U) && (dLen >= sLen)) {
         int sIdx, dIdx;
 
-        for (sIdx = (int)sLen - 1, dIdx = (int)dLen - 1; sIdx >= 0; dIdx--, sIdx--)
+        for (sIdx = (int)sLen - 1, dIdx = (int)dLen - 1; sIdx >= 0; dIdx = dIdx - 1, sIdx = sIdx - 1)
         {
             carry += (word16)d[dIdx] + (word16)s[sIdx];
             d[dIdx] = (byte)carry;

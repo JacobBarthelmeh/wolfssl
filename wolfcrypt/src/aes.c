@@ -205,8 +205,9 @@
                                       const byte* authIn, word32 authInSz)
         {
             /* sanity check on arguments */
-            if (aes == NULL || out == NULL || in == NULL || nonce == NULL
-                    || authTag == NULL || nonceSz < 7 || nonceSz > 13)
+            if ((aes == NULL) || (out == NULL) || (in == NULL) ||
+                (nonce == NULL) || (authTag == NULL) || (nonceSz < 7) ||
+                (nonceSz > 13))
                 return BAD_FUNC_ARG;
 
             AesCcmEncrypt(aes, out, in, inSz, nonce, nonceSz, authTag,
@@ -222,8 +223,9 @@
                 const byte* authIn, word32 authInSz)
             {
 
-                if (aes == NULL || out == NULL || in == NULL || nonce == NULL
-                    || authTag == NULL || nonceSz < 7 || nonceSz > 13) {
+                if ((aes == NULL) || (out == NULL) || (in == NULL) ||
+                    (nonce == NULL) || (authTag == NULL) || (nonceSz < 7) ||
+                    (nonceSz > 13)) {
                         return BAD_FUNC_ARG;
                 }
 
@@ -2149,7 +2151,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
             break;
     #endif /* 128 */
 
-    #if defined(AES_MAX_KEY_SIZE) && AES_MAX_KEY_SIZE >= 192 && \
+    #if defined(AES_MAX_KEY_SIZE) && (AES_MAX_KEY_SIZE >= 192) && \
             defined(WOLFSSL_AES_192)
         case 24:
             /* for (;;) here triggers a bug in VC60 SP4 w/ Pro Pack */
@@ -2175,7 +2177,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
             break;
     #endif /* 192 */
 
-    #if defined(AES_MAX_KEY_SIZE) && AES_MAX_KEY_SIZE >= 256 && \
+    #if defined(AES_MAX_KEY_SIZE) && (AES_MAX_KEY_SIZE >= 256) && \
             defined(WOLFSSL_AES_256)
         case 32:
             while (i != 7U)
@@ -6266,7 +6268,7 @@ int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
     if ((aes == NULL) || (rng == NULL) ||
         ((ivSz != (word32)GCM_NONCE_MIN_SZ) &&
          (ivSz != (word32)GCM_NONCE_MID_SZ) &&
-         ivSz != (word32)GCM_NONCE_MAX_SZ) ||
+         (ivSz != (word32)GCM_NONCE_MAX_SZ)) ||
         ((ivFixed == NULL) && (ivFixedSz != 0U)) ||
         ((ivFixed != NULL) && (ivFixedSz != (word32)AES_IV_FIXED_SZ))) {
 
