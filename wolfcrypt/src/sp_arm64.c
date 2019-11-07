@@ -63,15 +63,19 @@ static void sp_2048_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     r[0] = 0;
     for (i = n-1; i >= 0; i--) {
-        r[j] |= (((sp_digit)a[i]) << s);
+        sp_udigit tmp = (sp_udigit)r[j]; /* unsigned for bitwise operations */
+
+        tmp |= (((sp_udigit)a[i]) << s);
+        r[j] = (sp_digit)tmp;
         if (s >= 56U) {
-            r[j] &= 0xffffffffffffffffl;
+            tmp &= ;
+            r[j] = (sp_digit)tmp;
             s = 64U - s;
             if ((j + 1) >= size) {
                 break;
             }
             j = j +1;
-            r[j] = (sp_digit)a[i] >> s;
+            r[j] = sp_digit_rshd(a[i], s);
             s = 8U - s;
         }
         else {
@@ -106,25 +110,29 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; (i < a->used) && (j < size); i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
-        r[j] &= 0xffffffffffffffffl;
+        sp_udigit tmp = (sp_udigit)r[j];
+
+        tmp |= ((sp_udigit)a->dp[i] << s);
+        tmp &= ;
+        r[j] = (sp_digit)tmp;
         s = 64U - s;
         if ((j + 1) >= size) {
             break;
         }
         j = j + 1;
-        /* lint allow cast of mismatch word32 and mp_digit */
-        r[j] = (sp_digit)(a->dp[i] >> s); /*lint !e9033*/
+        r[j] = ((sp_udigit)a->dp[i] >> s);
         while ((s + 64U) <= (word32)DIGIT_BIT) {
+            tmp = (sp_udigit)r[j];
+
             s += 64U;
-            r[j] &= 0xffffffffffffffffl;
+            tmp &= ;
+            r[j] = (sp_digit)tmp;
             if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
                 j = j + 1;
-                /* lint allow cast of mismatch word32 and mp_digit */
-                r[j] = (sp_digit)(a->dp[i] >> s); /*lint !e9033*/
+                r[j] = ((sp_udigit)a->dp[i] >> s);
             }
             else {
                 j = j + 1;
@@ -142,7 +150,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_udigit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if ((j + 1) >= size) {
@@ -179,28 +187,29 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
  */
 static void sp_2048_to_bin(sp_digit* r, byte* a)
 {
-    int i, j, s = 0, b;
+    int i, j;
+    word32 s = 0, b;
+    sp_udigit tmp;
 
     j = (2048 / 8) - 1;
     a[j] = 0;
     for (i=0; (i<32) && (j>=0); i++) {
         b = 0;
-        /* lint allow cast of mismatch sp_digit and int */
-        a[j] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/
+        a[j] |= ((sp_udigit)r[i] << s); b += 8 - s;
         j = j - 1;
         if (j < 0) {
             break;
         }
-        while (b < 64) {
-            a[j] = r[i] >> b; b += 8;
+        while (b < 64U) {
+            a[j] = sp_digit_rshd(r[i], b); b += 8;
             j = j - 1;
             if (j < 0) {
                 break;
             }
         }
-        s = 8 - (b - 64);
+        s = 8U - (b - 64U);
         if (j >= 0) {
-            a[j] = 0;
+            a[j] = 0U;
         }
         if (s != 0) {
             j++;
@@ -3090,13 +3099,14 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 16 * 32, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<16; i++) {
-        t[i] = td + i * 32;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<16; i++) {
+            t[i] = td + i * 32;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -3182,6 +3192,7 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -3220,13 +3231,14 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 32 * 32, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<32; i++) {
-        t[i] = td + i * 32;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<32; i++) {
+            t[i] = td + i * 32;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -3329,6 +3341,7 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -4463,13 +4476,14 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 16 * 64, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<16; i++) {
-        t[i] = td + i * 64;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<16; i++) {
+            t[i] = td + i * 64;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -4555,6 +4569,7 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -4593,13 +4608,14 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 32 * 64, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<32; i++) {
-        t[i] = td + i * 64;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<32; i++) {
+            t[i] = td + i * 64;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -4702,6 +4718,7 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -4990,7 +5007,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             j = j + 1;
-            r->dp[j] = a[i] >> s;
+            r->dp[j] = sp_digit_rshd(a[i], s);
             while ((s + DIGIT_BIT) <= 64) {
                 s += DIGIT_BIT;
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
@@ -5318,11 +5335,12 @@ static int sp_2048_mod_exp_2_32(sp_digit* r, const sp_digit* e, int bits,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 97, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    norm = td;
-    tmp  = td + 64;
+    if (err == MP_OKAY) {
+        norm = td;
+        tmp  = td + 64;
 #else
     norm = nd;
     tmp  = td;
@@ -5386,6 +5404,7 @@ static int sp_2048_mod_exp_2_32(sp_digit* r, const sp_digit* e, int bits,
     sp_2048_cond_sub_32(r, r, m, mask);
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -5532,15 +5551,19 @@ static void sp_3072_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     r[0] = 0;
     for (i = n-1; i >= 0; i--) {
-        r[j] |= (((sp_digit)a[i]) << s);
+        sp_udigit tmp = (sp_udigit)r[j]; /* unsigned for bitwise operations */
+
+        tmp |= (((sp_udigit)a[i]) << s);
+        r[j] = (sp_digit)tmp;
         if (s >= 56U) {
-            r[j] &= 0xffffffffffffffffl;
+            tmp &= ;
+            r[j] = (sp_digit)tmp;
             s = 64U - s;
             if ((j + 1) >= size) {
                 break;
             }
             j = j +1;
-            r[j] = (sp_digit)a[i] >> s;
+            r[j] = sp_digit_rshd(a[i], s);
             s = 8U - s;
         }
         else {
@@ -5575,25 +5598,29 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; (i < a->used) && (j < size); i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
-        r[j] &= 0xffffffffffffffffl;
+        sp_udigit tmp = (sp_udigit)r[j];
+
+        tmp |= ((sp_udigit)a->dp[i] << s);
+        tmp &= ;
+        r[j] = (sp_digit)tmp;
         s = 64U - s;
         if ((j + 1) >= size) {
             break;
         }
         j = j + 1;
-        /* lint allow cast of mismatch word32 and mp_digit */
-        r[j] = (sp_digit)(a->dp[i] >> s); /*lint !e9033*/
+        r[j] = ((sp_udigit)a->dp[i] >> s);
         while ((s + 64U) <= (word32)DIGIT_BIT) {
+            tmp = (sp_udigit)r[j];
+
             s += 64U;
-            r[j] &= 0xffffffffffffffffl;
+            tmp &= ;
+            r[j] = (sp_digit)tmp;
             if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
                 j = j + 1;
-                /* lint allow cast of mismatch word32 and mp_digit */
-                r[j] = (sp_digit)(a->dp[i] >> s); /*lint !e9033*/
+                r[j] = ((sp_udigit)a->dp[i] >> s);
             }
             else {
                 j = j + 1;
@@ -5611,7 +5638,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_udigit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if ((j + 1) >= size) {
@@ -5648,28 +5675,29 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
  */
 static void sp_3072_to_bin(sp_digit* r, byte* a)
 {
-    int i, j, s = 0, b;
+    int i, j;
+    word32 s = 0, b;
+    sp_udigit tmp;
 
     j = (3072 / 8) - 1;
     a[j] = 0;
     for (i=0; (i<48) && (j>=0); i++) {
         b = 0;
-        /* lint allow cast of mismatch sp_digit and int */
-        a[j] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/
+        a[j] |= ((sp_udigit)r[i] << s); b += 8 - s;
         j = j - 1;
         if (j < 0) {
             break;
         }
-        while (b < 64) {
-            a[j] = r[i] >> b; b += 8;
+        while (b < 64U) {
+            a[j] = sp_digit_rshd(r[i], b); b += 8;
             j = j - 1;
             if (j < 0) {
                 break;
             }
         }
-        s = 8 - (b - 64);
+        s = 8U - (b - 64U);
         if (j >= 0) {
-            a[j] = 0;
+            a[j] = 0U;
         }
         if (s != 0) {
             j++;
@@ -10165,13 +10193,14 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 16 * 48, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<16; i++) {
-        t[i] = td + i * 48;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<16; i++) {
+            t[i] = td + i * 48;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -10257,6 +10286,7 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -10295,13 +10325,14 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 32 * 48, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<32; i++) {
-        t[i] = td + i * 48;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<32; i++) {
+            t[i] = td + i * 48;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -10404,6 +10435,7 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -11906,13 +11938,14 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 16 * 96, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<16; i++) {
-        t[i] = td + i * 96;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<16; i++) {
+            t[i] = td + i * 96;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -11998,6 +12031,7 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -12036,13 +12070,14 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 32 * 96, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    for (i=0; i<32; i++) {
-        t[i] = td + i * 96;
-    }
-    norm = t[0];
+    if (err == MP+OKAY) {
+        for (i=0; i<32; i++) {
+            t[i] = td + i * 96;
+        }
+        norm = t[0];
 #else
     norm = t[0];
 #endif
@@ -12145,6 +12180,7 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
     }
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -12433,7 +12469,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             j = j + 1;
-            r->dp[j] = a[i] >> s;
+            r->dp[j] = sp_digit_rshd(a[i], s);
             while ((s + DIGIT_BIT) <= 64) {
                 s += DIGIT_BIT;
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
@@ -12857,11 +12893,12 @@ static int sp_3072_mod_exp_2_48(sp_digit* r, const sp_digit* e, int bits,
     td = (sp_digit*)XMALLOC(sizeof(sp_digit) * 145, NULL,
                             DYNAMIC_TYPE_TMP_BUFFER);
     if (td == NULL) {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 
-    norm = td;
-    tmp  = td + 96;
+    if (err == MP_OKAY) {
+        norm = td;
+        tmp  = td + 96;
 #else
     norm = nd;
     tmp  = td;
@@ -12925,6 +12962,7 @@ static int sp_3072_mod_exp_2_48(sp_digit* r, const sp_digit* e, int bits,
     sp_3072_cond_sub_48(r, r, m, mask);
 
 #ifdef WOLFSSL_SMALL_STACK
+    }
     if (td != NULL) {
         XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
@@ -13135,6 +13173,8 @@ static const sp_digit p256_b[4] = {
 
 static int sp_ecc_point_new_ex(void* heap, sp_point* sp, sp_point** p)
 {
+    int ret = MP_OKAY;
+
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     (void)sp;
     *p = (sp_point*)XMALLOC(sizeof(sp_point), heap, DYNAMIC_TYPE_ECC);
@@ -13143,9 +13183,9 @@ static int sp_ecc_point_new_ex(void* heap, sp_point* sp, sp_point** p)
 #endif
     (void)heap;
     if (p == NULL) {
-        return MEMORY_E;
+        ret = MEMORY_E;
     }
-    return MP_OKAY;
+    return ret;
 }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
@@ -13265,25 +13305,29 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; (i < a->used) && (j < size); i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
-        r[j] &= 0xffffffffffffffffl;
+        sp_udigit tmp = (sp_udigit)r[j];
+
+        tmp |= ((sp_udigit)a->dp[i] << s);
+        tmp &= ;
+        r[j] = (sp_digit)tmp;
         s = 64U - s;
         if ((j + 1) >= size) {
             break;
         }
         j = j + 1;
-        /* lint allow cast of mismatch word32 and mp_digit */
-        r[j] = (sp_digit)(a->dp[i] >> s); /*lint !e9033*/
+        r[j] = ((sp_udigit)a->dp[i] >> s);
         while ((s + 64U) <= (word32)DIGIT_BIT) {
+            tmp = (sp_udigit)r[j];
+
             s += 64U;
-            r[j] &= 0xffffffffffffffffl;
+            tmp &= ;
+            r[j] = (sp_digit)tmp;
             if ((j + 1) >= size) {
                 break;
             }
             if (s < (word32)DIGIT_BIT) {
                 j = j + 1;
-                /* lint allow cast of mismatch word32 and mp_digit */
-                r[j] = (sp_digit)(a->dp[i] >> s); /*lint !e9033*/
+                r[j] = ((sp_udigit)a->dp[i] >> s);
             }
             else {
                 j = j + 1;
@@ -13301,7 +13345,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_udigit)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if ((j + 1) >= size) {
@@ -13370,7 +13414,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] &= (1L << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             j = j + 1;
-            r->dp[j] = a[i] >> s;
+            r->dp[j] = sp_digit_rshd(a[i], s);
             while ((s + DIGIT_BIT) <= 64) {
                 s += DIGIT_BIT;
                 r->dp[j] &= (1L << DIGIT_BIT) - 1;
@@ -29025,15 +29069,19 @@ static void sp_256_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     r[0] = 0;
     for (i = n-1; i >= 0; i--) {
-        r[j] |= (((sp_digit)a[i]) << s);
+        sp_udigit tmp = (sp_udigit)r[j]; /* unsigned for bitwise operations */
+
+        tmp |= (((sp_udigit)a[i]) << s);
+        r[j] = (sp_digit)tmp;
         if (s >= 56U) {
-            r[j] &= 0xffffffffffffffffl;
+            tmp &= ;
+            r[j] = (sp_digit)tmp;
             s = 64U - s;
             if ((j + 1) >= size) {
                 break;
             }
             j = j +1;
-            r[j] = (sp_digit)a[i] >> s;
+            r[j] = sp_digit_rshd(a[i], s);
             s = 8U - s;
         }
         else {
@@ -29165,28 +29213,29 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
  */
 static void sp_256_to_bin(sp_digit* r, byte* a)
 {
-    int i, j, s = 0, b;
+    int i, j;
+    word32 s = 0, b;
+    sp_udigit tmp;
 
     j = (256 / 8) - 1;
     a[j] = 0;
     for (i=0; (i<4) && (j>=0); i++) {
         b = 0;
-        /* lint allow cast of mismatch sp_digit and int */
-        a[j] |= (byte)(r[i] << s); b += 8 - s; /*lint !e9033*/
+        a[j] |= ((sp_udigit)r[i] << s); b += 8 - s;
         j = j - 1;
         if (j < 0) {
             break;
         }
-        while (b < 64) {
-            a[j] = r[i] >> b; b += 8;
+        while (b < 64U) {
+            a[j] = sp_digit_rshd(r[i], b); b += 8;
             j = j - 1;
             if (j < 0) {
                 break;
             }
         }
-        s = 8 - (b - 64);
+        s = 8U - (b - 64U);
         if (j >= 0) {
-            a[j] = 0;
+            a[j] = 0U;
         }
         if (s != 0) {
             j++;
@@ -30347,8 +30396,10 @@ static int sp_256_ecc_is_point_4(sp_point* point, void* heap)
         t2 = d + 2 * 4;
     }
     else {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
+
+    if (err == MP_OKAY) {
 #else
     (void)heap;
 
@@ -30374,6 +30425,7 @@ static int sp_256_ecc_is_point_4(sp_point* point, void* heap)
     }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
+    }
     if (d != NULL) {
         XFREE(d, heap, DYNAMIC_TYPE_ECC);
     }
@@ -30736,8 +30788,10 @@ static int sp_256_mont_sqrt_4(sp_digit* y)
         t2 = d + 2 * 4;
     }
     else {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
+
+    if (err == MP_OKAY) {
 #else
     t1 = t1d;
     t2 = t2d;
@@ -30776,6 +30830,7 @@ static int sp_256_mont_sqrt_4(sp_digit* y)
         }
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
+    }
     if (d != NULL) {
         XFREE(d, NULL, DYNAMIC_TYPE_ECC);
     }
@@ -30810,7 +30865,7 @@ int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
         y = d + 2 * 4;
     }
     else {
-        return MEMORY_E;
+        err = MEMORY_E;
     }
 #else
     x = xd;

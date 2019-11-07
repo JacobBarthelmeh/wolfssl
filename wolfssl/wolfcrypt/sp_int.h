@@ -59,10 +59,12 @@
 #ifndef WOLFSSL_SP_ASM
   #if SP_WORD_SIZE == 32
     typedef int32_t sp_digit;
+    typedef uint32_t sp_udigit;
     typedef uint32_t sp_int_digit;
     typedef uint64_t sp_int_word;
   #elif SP_WORD_SIZE == 64
     typedef int64_t sp_digit;
+    typedef uint64_t sp_udigit;
     typedef uint64_t sp_int_digit;
     typedef unsigned long uint128_t __attribute__ ((mode(TI)));
     typedef long int128_t __attribute__ ((mode(TI)));

@@ -91,6 +91,53 @@
 
 #endif
 
+#if defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH) || \
+                                    defined(WOLFSSL_HAVE_SP_ECC)
+
+/* include sp_int.h for int128_t type and SP_WORD_SIZE macro */
+#include <wolfssl/wolfcrypt/sp_int.h>
+
+#if SP_WORD_SIZE == 64
+/* keeps signed value of right shifted signed type MISRA C compliant */
+WC_STATIC WC_INLINE int128_t signedShift128(int128_t in, word32 shift)
+{
+    uint128_t u1, s;
+
+    u1 = (uint128_t)in;
+    
+    /* get sign value mask */
+    s = 1;
+    s = ((s & u1 >> ((sizeof(int128_t) * WOLFSSL_BIT_SIZE) - 1)) * -1);
+    s = s << ((sizeof(int128_t) * WOLFSSL_BIT_SIZE) - shift);
+
+    /* shift and apply signed bytes back onto shifted value */
+    u1 = u1 >> shift;
+    u1 = u1 | s;
+
+    return (int128_t)u1;
+}
+#endif
+
+/* handle right shift on signed types while keeping signed value */
+WC_STATIC WC_INLINE sp_digit sp_digit_rshd(sp_digit a, unsigned int shift)
+{
+    sp_udigit u1, s;
+
+    u1 = (sp_udigit)a;
+    
+    /* get sign value mask */
+    s = 1;
+    s = ((s & u1 >> ((sizeof(sp_digit) * WOLFSSL_BIT_SIZE) - 1)) * -1);
+    s = s << ((sizeof(sp_digit) * WOLFSSL_BIT_SIZE) - shift);
+
+    /* shift and apply signed bytes back onto shifted value */
+    u1 = u1 >> shift;
+    u1 = u1 | s;
+
+    return (sp_digit)u1;
+}
+#endif /* WOLFSSL_HAVE_SP_RSA || WOLFSSL_HAVE_SP_DH || WOLFSSL_HAVE_SP_ECC */
+
 
 WC_STATIC WC_INLINE word32 ByteReverseWord32(word32 value)
 {
