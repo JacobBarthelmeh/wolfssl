@@ -233,8 +233,10 @@ Std_ReturnType wolfSSL_Crypto_CBC(Crypto_JobType* job)
         }
 
         if (GetKey(job, CRYPTO_KE_CIPHER_IV, &iv, &ivSz) != 0) {
-            WOLFSSL_MSG("Crypto error with getting an IV using all 0's");
+            WOLFSSL_MSG("Crypto error with getting an IV");
+            return E_NOT_OK;
         }
+
         if (iv != NULL && ivSz < AES_BLOCK_SIZE) {
             WOLFSSL_MSG("Error IV is too small");
             return E_NOT_OK;
