@@ -3631,7 +3631,7 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
     }
 #endif
 
-#ifdef WOLFSSL_HAVE_SP_ECC
+#if defined(WOLFSSL_HAVE_SP_ECC) && !defined(WOLFSSL_DSP_BUILD)
 #ifndef WOLFSSL_SP_NO_256
     if (private_key->idx != ECC_CUSTOM_IDX &&
                                ecc_sets[private_key->idx].id == ECC_SECP256R1) {
@@ -4486,7 +4486,7 @@ int wc_ecc_init_ex(ecc_key* key, void* heap, int devId)
                                                             key->heap, devId);
 #endif
 
-#if defined(WOLFSSL_DSP)
+#if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
     key->handle = -1;
 #endif
     return ret;
@@ -5967,14 +5967,26 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
       }
   }
 
-#if defined(WOLFSSL_DSP) && !defined(FREESCALE_LTC_ECC)
+#if defined(WOLFSSL_DSP) && !defined(FREESCALE_LTC_ECC) && \
+   !defined(WOLFSSL_DSP_BUILD)
   if (key->handle != -1) {
-      return sp_dsp_ecc_verify_256(key->handle, hash, hashlen, key->pubkey.x, key->pubkey.y,
-                                           key->pubkey.z, r, s, res, key->heap);
+      if (key->idx != ECC_CUSTOM_IDX &&
+              ecc_sets[key->idx].id == ECC_SECP256R1) {
+          return sp_dsp_ecc_verify_256(key->handle, hash, hashlen,
+                  key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res,
+                  key->heap);
+      }
+      return dsp_ecc_verify(key->handle, hash, hashlen, key, r, s, res,
+              key->heap);
   }
   if (wolfSSL_GetHandleCbSet() == 1) {
-      return sp_dsp_ecc_verify_256(0, hash, hashlen, key->pubkey.x, key->pubkey.y,
-                                           key->pubkey.z, r, s, res, key->heap);
+      if (key->idx != ECC_CUSTOM_IDX &&
+              ecc_sets[key->idx].id == ECC_SECP256R1) {
+          return sp_dsp_ecc_verify_256(0, hash, hashlen, key->pubkey.x,
+                  key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+      }
+      return dsp_ecc_verify(key->handle, hash, hashlen, key, r, s, res,
+              key->heap);
   }
 #endif
 #if defined(WOLFSSL_SP_MATH) && !defined(FREESCALE_LTC_ECC)
@@ -5992,6 +6004,7 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
 #endif
   return WC_KEY_SIZE_E;
 #else
+#if !defined(WOLFSSL_DSP_BUILD)
 #if defined WOLFSSL_HAVE_SP_ECC && !defined(FREESCALE_LTC_ECC)
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_ECC)
     if (key->asyncDev.marker != WOLFSSL_ASYNC_MARKER_ECC)
@@ -6015,7 +6028,7 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
 #endif /* WOLFSSL_SP_384 */
     }
 #endif /* WOLFSSL_HAVE_SP_ECC */
-
+#endif
    ALLOC_CURVE_SPECS(ECC_CURVE_FIELD_COUNT);
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(HAVE_CAVIUM_V)

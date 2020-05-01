@@ -294,7 +294,8 @@ int sp_dsp_ecc_verify_256(remote_handle64 handleIn, const byte* hash, word32 has
     }
 
     *res = 0;
-    ret = wolfSSL_DSP_ECC_Verify_256(handle, u1, 10, u2, 10, s, 10, x, 10, y, 10, z, 10, res);
+    ret = wolfSSL_DSP_ECC_Verify_256(handle, u1, 10, u2, 10, s, 10, x, 10, y,
+            10, z, 10, res);
 
     if (handle_function != NULL) {
         handle_function(&handle, WOLFSSL_HANDLE_DONE, NULL);
@@ -309,6 +310,83 @@ int sp_dsp_ecc_verify_256(remote_handle64 handleIn, const byte* hash, word32 has
 #endif
     return ret;
 }
+#endif /* HAVE_ECC_VERIFY */
+#endif /* !WOLFSSL_SP_NO_256 */
+#endif /* WOLFSSL_HAVE_SP_ECC */
+
+#ifdef HAVE_ECC_VERIFY
+/* Generic ECC verify the signature values with the hash and public key.
+ *
+ * handleIn The DSP handle to use
+ * hash     Hash to sign.
+ * hashLen  Length of the hash data.
+ * key      ECC key to use for verify
+ * r        First part of result as an mp_int.
+ * s        Sirst part of result as an mp_int.
+ * res      Set to 1 if verify success and 0 if verify fail
+ * heap     Heap to use for allocation.
+ * returns  0 on success (note that for verify state res should be checked)
+ */
+int dsp_ecc_verify(remote_handle64 handleIn, const byte* hash,
+        word32 hashLen, ecc_key *key, mp_int* r, mp_int* s, int* res,
+        void* heap)
+{
+    int ret, sSz, rSz, curveId;
+    word32 keySz;
+    uint8 *x963 = NULL;
+    uint8 *sdsp = NULL;
+    uint8 *rdsp = NULL;
+
+    if (hash == NULL || key == NULL || r == NULL || s == NULL || res == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    remote_handle64 handle = handleIn;
+    ret = wc_ecc_export_x963(key, NULL, &keySz);
+    if (ret != LENGTH_ONLY_E) {
+        return BAD_FUNC_ARG;
+    }
+
+    sSz = mp_unsigned_bin_size(s);
+    rSz = mp_unsigned_bin_size(r);
+
+    x963 = (uint8*)XMALLOC(keySz, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    sdsp = (uint8*)XMALLOC(sSz, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    rdsp = (uint8*)XMALLOC(rSz, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    if (x963 == NULL || sdsp == NULL || rdsp == NULL) {
+        XFREE(x963, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(sdsp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(rdsp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        return MEMORY_E;
+    }
+
+    if (handle_function != NULL) {
+        handle_function(&handle, WOLFSSL_HANDLE_GET, NULL);
+    }
+
+    ret = wc_ecc_export_x963(key, x963, &keySz);
+    if (ret != MP_OKAY) {
+        return ret;
+    }
+
+    mp_to_unsigned_bin(s, sdsp);
+    mp_to_unsigned_bin(r, rdsp);
+
+    *res = 0;
+    curveId = wc_ecc_get_curve_id_from_dp_params(key->dp);
+    ret = wolfSSL_DSP_ECC_Verify(handle, hash, hashLen, x963, keySz,
+            rdsp, rSz, sdsp, sSz, curveId, res);
+
+    if (handle_function != NULL) {
+        handle_function(&handle, WOLFSSL_HANDLE_DONE, NULL);
+    }
+
+    free(x963);
+    free(sdsp);
+    free(rdsp);
+    return ret;
+}
+#endif /* HAVE_ECC_VERIFY */
 
 
 /* Used to assign a handle to an ecc_key structure.
@@ -321,7 +399,4 @@ int wc_ecc_set_handle(ecc_key* key, remote_handle64 handle)
     key->handle = handle;
     return 0;
 }
-#endif /* HAVE_ECC_VERIFY */
-#endif /* !WOLFSSL_SP_NO_256 */
-#endif /* WOLFSSL_HAVE_SP_ECC */
 #endif /* WOLFSSL_DSP */

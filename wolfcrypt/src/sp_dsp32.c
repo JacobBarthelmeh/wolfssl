@@ -1,4 +1,4 @@
-/* sp_cdsp_signed.c
+/* sp_dsp32.c
  *
  * Copyright (C) 2006-2020 wolfSSL Inc.
  *
@@ -39,6 +39,7 @@
 #ifdef WOLFSSL_DSP
 
 #include <wolfssl/wolfcrypt/sp.h>
+#include <wolfssl/wolfcrypt/ecc.h>
 #include "remote.h"
 #include "hexagon_protos.h"
 #include "hexagon_types.h"
@@ -4424,11 +4425,11 @@ static void sp_256_mont_inv_order_10(sp_digit* r, const sp_digit* a,
 int wolfSSL_DSP_ECC_Verify_256(remote_handle64 h, int32 *u1, int hashLen, int32* r, int rSz, int32* s, int sSz,
 	int32* x, int xSz, int32* y, int ySz, int32* z, int zSz, int* res)
 {
+    sp_digit u2d[2*10] __attribute__((aligned(128)));
+    sp_digit tmpd[2*10 * 5] __attribute__((aligned(128)));
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     sp_digit* d = NULL;
 #else
-    sp_digit u2d[2*10] __attribute__((aligned(128)));
-    sp_digit tmpd[2*10 * 5] __attribute__((aligned(128)));
     sp_point p1d;
     sp_point p2d;
 #endif
@@ -4524,13 +4525,8 @@ int wolfSSL_DSP_ECC_Verify_256(remote_handle64 h, int32 *u1, int hashLen, int32*
     return err;
 }
 
-/** Free the Fixed Point cache */
-void wc_ecc_fp_free(void)
-{
-}
 
-
-AEEResult wolfSSL_open(const char *uri, remote_handle64 *handle) 
+AEEResult wolfSSL_open(const char *uri, remote_handle64 *handle)
 {
    void *tptr;
   /* can be any value or ignored, rpc layer doesn't care
@@ -4543,7 +4539,7 @@ AEEResult wolfSSL_open(const char *uri, remote_handle64 *handle)
    return 0;
 }
 
-AEEResult wolfSSL_close(remote_handle64 handle) 
+AEEResult wolfSSL_close(remote_handle64 handle)
 {
    if (handle)
       free((void*)handle);
@@ -4750,159 +4746,51 @@ int sp_ecc_map_256(mp_int* pX, mp_int* pY, mp_int* pZ)
     return err;
 }
 #endif /* WOLFSSL_PUBLIC_ECC_ADD_DBL */
-#ifdef HAVE_COMP_KEY
-/* Find the square root of a number mod the prime of the curve.
- *
- * y  The number to operate on and the result.
- * returns MEMORY_E if dynamic memory allocation fails and MP_OKAY otherwise.
- */
-static int sp_256_mont_sqrt_10(sp_digit* y)
-{
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    sp_digit* d;
-#else
-    sp_digit t1d[2 * 10];
-    sp_digit t2d[2 * 10];
-#endif
-    sp_digit* t1;
-    sp_digit* t2;
-    int err = MP_OKAY;
-
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 4 * 10, NULL, DYNAMIC_TYPE_ECC);
-    if (d == NULL) {
-        err = MEMORY_E;
-    }
-#endif
-
-    if (err == MP_OKAY) {
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-        t1 = d + 0 * 10;
-        t2 = d + 2 * 10;
-#else
-        t1 = t1d;
-        t2 = t2d;
-#endif
-
-        {
-            /* t2 = y ^ 0x2 */
-            sp_256_mont_sqr_10(t2, y, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0x3 */
-            sp_256_mont_mul_10(t1, t2, y, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xc */
-            sp_256_mont_sqr_n_10(t2, t1, 2, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xf */
-            sp_256_mont_mul_10(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xf0 */
-            sp_256_mont_sqr_n_10(t2, t1, 4, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xff */
-            sp_256_mont_mul_10(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xff00 */
-            sp_256_mont_sqr_n_10(t2, t1, 8, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffff */
-            sp_256_mont_mul_10(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xffff0000 */
-            sp_256_mont_sqr_n_10(t2, t1, 16, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff */
-            sp_256_mont_mul_10(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000000 */
-            sp_256_mont_sqr_n_10(t1, t1, 32, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001 */
-            sp_256_mont_mul_10(t1, t1, y, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001000000000000000000000000 */
-            sp_256_mont_sqr_n_10(t1, t1, 96, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001000000000000000000000001 */
-            sp_256_mont_mul_10(t1, t1, y, p256_mod, p256_mp_mod);
-            sp_256_mont_sqr_n_10(y, t1, 94, p256_mod, p256_mp_mod);
-        }
-    }
-
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (d != NULL) {
-        XFREE(d, NULL, DYNAMIC_TYPE_ECC);
-    }
-#endif
-
-    return err;
-}
-
-/* Uncompress the point given the X ordinate.
- *
- * xm    X ordinate.
- * odd   Whether the Y ordinate is odd.
- * ym    Calculated Y ordinate.
- * returns MEMORY_E if dynamic memory allocation fails and MP_OKAY otherwise.
- */
-int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
-{
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    sp_digit* d;
-#else
-    sp_digit xd[2 * 10];
-    sp_digit yd[2 * 10];
-#endif
-    sp_digit* x = NULL;
-    sp_digit* y = NULL;
-    int err = MP_OKAY;
-
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 4 * 10, NULL, DYNAMIC_TYPE_ECC);
-    if (d == NULL) {
-        err = MEMORY_E;
-    }
-#endif
-
-    if (err == MP_OKAY) {
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-        x = d + 0 * 10;
-        y = d + 2 * 10;
-#else
-        x = xd;
-        y = yd;
-#endif
-
-        sp_256_from_mp(x, 10, xm);
-        err = sp_256_mod_mul_norm_10(x, x, p256_mod);
-    }
-    if (err == MP_OKAY) {
-        /* y = x^3 */
-        {
-            sp_256_mont_sqr_10(y, x, p256_mod, p256_mp_mod);
-            sp_256_mont_mul_10(y, y, x, p256_mod, p256_mp_mod);
-        }
-        /* y = x^3 - 3x */
-        sp_256_mont_sub_10(y, y, x, p256_mod);
-        sp_256_mont_sub_10(y, y, x, p256_mod);
-        sp_256_mont_sub_10(y, y, x, p256_mod);
-        /* y = x^3 - 3x + b */
-        err = sp_256_mod_mul_norm_10(x, p256_b, p256_mod);
-    }
-    if (err == MP_OKAY) {
-        sp_256_mont_add_10(y, y, x, p256_mod);
-        /* y = sqrt(x^3 - 3x + b) */
-        err = sp_256_mont_sqrt_10(y);
-    }
-    if (err == MP_OKAY) {
-        XMEMSET(y + 10, 0, 10U * sizeof(sp_digit));
-        sp_256_mont_reduce_10(y, p256_mod, p256_mp_mod);
-        if ((((word32)y[0] ^ (word32)odd) & 1U) != 0U) {
-            sp_256_mont_sub_10(y, p256_mod, y, p256_mod);
-        }
-
-        err = sp_256_to_mp(y, ym);
-    }
-
-#if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    if (d != NULL) {
-        XFREE(d, NULL, DYNAMIC_TYPE_ECC);
-    }
-#endif
-
-    return err;
-}
-#endif
 #endif /* !WOLFSSL_SP_NO_256 */
 #endif /* WOLFSSL_HAVE_SP_ECC */
+
+/* pass back to software version */
+int wolfSSL_DSP_ECC_Verify(remote_handle64 h, const uint8* hash, int hashLen,
+        uint8* x963, int keySz, uint8* rdsp, int rdspLen,
+        uint8* sdsp, int sdspLen,
+        int curveId, int* res)
+{
+    int ret;
+    ecc_key key;
+    mp_int r, s;
+
+    mp_init(&s);
+    mp_init(&r);
+
+    wc_ecc_init(&key);
+    ret = wc_ecc_import_x963_ex(x963, keySz, &key, curveId);
+
+    if (ret == 0) {
+        if (mp_read_unsigned_bin(&r, rdsp, rdspLen) != MP_OKAY) {
+            wc_ecc_free(&key);
+            mp_free(&s);
+            mp_free(&r);
+            return BAD_FUNC_ARG;
+        }
+    }
+
+    if (ret == 0) {
+        if (mp_read_unsigned_bin(&s, sdsp, sdspLen) != MP_OKAY) {
+            wc_ecc_free(&key);
+            mp_free(&s);
+            mp_free(&r);
+            return BAD_FUNC_ARG;
+        }
+    }
+
+    *res = 1;
+    ret = wc_ecc_verify_hash_ex(&r, &s, hash, hashLen, res, &key);
+
+    wc_ecc_free(&key);
+    mp_free(&s);
+    mp_free(&r);
+    return ret;
+}
 #endif /* WOLFSSL_DSP */
 #endif /* WOLFSSL_HAVE_SP_ECC */
 
