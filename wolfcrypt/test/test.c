@@ -157,6 +157,9 @@
 #ifdef HAVE_ECC
     #include <wolfssl/wolfcrypt/ecc.h>
 #endif
+#ifdef HAVE_ECC_SM2
+    #include <wolfssl/wolfcrypt/sm2.h>
+#endif
 #ifdef HAVE_CURVE25519
     #include <wolfssl/wolfcrypt/curve25519.h>
 #endif
@@ -20018,6 +20021,269 @@ static int ecc_test_custom_curves(WC_RNG* rng)
 }
 #endif /* WOLFSSL_CUSTOM_CURVES */
 
+
+#ifdef HAVE_ECC_SM2
+#ifdef HAVE_ECC_VERIFY
+#if defined(WOLFSSL_PUBLIC_MP) && defined(WOLFSSL_CUSTOM_CURVES)
+    #ifdef HAVE_ECC_SM2
+        #ifdef HAVE_OID_ENCODING
+            #define CODED_SM2P256V1    {1,2,156,10197,1,301}
+            #define CODED_SM2P256V1_SZ 6
+        #else
+            #define CODED_SM2P256V1 {0x06,0x08,0x2A,0x81,0x1C,0xCF,0x55,0x01,0x82,0x2D}
+            #define CODED_SM2P256V1_SZ 10
+        #endif
+        #ifndef WOLFSSL_ECC_CURVE_STATIC
+            static const ecc_oid_t ecc_oid_sm2p256v1[] = CODED_SM2P256V1;
+        #else
+            #define ecc_oid_sm2p256v1 CODED_SM2P256V1
+        #endif
+        #define ecc_oid_sm2p256v1_sz CODED_SM2P256V1_SZ
+    #endif /* HAVE_ECC_SM2 */
+    #define ECC_SM2P256V1_TEST 101
+static int test_sm2_verify_caseA2()
+{
+    ecc_key key;
+    int ret, res;
+    mp_int r,s;
+
+    /* test key values */
+    const char qx[] = "0AE4C7798AA0F119471BEE11825BE46202BB79E2A5844495E97C04FF4DF2548A";
+    const char qy[] = "7C0240F88F1CD4E16352A73C17B7F16F07353E53A176D684A9FE0C6BB798E857";
+    const char d[] = "128B2FA8BD433C6C068C8D803DFF79792A519A55171B1B650C23661D15897263";
+
+    const ecc_set_type ecc_sm2_A2 = {
+        32,                                                     /* size/bytes */
+        ECC_SM2P256V1_TEST,                                     /* ID         */
+        "SM2P256V1_TEST",                                       /* curve name */
+
+        /* from test case A.2 in draft-shen-sm2-ecdsa-02 */
+        "8542D69E4C044F18E8B92435BF6FF7DE457283915C45517D722EDB8B08F1DFC3", /* prime */
+        "787968B4FA32C3FD2417842E73BBFEFF2F3C848B6831D7E0EC65228B3937E498", /* A */
+        "63E4C6D3B23B0C849CF84241484BFE48F61D59A5B16BA06E6E12D1DA27C5249A", /* B */
+        "8542D69E4C044F18E8B92435BF6FF7DD297720630485628D5AE74EE7C32E79B7", /* order n */
+        "421DEBD61B62EAB6746434EBC3CC315E32220B3BADD50BDC4C4E6C147FEDD43D", /* Gx */
+        "0680512BCBB42C07D47349D2153B70C4E5D7FDFCBFA36EA1A85841B9E46E09A2", /* Gy */
+        ecc_oid_sm2p256v1,                                      /* oid/oidSz  */
+        ecc_oid_sm2p256v1_sz,
+        ECC_SM2P256V1_OID,                                      /* oid sum    */
+        1,                                                      /* cofactor   */
+    };
+
+    /* use canned hash value hash = H(ZA||M) */
+    const byte hash[] = {
+        0xB5,0x24,0xF5,0x52,0xCD,0x82,0xB8,0xB0,
+        0x28,0x47,0x6E,0x00,0x5C,0x37,0x7F,0xB1,
+        0x9A,0x87,0xE6,0xFC,0x68,0x2D,0x48,0xBB,
+        0x5D,0x42,0xE3,0xD9,0xB9,0xEF,0xFE,0x76
+    };
+
+    /* canned r and s */
+    const byte rCan[] = {
+        0x40,0xF1,0xEC,0x59,0xF7,0x93,0xD9,0xF4,
+        0x9E,0x09,0xDC,0xEF,0x49,0x13,0x0D,0x41,
+        0x94,0xF7,0x9F,0xB1,0xEE,0xD2,0xCA,0xA5,
+        0x5B,0xAC,0xDB,0x49,0xC4,0xE7,0x55,0xD1
+    };
+
+    const byte sCan[] = {
+        0x6F,0xC6,0xDA,0xC3,0x2C,0x5D,0x5C,0xF1,
+        0x0C,0x77,0xDF,0xB2,0x0F,0x7C,0x2E,0xB6,
+        0x67,0xA4,0x57,0x87,0x2F,0xB0,0x9E,0xC5,
+        0x63,0x27,0xA6,0x7E,0xC7,0xDE,0xEB,0xE7
+    };
+
+    mp_init(&r);
+    mp_init(&s);
+
+    ret = wc_ecc_init_ex(&key, HEAP_HINT, devId);
+    if (ret != 0)
+        goto done;
+
+    ret = wc_ecc_import_raw(&key, qx, qy, d, "SM2P256V1");
+    if (ret != 0)
+        goto done;
+
+    ret = wc_ecc_set_custom_curve(&key, &ecc_sm2_A2);
+    if (ret != 0)
+        goto done;
+
+    ret = wc_ecc_set_curve(&key, 32, ECC_CUSTOM_IDX);
+    if (ret != 0)
+        goto done;
+
+    mp_read_unsigned_bin(&r, rCan, sizeof(rCan));
+    mp_read_unsigned_bin(&s, sCan, sizeof(sCan));
+
+    ret = wc_ecc_sm2_verify_hash_ex(&r, &s, hash, sizeof(hash), &res, &key);
+    if (ret != 0)
+        goto done;
+
+    if (res != 1) {
+        ret = -1;
+        goto done;
+    }
+
+done:
+    mp_free(&r);
+    mp_free(&s);
+    wc_ecc_free(&key);
+    return ret;
+}
+#endif /* WOLFSSL_PUBLIC_MP && WOLFSSL_CUSTOM_CURVES */
+
+static int test_sm2_verify_case()
+{
+    ecc_key key;
+    int ret, res;
+
+    /* test key values */
+    const char qx[] = "637F1B135036C933DC3F7A8EBB1B7B2FD1DFBD268D4F894B5AD47DBDBECD558F";
+    const char qy[] = "E88101D08048E36CCBF61CA38DDF7ABA542B4486E99E49F3A7470A857A096433";
+
+    /* use canned hash value hash = H(ZA||M) */
+    const byte hash[] = {
+        0x3B,0xFA,0x5F,0xFB,0xC4,0x27,0x8C,0x9D,
+        0x02,0x3A,0x19,0xCB,0x1E,0xAA,0xD2,0xF1,
+        0x50,0x69,0x5B,0x20
+    };
+
+    const byte sig[] = {
+        0x30,0x45,0x02,0x21,0x00,0xD2,0xFC,0xA3,
+        0x88,0xE3,0xDF,0xA3,0x00,0x73,0x9B,0x3C,
+        0x2A,0x0D,0xAD,0x44,0xA2,0xFC,0x62,0xD5,
+        0x6B,0x84,0x54,0xD8,0x40,0x22,0x62,0x3D,
+        0x5C,0xA6,0x61,0x9B,0xE7,0x02,0x20,0x1D,
+        0xB5,0xB5,0xD9,0xD8,0xF1,0x20,0xDD,0x97,
+        0x92,0xBF,0x7E,0x9B,0x3F,0xE6,0x3C,0x4B,
+        0x03,0xD8,0x80,0xBD,0xB7,0x27,0x7E,0x6A,
+        0x84,0x23,0xDE,0x61,0x7C,0x8D,0xDC
+    };
+
+    const byte badSig[] = {
+        0x30,0x45,0x02,0x21,0x00,0xD2,0xFC,0xA3,
+        0x88,0xE3,0xDF,0xA3,0x00,0x73,0x9B,0x3C,
+        0x2A,0x0D,0xAD,0x44,0xA2,0xFC,0x62,0xD5,
+        0x6B,0x84,0x54,0xD8,0x40,0x22,0x62,0x3D,
+        0x5C,0xA6,0x61,0x9B,0xE7,0x02,0x20,0x1D,
+        0xB5,0xB5,0xE9,0xD8,0xF1,0x20,0xDD,0x97,
+        0x92,0xBF,0x7E,0x9B,0x3F,0xE6,0x3C,0x4B,
+        0x03,0xD8,0x80,0xBD,0xB7,0x27,0x7E,0x6A,
+        0x84,0x23,0xDE,0x61,0x7C,0x8D,0xDC
+    };
+
+
+    ret = wc_ecc_init_ex(&key, HEAP_HINT, devId);
+    if (ret != 0)
+        goto done;
+
+    ret = wc_ecc_import_raw(&key, qx, qy, NULL, "SM2P256V1");
+    if (ret != 0)
+        goto done;
+
+    ret = wc_ecc_sm2_verify_hash(sig, sizeof(sig), hash, sizeof(hash), &res,
+            &key);
+    if (ret != 0)
+        goto done;
+
+    if (res != 1) {
+        ret = -1;
+        goto done;
+    }
+
+    /* now test a case that should fail */
+    ret = wc_ecc_sm2_verify_hash(badSig, sizeof(badSig), hash, sizeof(hash),
+            &res, &key);
+    if (ret != 0)
+        goto done;
+
+    if (res == 1) {
+        ret = -1;
+        goto done;
+    }
+done:
+    wc_ecc_free(&key);
+    return ret;
+}
+#endif /* HAVE_ECC_VERIFY */
+
+static int test_sm2_create_digest()
+{
+    const byte msg[] = "message to sign";
+    const byte id[] = "0123456789";
+    const byte badId[] = "0123556789";
+    byte expected[] = {
+        0x17,0xA3,0xC0,0xC0,0xCB,0x50,0xDF,0x7C,
+        0xCB,0xB1,0x03,0x08,0xA9,0xE8,0x9F,0xD4,
+        0x3B,0x21,0x63,0xF6,0xC8,0x8E,0x47,0xA3,
+        0xEB,0x73,0xE0,0xBF,0x45,0xE1,0x09,0xEF
+    };
+    ecc_key key;
+    int ret;
+
+    /* test key values */
+    const char qx[] = "0AE4C7798AA0F119471BEE11825BE46202BB79E2A5844495E97C04FF4DF2548A";
+    const char qy[] = "7C0240F88F1CD4E16352A73C17B7F16F07353E53A176D684A9FE0C6BB798E857";
+    const char d[] = "128B2FA8BD433C6C068C8D803DFF79792A519A55171B1B650C23661D15897263";
+    byte digest[WC_SHA256_DIGEST_SIZE];
+
+    ret = wc_ecc_init_ex(&key, HEAP_HINT, devId);
+    if (ret != 0)
+        goto done;
+
+    ret = wc_ecc_import_raw(&key, qx, qy, d, "SM2P256V1");
+    if (ret != 0)
+        goto done;
+
+    ret = wc_ecc_sm2_create_digest(id, (int)XSTRLEN((const char*)id),
+            msg, (int)XSTRLEN((const char*)msg), WC_HASH_TYPE_SHA256, digest,
+            WC_SHA256_DIGEST_SIZE, &key);
+    if (ret != 0)
+        goto done;
+
+    if (XMEMCMP(digest, expected, WC_SHA256_DIGEST_SIZE) != 0) {
+        ret = -1;
+        goto done;
+    }
+
+    ret = wc_ecc_sm2_create_digest(badId, (int)XSTRLEN((const char*)badId),
+            msg, (int)XSTRLEN((const char*)msg), WC_HASH_TYPE_SHA256, digest,
+            WC_SHA256_DIGEST_SIZE, &key);
+    if (ret != 0)
+        goto done;
+
+    /* should be different than the previous ID used */
+    if (XMEMCMP(digest, expected, WC_SHA256_DIGEST_SIZE) == 0) {
+        ret = -1;
+        goto done;
+    }
+done:
+    wc_ecc_free(&key);
+    return ret;
+}
+
+static int test_sm2_verify()
+{
+    int ret = 0;
+
+#ifdef HAVE_ECC_VERIFY
+#if defined(WOLFSSL_PUBLIC_MP) && defined(WOLFSSL_CUSTOM_CURVES)
+    ret = test_sm2_verify_caseA2();
+    if (ret != 0)
+        return ret;
+#endif
+
+    ret = test_sm2_verify_case();
+    if (ret != 0)
+        return ret;
+#endif /* HAVE_ECC_VERIFY */
+
+    ret = test_sm2_create_digest();
+
+    return ret;
+}
+#endif /* HAVE_ECC_SM2 */
+
 #ifdef WOLFSSL_CERT_GEN
 
 /* Make Cert / Sign example for ECC cert and ECC CA */
@@ -20782,6 +21048,12 @@ int ecc_test(void)
 
 #if defined(WOLFSSL_CUSTOM_CURVES)
     ret = ecc_test_custom_curves(&rng);
+    if (ret != 0) {
+        goto done;
+    }
+#endif
+#if defined(HAVE_ECC_SM2)
+    ret = test_sm2_verify();
     if (ret != 0) {
         goto done;
     }
