@@ -66,6 +66,7 @@ enum {
     NID_brainpoolP320r1 = 929,
     NID_brainpoolP384r1 = 931,
     NID_brainpoolP512r1 = 933,
+    NID_sm2 = 1172,
 #endif
 
     OPENSSL_EC_NAMED_CURVE  = 0x001

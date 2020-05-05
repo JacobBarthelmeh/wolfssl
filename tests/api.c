@@ -28008,7 +28008,7 @@ static void test_wolfSSL_OBJ_ln(void)
 
 #ifdef HAVE_ECC
     {
-        int nCurves = 27;
+        int nCurves = 28;
         EC_builtin_curve r[nCurves];
         EC_get_builtin_curves(r,nCurves);
 

@@ -194,6 +194,7 @@ then
     enable_enckeys=yes
     enable_hashflags=yes
     enable_dhdefaultparams=yes
+    enable_sm2=yes
 
     # Enable AES Decrypt, AES ECB, Alt Names, DER Load, Keep Certs, CRL IO with Timeout
     AM_CFLAGS="$AM_CFLAGS -DHAVE_AES_DECRYPT -DHAVE_AES_ECB -DWOLFSSL_ALT_NAMES -DWOLFSSL_DER_LOAD -DKEEP_OUR_CERT -DKEEP_PEER_CERT -DHAVE_CRL_IO -DHAVE_IO_TIMEOUT"
@@ -1561,6 +1562,12 @@ then
     fi
 fi
 
+# SM2
+AC_ARG_ENABLE([sm2],
+    [AS_HELP_STRING([--enable-sm2],[Enable ECC SM2 (default: disabled)])],
+    [ ENABLED_SM2=$enableval ],
+    [ ENABLED_SM2=no ]
+    )
 
 # ECC Custom Curves
 AC_ARG_ENABLE([ecccustcurves],
@@ -4997,6 +5004,11 @@ AS_IF([test "x$ENABLED_CMAC" = "xyes" && \
 AS_IF([test "x$ENABLED_MCAPI" = "xyes"],
       [AS_IF([test "x$ENABLED_DES3" = "xno"],[ENABLED_DES3="yes"])])
 
+if test "$ENABLED_SM2" = "yes"
+then
+    AM_CFLAGS="$AM_CFLAGS -DHAVE_ECC_SM2"
+fi
+
 if test "$ENABLED_WOLFSCEP" = "yes"
 then
     # Enable prereqs if not already enabled
@@ -5296,6 +5308,7 @@ AM_CONDITIONAL([BUILD_PKI],[test "x$ENABLED_PKI" = "xyes"])
 AM_CONDITIONAL([BUILD_DES3],[test "x$ENABLED_DES3" = "xyes" || test "x$ENABLED_USERSETTINGS" = "xyes"])
 AM_CONDITIONAL([BUILD_PKCS7],[test "x$ENABLED_PKCS7" = "xyes" || test "x$ENABLED_USERSETTINGS" = "xyes"])
 AM_CONDITIONAL([BUILD_HASHFLAGS],[test "x$ENABLED_HASHFLAGS" = "xyes"])
+AM_CONDITIONAL([BUILD_SM2],[test "x$ENABLED_SM2" = "xyes"])
 
 
 CREATE_HEX_VERSION
@@ -5492,6 +5505,7 @@ echo "   * DSA:                        $ENABLED_DSA"
 echo "   * DH:                         $ENABLED_DH"
 echo "   * DH Default Parameters:      $ENABLED_DHDEFAULTPARAMS"
 echo "   * ECC:                        $ENABLED_ECC"
+echo "   * ECC SM2:                    $ENABLED_SM2"
 echo "   * ECC Custom Curves           $ENABLED_ECCCUSTCURVES"
 echo "   * CURVE25519:                 $ENABLED_CURVE25519"
 echo "   * ED25519:                    $ENABLED_ED25519"
