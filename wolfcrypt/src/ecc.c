@@ -69,6 +69,7 @@ ECC Curve Types:
  * HAVE_ECC_SECPR3      Enables SECP R3 curves                  default: off
  * HAVE_ECC_BRAINPOOL   Enables Brainpool curves                default: off
  * HAVE_ECC_KOBLITZ     Enables Koblitz curves                  default: off
+ * HAVE_ECC_SM2         Enables SM2 curves                      default: off
  */
 
 /*
@@ -558,6 +559,21 @@ enum {
         #endif
         #define ecc_oid_brainpoolp256r1_sz CODED_BRAINPOOLP256R1_SZ
     #endif /* HAVE_ECC_BRAINPOOL */
+    #ifdef HAVE_ECC_SM2
+        #ifdef HAVE_OID_ENCODING
+            #define CODED_SM2P256V1    {1,2,156,10197,1,301}
+            #define CODED_SM2P256V1_SZ 6
+        #else
+            #define CODED_SM2P256V1 {0x06,0x08,0x2A,0x81,0x1C,0xCF,0x55,0x01,0x82,0x2D}
+            #define CODED_SM2P256V1_SZ 10
+        #endif
+        #ifndef WOLFSSL_ECC_CURVE_STATIC
+            static const ecc_oid_t ecc_oid_sm2p256v1[] = CODED_SM2P256V1;
+        #else
+            #define ecc_oid_sm2p256v1 CODED_SM2P256V1
+        #endif
+        #define ecc_oid_sm2p256v1_sz CODED_SM2P256V1_SZ
+    #endif /* HAVE_ECC_SM2 */
 #endif /* ECC256 */
 #ifdef ECC320
     #ifdef HAVE_ECC_BRAINPOOL
@@ -1036,6 +1052,25 @@ const ecc_set_type ecc_sets[] = {
         1,                                                                  /* cofactor   */
     },
     #endif /* HAVE_ECC_BRAINPOOL */
+    #ifdef HAVE_ECC_SM2
+    {
+        32,                                                     /* size/bytes */
+        ECC_SM2P256V1,                                          /* ID         */
+        "SM2P256V1",                                            /* curve name */
+
+        /* bottom of draft-shen-sm2-ecdsa-02, recommended values */
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF", /* prime */
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC", /* A */
+        "28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93", /* B */
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123", /* order */
+        "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7", /* Gx */
+        "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0", /* Gy */
+        ecc_oid_sm2p256v1,                                      /* oid/oidSz  */
+        ecc_oid_sm2p256v1_sz,
+        ECC_SM2P256V1_OID,                                      /* oid sum    */
+        1,                                                      /* cofactor   */
+    },
+    #endif /* HAVE_ECC_SM2 */
 #endif /* ECC256 */
 #ifdef ECC320
     #ifdef HAVE_ECC_BRAINPOOL

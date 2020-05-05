@@ -34994,7 +34994,7 @@ static void test_wolfSSL_OBJ_ln(void)
 #ifdef HAVE_ECC
 #if !defined(HAVE_FIPS) || (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION>2))
     {
-        size_t nCurves = 27;
+        size_t nCurves = 28;
         EC_builtin_curve r[nCurves];
         nCurves = EC_get_builtin_curves(r,nCurves);
 
