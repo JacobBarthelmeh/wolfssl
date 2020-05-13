@@ -4528,21 +4528,14 @@ int wolfSSL_DSP_ECC_Verify_256(remote_handle64 h, int32 *u1, int hashLen, int32*
 
 AEEResult wolfSSL_open(const char *uri, remote_handle64 *handle)
 {
-   void *tptr;
-  /* can be any value or ignored, rpc layer doesn't care
-   * also ok
-   * *handle = 0;
-   * *handle = 0xdeadc0de;
-   */
-   tptr = (void *)malloc(1);
-   *handle = (remote_handle64)tptr;
+   *handle = 0;
+   wolfCrypt_Init();
    return 0;
 }
 
 AEEResult wolfSSL_close(remote_handle64 handle)
 {
-   if (handle)
-      free((void*)handle);
+   wolfCrypt_Cleanup();
    return 0;
 }
 #endif /* HAVE_ECC_VERIFY */
@@ -4764,7 +4757,6 @@ int wolfSSL_DSP_ECC_Verify(remote_handle64 h, const uint8* hash, int hashLen,
 
     wc_ecc_init(&key);
     ret = wc_ecc_import_x963_ex(x963, keySz, &key, curveId);
-
     if (ret == 0) {
         if (mp_read_unsigned_bin(&r, rdsp, rdspLen) != MP_OKAY) {
             wc_ecc_free(&key);
@@ -4783,8 +4775,10 @@ int wolfSSL_DSP_ECC_Verify(remote_handle64 h, const uint8* hash, int hashLen,
         }
     }
 
-    *res = 1;
-    ret = wc_ecc_verify_hash_ex(&r, &s, hash, hashLen, res, &key);
+    *res = 0;
+    if (ret == 0) {
+        ret = wc_ecc_verify_hash_ex(&r, &s, hash, hashLen, res, &key);
+    }
 
     wc_ecc_free(&key);
     mp_free(&s);
