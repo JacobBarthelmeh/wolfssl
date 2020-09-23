@@ -69,6 +69,7 @@
 #define V_ASN1_OBJECT                   6
 #define V_ASN1_UTCTIME                  23
 #define V_ASN1_GENERALIZEDTIME          24
+#define V_ASN1_PRINTABLESTRING          19
 
 #define ASN1_STRING_FLAG_BITS_LEFT       0x008
 #define ASN1_STRING_FLAG_NDEF            0x010
@@ -107,7 +108,7 @@ typedef enum {
 } WOLFSSL_ASN1_TYPES;
 
 #define ASN1_SEQUENCE(type) \
-    static const type __##type##_dummy_struct;\
+    static type __##type##_dummy_struct;\
     static const WOLFSSL_ASN1_TEMPLATE type##_member_data[]
 
 #define ASN1_SIMPLE(type, member, member_type) \
@@ -123,10 +124,10 @@ typedef enum {
             sizeof(type) \
     };
 
-WOLFSSL_API void *wolfSSL_ASN1_item_new(const WOLFSSL_ASN1_ITEM *template);
-WOLFSSL_API void wolfSSL_ASN1_item_free(void *val, const WOLFSSL_ASN1_ITEM *template);
+WOLFSSL_API void *wolfSSL_ASN1_item_new(const WOLFSSL_ASN1_ITEM *tpl);
+WOLFSSL_API void wolfSSL_ASN1_item_free(void *val, const WOLFSSL_ASN1_ITEM *tpl);
 WOLFSSL_API int wolfSSL_ASN1_item_i2d(const void *src, byte **dest,
-                                      const WOLFSSL_ASN1_ITEM *template);
+                                      const WOLFSSL_ASN1_ITEM *tpl);
 
 /* Need function declaration otherwise compiler complains */
 #define IMPLEMENT_ASN1_FUNCTIONS(type) \

@@ -41,6 +41,7 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+#ifndef NO_HASH_WRAPPER
 /* takes in a hex string and converts it to binary then hash's in
  * returns 0 on success
  */
@@ -193,6 +194,7 @@ int wc_ecc_sm2_create_digest(const byte *id, word16 idSz,
     (void)wc_HashFree(&hash, hashType);
     return err;
 }
+#endif /* NO_HASH_WRAPPER */
 
 
 #ifdef HAVE_ECC_VERIFY
@@ -206,15 +208,26 @@ int wc_ecc_sm2_create_digest(const byte *id, word16 idSz,
 int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
         word32 hashSz, int *res, ecc_key *key)
 {
-    int err;
+    int err = MP_OKAY;
     const ecc_set_type* dp;
     ecc_point *PO = NULL, *G = NULL;
     mp_int t, e, prime, Af, order;
-   
+
     if (key == NULL || res == NULL || r == NULL || s == NULL || hash == NULL) {
         return BAD_FUNC_ARG;
     }
     *res = 0;
+
+#if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
+  if (key->handle != -1) {
+      return dsp_ecc_verify(key->handle, hash, hashSz, key, r, s, res,
+              key->heap);
+  }
+  if (wolfSSL_GetHandleCbSet() == 1) {
+      return dsp_ecc_verify(key->handle, hash, hashSz, key, r, s, res,
+              key->heap);
+  }
+#endif
 
     err = mp_init_multi(&e, &t, &prime, &Af, &order, NULL);
     if (err == MP_OKAY) {
@@ -288,6 +301,7 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
 }
 
 
+#ifndef NO_ASN
 /* verify a digest of hash(ZA || M) using SM2 and encoded signature
  *
  * res gets set to 1 on successful verify and 0 on failure
@@ -312,6 +326,7 @@ int wc_ecc_sm2_verify_hash(const byte* sig, word32 siglen, const byte* hash,
     mp_free(&s);
     return err;
 }
+#endif /* NO_ASN */
 #endif /* HAVE_ECC_VERIFY */
 
 #endif /* HAVE_ECC_SM2 */

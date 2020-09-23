@@ -19,6 +19,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+/* For more info on the algorithm, see https://tools.ietf.org/html/rfc6234 */
+/*
+
+DESCRIPTION
+This library provides the interface to SHA-256 secure hash algorithms.
+SHA-256 performs processing on message blocks to produce a final hash digest
+output. It can be used to hash a message, M, having a length of L bits,
+where 0 <= L < 2^64.
+
+*/
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
@@ -119,6 +129,10 @@
     /* #include <wolfcrypt/src/port/ti/ti-hash.c> included by wc_port.c */
 #elif defined(WOLFSSL_CRYPTOCELL)
     /* wc_port.c includes wolfcrypt/src/port/arm/cryptoCellHash.c */
+
+#elif defined(WOLFSSL_PSOC6_CRYPTO)
+
+
 #else
 
 #include <wolfssl/wolfcrypt/logging.h>
@@ -164,7 +178,8 @@
     (!defined(WOLFSSL_IMX6_CAAM) || defined(NO_IMX6_CAAM_HASH)) && \
     !defined(WOLFSSL_AFALG_HASH) && !defined(WOLFSSL_DEVCRYPTO_HASH) && \
     (!defined(WOLFSSL_ESP32WROOM32_CRYPT) || defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)) && \
-    (!defined(WOLFSSL_RENESAS_TSIP_CRYPT) || defined(NO_WOLFSSL_RENESAS_TSIP_HASH))
+    (!defined(WOLFSSL_RENESAS_TSIP_CRYPT) || defined(NO_WOLFSSL_RENESAS_TSIP_HASH)) && \
+    !defined(WOLFSSL_PSOC6_CRYPTO)
 
 static int InitSha256(wc_Sha256* sha256)
 {
@@ -354,6 +369,9 @@ static int InitSha256(wc_Sha256* sha256)
     #ifdef WOLF_CRYPTO_CB
         sha256->devId = devId;
     #endif
+    #ifdef WOLFSSL_SMALL_STACK_CACHE
+        sha256->W = NULL;
+    #endif
 
         ret = InitSha256(sha256);
         if (ret != 0)
@@ -494,6 +512,7 @@ static int InitSha256(wc_Sha256* sha256)
         (void)devId;
         (void)heap;
 
+        XMEMSET(sha256, 0, sizeof(wc_Sha256));
         wc_Stm32_Hash_Init(&sha256->stmCtx);
         return 0;
     }
@@ -663,6 +682,10 @@ static int InitSha256(wc_Sha256* sha256)
 
     /* implemented in wolfcrypt/src/port/Renesas/renesas_tsip_sha.c */
 
+#elif defined(WOLFSSL_PSOC6_CRYPTO)
+
+    /* implemented in wolfcrypt/src/port/cypress/psoc6_crypto.c */
+
 #else
     #define NEED_SOFT_SHA256
 
@@ -677,14 +700,13 @@ static int InitSha256(wc_Sha256* sha256)
         sha256->devId = devId;
         sha256->devCtx = NULL;
     #endif
+    #ifdef WOLFSSL_SMALL_STACK_CACHE
+        sha256->W = NULL;
+    #endif
 
         ret = InitSha256(sha256);
         if (ret != 0)
             return ret;
-
-    #ifdef WOLFSSL_SMALL_STACK_CACHE
-        sha256->W = NULL;
-    #endif
 
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA256)
         ret = wolfAsync_DevCtxInit(&sha256->asyncDev,
@@ -699,7 +721,7 @@ static int InitSha256(wc_Sha256* sha256)
 
 #ifdef NEED_SOFT_SHA256
 
-    static const ALIGN32 word32 K[64] = {
+    static const FLASH_QUALIFIER ALIGN32 word32 K[64] = {
         0x428A2F98L, 0x71374491L, 0xB5C0FBCFL, 0xE9B5DBA5L, 0x3956C25BL,
         0x59F111F1L, 0x923F82A4L, 0xAB1C5ED5L, 0xD807AA98L, 0x12835B01L,
         0x243185BEL, 0x550C7DC3L, 0x72BE5D74L, 0x80DEB1FEL, 0x9BDC06A7L,
@@ -1244,6 +1266,7 @@ static int InitSha256(wc_Sha256* sha256)
         (void)devId;
         (void)heap;
 
+        XMEMSET(sha224, 0, sizeof(wc_Sha224));
         wc_Stm32_Hash_Init(&sha224->stmCtx);
         return 0;
     }
@@ -1342,14 +1365,13 @@ static int InitSha256(wc_Sha256* sha256)
             return BAD_FUNC_ARG;
 
         sha224->heap = heap;
+    #ifdef WOLFSSL_SMALL_STACK_CACHE
+        sha224->W = NULL;
+    #endif
 
         ret = InitSha224(sha224);
         if (ret != 0)
             return ret;
-
-    #ifdef WOLFSSL_SMALL_STACK_CACHE
-        sha224->W = NULL;
-    #endif
 
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA224)
         ret = wolfAsync_DevCtxInit(&sha224->asyncDev,
@@ -1559,6 +1581,8 @@ void wc_Sha256Free(wc_Sha256* sha256)
     !defined(NO_WOLFSSL_RENESAS_TSIP_CRYPT_HASH)
 
     /* implemented in wolfcrypt/src/port/Renesas/renesas_tsip_sha.c */
+#elif defined(WOLFSSL_PSOC6_CRYPTO)
+    /* implemented in wolfcrypt/src/port/cypress/psoc6_crypto.c */
 #else
 
 int wc_Sha256GetHash(wc_Sha256* sha256, byte* hash)

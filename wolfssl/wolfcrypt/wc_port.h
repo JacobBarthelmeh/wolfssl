@@ -156,8 +156,10 @@
 
 #else
     #ifndef SINGLE_THREADED
-        #define WOLFSSL_PTHREADS
-        #include <pthread.h>
+        #ifndef  WOLFSSL_USER_MUTEX
+            #define WOLFSSL_PTHREADS
+            #include <pthread.h>
+        #endif
     #endif
     #if (defined(OPENSSL_EXTRA) || defined(GOAHEAD_WS)) && \
         !defined(NO_FILESYSTEM)
@@ -238,6 +240,8 @@
         typedef struct k_mutex wolfSSL_Mutex;
     #elif defined(WOLFSSL_TELIT_M2MB)
         typedef M2MB_OS_MTX_HANDLE wolfSSL_Mutex;
+    #elif defined(WOLFSSL_USER_MUTEX)
+        /* typedef User_Mutex wolfSSL_Mutex; */
     #else
         #error Need a mutex type in multithreaded mode
     #endif /* USE_WINDOWS_API */
@@ -245,7 +249,7 @@
 
 /* Enable crypt HW mutex for Freescale MMCAU, PIC32MZ or STM32 */
 #if defined(FREESCALE_MMCAU) || defined(WOLFSSL_MICROCHIP_PIC32MZ) || \
-    defined(STM32_CRYPTO)
+    defined(STM32_CRYPTO) || defined(STM32_HASH) || defined(STM32_RNG)
     #ifndef WOLFSSL_CRYPT_HW_MUTEX
         #define WOLFSSL_CRYPT_HW_MUTEX  1
     #endif
@@ -414,6 +418,23 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XBADFILE                 -1
     #define XFGETS(b,s,f)            -2 /* Not ported yet */
 
+#elif defined (WOLFSSL_XILINX)
+    #include "xsdps.h"
+    #include "ff.h"
+
+    /* workaround to declare variable and provide type */
+    #define XFILE                    FIL curFile; FIL*
+    #define XFOPEN(NAME, MODE)       ({ FRESULT res; res = f_open(&curFile, (NAME), (FA_OPEN_ALWAYS | FA_WRITE | FA_READ)); (res == FR_OK) ? &curFile : NULL; })
+    #define XFSEEK(F, O, W)          f_lseek((F), (O))
+    #define XFTELL(F)                f_tell((F))
+    #define XREWIND(F)               f_rewind((F))
+    #define XFREAD(BUF, SZ, AMT, F)  ({ FRESULT res; UINT br; res = f_read((F), (BUF), (SZ)*(AMT), &br); (void)br; res; })
+    #define XFWRITE(BUF, SZ, AMT, F) ({ FRESULT res; UINT written; res = f_write((F), (BUF), (SZ)*(AMT), &written); (void)written; res; })
+    #define XFCLOSE(F)               f_close((F))
+    #define XSEEK_END                0
+    #define XBADFILE                 NULL
+    #define XFGETS(b,s,f)            f_gets((b), (s), (f))
+
 #elif defined(WOLFSSL_USER_FILESYSTEM)
     /* To be defined in user_settings.h */
 #else
@@ -450,6 +471,9 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #ifndef MAX_PATH
         #define MAX_PATH 256
     #endif
+
+    WOLFSSL_LOCAL int wc_FileLoad(const char* fname, unsigned char** buf, 
+        size_t* bufLen, void* heap);
 
 #if !defined(NO_WOLFSSL_DIR) && !defined(WOLFSSL_NUCLEUS) && \
     !defined(WOLFSSL_NUCLEUS_1_2)
@@ -528,7 +552,9 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define NEED_TMP_TIME
 
 #elif defined(WOLFSSL_XILINX)
-    #define USER_TIME
+    #ifndef XTIME
+        #define XTIME(t1)       xilinx_time((t1))
+    #endif
     #include <time.h>
 
 #elif defined(HAVE_RTP_SYS)
@@ -553,6 +579,7 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
 
 #elif defined(MICROCHIP_TCPIP_V5) || defined(MICROCHIP_TCPIP)
     #include <time.h>
+    extern time_t pic32_time(time_t* timer);
     #define XTIME(t1)       pic32_time((t1))
     #define XGMTIME(c, t)   gmtime((c))
 
@@ -683,7 +710,7 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
 #endif
 #if !defined(XVALIDATE_DATE) && !defined(HAVE_VALIDATE_DATE)
     #define USE_WOLF_VALIDDATE
-    #define XVALIDATE_DATE(d, f, t) ValidateDate((d), (f), (t))
+    #define XVALIDATE_DATE(d, f, t) wc_ValidateDate((d), (f), (t))
 #endif
 
 /* wolf struct tm and time_t */
@@ -742,7 +769,7 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
 #endif
 
 #ifndef FILE_BUFFER_SIZE
-    #define FILE_BUFFER_SIZE 1024     /* default static file buffer size for input,
+    #define FILE_BUFFER_SIZE 1024     /* default static file buffer size for input, \
                                     will use dynamic buffer if not big enough */
 #endif
 
