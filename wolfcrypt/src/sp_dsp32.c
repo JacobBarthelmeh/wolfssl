@@ -2162,7 +2162,6 @@ static void sp_256_cond_copy_10(sp_digit* r, const sp_digit* a, const sp_digit m
  */
 static void sp_256_proj_point_dbl_n_10(sp_point_256* p, int n, sp_digit* t)
 {
-    sp_point_256* rp[2];
     sp_digit* w = t;
     sp_digit* a = t + 2*10;
     sp_digit* b = t + 4*10;
@@ -2172,14 +2171,9 @@ static void sp_256_proj_point_dbl_n_10(sp_point_256* p, int n, sp_digit* t)
     sp_digit* y;
     sp_digit* z;
 
-    rp[0] = p;
-
-    /*lint allow cast to different type of pointer*/
-    rp[1] = (sp_point_256*)t; /*lint !e9087 !e740*/
-    XMEMSET(rp[1], 0, sizeof(sp_point_256));
-    x = rp[p->infinity]->x;
-    y = rp[p->infinity]->y;
-    z = rp[p->infinity]->z;
+    x = p->x;
+    y = p->y;
+    z = p->z;
 
     /* Y = 2*Y */
     sp_256_mont_dbl_10(y, y, p256_mod);
@@ -2187,32 +2181,62 @@ static void sp_256_proj_point_dbl_n_10(sp_point_256* p, int n, sp_digit* t)
     sp_256_mont_sqr_10(w, z, p256_mod, p256_mp_mod);
     sp_256_mont_sqr_10(w, w, p256_mod, p256_mp_mod);
 
-    while (n-- > 0) {
+#ifndef WOLFSSL_SP_SMALL
+    while (--n > 0)
+#else
+    while (--n >= 0)
+#endif
+    {
         /* A = 3*(X^2 - W) */
         sp_256_mont_sqr_10(t1, x, p256_mod, p256_mp_mod);
         sp_256_mont_sub_10(t1, t1, w, p256_mod);
         sp_256_mont_tpl_10(a, t1, p256_mod);
         /* B = X*Y^2 */
-        sp_256_mont_sqr_10(t2, y, p256_mod, p256_mp_mod);
-        sp_256_mont_mul_10(b, t2, x, p256_mod, p256_mp_mod);
+        sp_256_mont_sqr_10(t1, y, p256_mod, p256_mp_mod);
+        sp_256_mont_mul_10(b, t1, x, p256_mod, p256_mp_mod);
         /* X = A^2 - 2B */
         sp_256_mont_sqr_10(x, a, p256_mod, p256_mp_mod);
-        sp_256_mont_dbl_10(t1, b, p256_mod);
-        sp_256_mont_sub_10(x, x, t1, p256_mod);
+        sp_256_mont_dbl_10(t2, b, p256_mod);
+        sp_256_mont_sub_10(x, x, t2, p256_mod);
         /* Z = Z*Y */
         sp_256_mont_mul_10(z, z, y, p256_mod, p256_mp_mod);
         /* t2 = Y^4 */
-        sp_256_mont_sqr_10(t2, t2, p256_mod, p256_mp_mod);
-        if (n != 0) {
+        sp_256_mont_sqr_10(t1, t1, p256_mod, p256_mp_mod);
+#ifdef WOLFSSL_SP_SMALL
+        if (n != 0)
+#endif
+        {
             /* W = W*Y^4 */
-            sp_256_mont_mul_10(w, w, t2, p256_mod, p256_mp_mod);
+            sp_256_mont_mul_10(w, w, t1, p256_mod, p256_mp_mod);
         }
         /* y = 2*A*(B - X) - Y^4 */
         sp_256_mont_sub_10(y, b, x, p256_mod);
         sp_256_mont_mul_10(y, y, a, p256_mod, p256_mp_mod);
         sp_256_mont_dbl_10(y, y, p256_mod);
-        sp_256_mont_sub_10(y, y, t2, p256_mod);
+        sp_256_mont_sub_10(y, y, t1, p256_mod);
     }
+#ifndef WOLFSSL_SP_SMALL
+    /* A = 3*(X^2 - W) */
+    sp_256_mont_sqr_10(t1, x, p256_mod, p256_mp_mod);
+    sp_256_mont_sub_10(t1, t1, w, p256_mod);
+    sp_256_mont_tpl_10(a, t1, p256_mod);
+    /* B = X*Y^2 */
+    sp_256_mont_sqr_10(t1, y, p256_mod, p256_mp_mod);
+    sp_256_mont_mul_10(b, t1, x, p256_mod, p256_mp_mod);
+    /* X = A^2 - 2B */
+    sp_256_mont_sqr_10(x, a, p256_mod, p256_mp_mod);
+    sp_256_mont_dbl_10(t2, b, p256_mod);
+    sp_256_mont_sub_10(x, x, t2, p256_mod);
+    /* Z = Z*Y */
+    sp_256_mont_mul_10(z, z, y, p256_mod, p256_mp_mod);
+    /* t2 = Y^4 */
+    sp_256_mont_sqr_10(t1, t1, p256_mod, p256_mp_mod);
+    /* y = 2*A*(B - X) - Y^4 */
+    sp_256_mont_sub_10(y, b, x, p256_mod);
+    sp_256_mont_mul_10(y, y, a, p256_mod, p256_mp_mod);
+    sp_256_mont_dbl_10(y, y, p256_mod);
+    sp_256_mont_sub_10(y, y, t1, p256_mod);
+#endif
     /* Y = Y/2 */
     sp_256_div2_10(y, y, p256_mod);
 }
