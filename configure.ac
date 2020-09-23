@@ -5080,6 +5080,7 @@ AS_IF([test "x$ENABLED_MCAPI" = "xyes"],
 if test "$ENABLED_SM2" = "yes"
 then
     AM_CFLAGS="$AM_CFLAGS -DHAVE_ECC_SM2"
+    AM_CCASFLAGS="$AM_CCASFLAGS -DHAVE_ECC_SM2"
 fi
 
 if test "$ENABLED_WOLFSCEP" = "yes"
