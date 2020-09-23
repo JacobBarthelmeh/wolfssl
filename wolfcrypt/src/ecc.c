@@ -1927,6 +1927,12 @@ done:
 
 #ifndef WOLFSSL_SP_NO_256
     if (mp_count_bits(modulus) == 256) {
+    #ifdef HAVE_ECC_BRAINPOOL
+        if (!mp_is_bit_set(modulus, 3)) {
+           return sp_ecc_proj_add_point_brainpool_256(P->x, P->y, P->z, Q->x, Q->y,
+                                                Q->z, R->x, R->y, R->z);
+        }
+    #endif
     #ifdef HAVE_ECC_SM2
         if (!mp_is_bit_set(modulus, 224)) {
            return sp_ecc_proj_add_point_sm2_256(P->x, P->y, P->z, Q->x, Q->y,
@@ -2274,6 +2280,12 @@ int ecc_projective_dbl_point(ecc_point *P, ecc_point *R, mp_int* a,
 
 #ifndef WOLFSSL_SP_NO_256
     if (mp_count_bits(modulus) == 256) {
+    #ifdef HAVE_ECC_BRAINPOOL
+        if (!mp_is_bit_set(modulus, 3)) {
+           return sp_ecc_proj_dbl_point_brainpool_256(P->x, P->y, P->z, R->x, R->y,
+                                                R->z);
+        }
+    #endif
     #ifdef HAVE_ECC_SM2
         if (!mp_is_bit_set(modulus, 224)) {
            return sp_ecc_proj_dbl_point_sm2_256(P->x, P->y, P->z, R->x, R->y,
@@ -2504,6 +2516,11 @@ done:
 
 #ifndef WOLFSSL_SP_NO_256
     if (mp_count_bits(modulus) == 256) {
+    #ifdef HAVE_ECC_BRAINPOOL
+        if (!mp_is_bit_set(modulus, 3)) {
+           return sp_ecc_map_brainpool_256(P->x, P->y, P->z);
+        }
+    #endif
     #ifdef HAVE_ECC_SM2
         if (!mp_is_bit_set(modulus, 224)) {
            return sp_ecc_map_sm2_256(P->x, P->y, P->z);
@@ -3118,6 +3135,11 @@ exit:
 
 #ifndef WOLFSSL_SP_NO_256
    if (mp_count_bits(modulus) == 256) {
+   #ifdef HAVE_ECC_BRAINPOOL
+       if (!mp_is_bit_set(modulus, 3)) {
+           return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
+       }
+   #endif
    #ifdef HAVE_ECC_SM2
        if (!mp_is_bit_set(modulus, 224)) {
            return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);
@@ -3279,6 +3301,11 @@ exit:
 
 #ifndef WOLFSSL_SP_NO_256
    if (mp_count_bits(modulus) == 256) {
+   #ifdef HAVE_ECC_BRAINPOOL
+      if (!mp_is_bit_set(modulus, 3)) {
+         return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
+      }
+   #endif
    #ifdef HAVE_ECC_SM2
       if (!mp_is_bit_set(modulus, 224)) {
          return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);
@@ -3953,6 +3980,14 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
     }
     else
 #endif
+#ifdef HAVE_ECC_BRAINPOOL
+    if (private_key->idx != ECC_CUSTOM_IDX &&
+                               ecc_sets[private_key->idx].id == ECC_BRAINPOOLP256R1) {
+        err = sp_ecc_secret_gen_brainpool_256(k, point, out, outlen,
+                                                             private_key->heap);
+    }
+    else
+#endif
 #endif
 #ifdef WOLFSSL_SP_384
 #ifndef WOLFSSL_NO_P384_NIST
@@ -4403,6 +4438,12 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
     }
     else
 #endif
+#ifdef HAVE_ECC_BRAINPOOL
+    if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+        err = sp_ecc_mulmod_base_brainpool_256(&key->k, pub, 1, key->heap);
+    }
+    else
+#endif
 #endif
 #ifdef WOLFSSL_SP_384
 #ifndef WOLFSSL_NO_P384_NIST
@@ -4669,6 +4710,15 @@ int wc_ecc_make_key_ex2(WC_RNG* rng, int keysize, ecc_key* key, int curve_id,
 #ifdef HAVE_ECC_SM2
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SM2P256V1) {
         err = sp_ecc_make_key_sm2_256(rng, &key->k, &key->pubkey, key->heap);
+        if (err == MP_OKAY) {
+            key->type = ECC_PRIVATEKEY;
+        }
+    }
+    else
+#endif
+#ifdef HAVE_ECC_BRAINPOOL
+    if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+        err = sp_ecc_make_key_brainpool_256(rng, &key->k, &key->pubkey, key->heap);
         if (err == MP_OKAY) {
             key->type = ECC_PRIVATEKEY;
         }
@@ -5336,6 +5386,9 @@ int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
     #ifdef HAVE_ECC_SM2
              ecc_sets[key->idx].id != ECC_SM2P256V1 &&
     #endif
+    #ifdef HAVE_ECC_BRAINPOOL
+             ecc_sets[key->idx].id != ECC_BRAINPOOLP256R1 &&
+    #endif
              ecc_sets[key->idx].id != ECC_SECP384R1)) {
         return WC_KEY_SIZE_E;
     }
@@ -5383,6 +5436,12 @@ int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
         #ifdef HAVE_ECC_SM2
         if (ecc_sets[key->idx].id == ECC_SM2P256V1) {
             return sp_ecc_sign_sm2_256(in, inlen, rng, &key->k, r, s, sign_k,
+                key->heap);
+        }
+        #endif
+        #ifdef HAVE_ECC_BRAINPOOL
+        if (ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+            return sp_ecc_sign_brainpool_256(in, inlen, rng, &key->k, r, s, sign_k,
                 key->heap);
         }
         #endif
@@ -6617,6 +6676,9 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
     #ifdef HAVE_ECC_SM2
              ecc_sets[key->idx].id != ECC_SM2P256V1 &&
     #endif
+    #ifdef HAVE_ECC_BRAINPOOL
+             ecc_sets[key->idx].id != ECC_BRAINPOOLP256R1 &&
+    #endif
              ecc_sets[key->idx].id != ECC_SECP384R1)) {
         return WC_KEY_SIZE_E;
     }
@@ -6663,6 +6725,12 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
         #ifdef HAVE_ECC_SM2
         if (ecc_sets[key->idx].id == ECC_SM2P256V1) {
             return sp_ecc_verify_sm2_256(hash, hashlen, key->pubkey.x,
+                key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+        }
+        #endif
+        #ifdef HAVE_ECC_BRAINPOOL
+        if (ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+            return sp_ecc_verify_brainpool_256(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
         }
         #endif
@@ -7105,6 +7173,13 @@ int wc_ecc_import_point_der_ex(byte* in, word32 inLen, const int curve_idx,
         }
         else
         #endif
+        #ifdef HAVE_ECC_BRAINPOOL
+        if (curve_idx != ECC_CUSTOM_IDX &&
+                           ecc_sets[curve_idx->idx].id == ECC_BRAINPOOLP256R1) {
+            sp_ecc_uncompress_brainpool_256(point->x, pointType, point->y);
+        }
+        else
+        #endif
     #endif
     #ifdef WOLFSSL_SP_384
         #ifndef WOLFSSL_NO_P384_NIST
@@ -7503,6 +7578,11 @@ int wc_ecc_is_point(ecc_point* ecp, mp_int* a, mp_int* b, mp_int* prime)
 
 #ifndef WOLFSSL_SP_NO_256
    if (mp_count_bits(prime) == 256) {
+   #ifdef HAVE_ECC_BRAINPOOL
+       if (!mp_is_bit_set(prime, 3)) {
+           return sp_ecc_is_point_brainpool_256(ecp->x, ecp->y);
+       }
+   #endif
    #ifdef HAVE_ECC_SM2
        if (!mp_is_bit_set(prime, 224)) {
            return sp_ecc_is_point_sm2_256(ecp->x, ecp->y);
@@ -7556,6 +7636,14 @@ static int ecc_check_privkey_gen(ecc_key* key, mp_int* a, mp_int* prime)
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SM2P256V1) {
         if (err == MP_OKAY) {
             err = sp_ecc_mulmod_base_sm2_256(&key->k, res, 1, key->heap);
+        }
+    }
+    else
+    #endif
+    #ifdef HAVE_ECC_BRAINPOOL
+    if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+        if (err == MP_OKAY) {
+            err = sp_ecc_mulmod_base_brainpool_256(&key->k, res, 1, key->heap);
         }
     }
     else
@@ -7691,6 +7779,13 @@ static int ecc_check_pubkey_order(ecc_key* key, ecc_point* pubkey, mp_int* a,
         }
         else
     #endif
+    #ifdef HAVE_ECC_BRAINPOOL
+        if (key->idx != ECC_CUSTOM_IDX &&
+                                       ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+            err = sp_ecc_mulmod_brainpool_256(order, pubkey, inf, 1, key->heap);
+        }
+        else
+    #endif
 #endif
 #ifdef WOLFSSL_SP_384
     #ifndef WOLFSSL_NO_P384_NIST
@@ -7782,6 +7877,13 @@ int wc_ecc_check_key(ecc_key* key)
 #ifdef HAVE_ECC_SM2
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SM2P256V1) {
         return sp_ecc_check_key_sm2_256(key->pubkey.x, key->pubkey.y, &key->k,
+                                                                     key->heap);
+    }
+#endif
+#ifdef HAVE_ECC_BRAINPOOL
+    if (key->idx != ECC_CUSTOM_IDX &&
+                                 ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+        return sp_ecc_check_key_brainpool_256(key->pubkey.x, key->pubkey.y, &key->k,
                                                                      key->heap);
     }
 #endif
@@ -8056,6 +8158,13 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
         #ifdef HAVE_ECC_SM2
         if (key->dp->id == ECC_SM2P256V1) {
             sp_ecc_uncompress_sm2_256(key->pubkey.x, pointType, key->pubkey.y);
+        }
+        else
+        #endif
+        #ifdef HAVE_ECC_BRAINPOOL
+        if (key->dp->id == ECC_BRAINPOOLP256R1) {
+            sp_ecc_uncompress_brainpool_256(key->pubkey.x, pointType,
+                                                                 key->pubkey.y);
         }
         else
         #endif
@@ -10238,6 +10347,11 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 
 #ifndef WOLFSSL_SP_NO_256
     if (mp_count_bits(modulus) == 256) {
+    #ifdef HAVE_ECC_BRAINPOOL
+       if (!mp_is_bit_set(modulus, 3)) {
+           return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
+       }
+    #endif
     #ifdef HAVE_ECC_SM2
        if (!mp_is_bit_set(modulus, 224)) {
            return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);
@@ -10320,7 +10434,8 @@ int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 
       if (err == MP_OKAY) {
         /* if it's 2 build the LUT, if it's higher just use the LUT */
-        if (idx >= 0 && fp_cache[idx].lru_count >= 2 && !fp_cache[idx].LUT_set) {
+        if (idx >= 0 && fp_cache[idx].lru_count >= 2 &&
+                                                       !fp_cache[idx].LUT_set) {
            /* compute mp */
            err = mp_montgomery_setup(modulus, &mp);
 
@@ -10365,6 +10480,11 @@ int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 
 #ifndef WOLFSSL_SP_NO_256
     if (mp_count_bits(modulus) == 256) {
+    #ifdef HAVE_ECC_BRAINPOOL
+       if (!mp_is_bit_set(modulus, 3)) {
+           return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
+       }
+    #endif
     #ifdef HAVE_ECC_SM2
        if (!mp_is_bit_set(modulus, 224)) {
            return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);

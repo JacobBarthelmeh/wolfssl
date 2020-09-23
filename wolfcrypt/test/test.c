@@ -21636,7 +21636,7 @@ done:
 }
 #endif /* WOLFSSL_CERT_EXT */
 
-#ifdef WOLFSSL_CUSTOM_CURVES
+#if defined(WOLFSSL_CUSTOM_CURVES) && !defined(WOLFSSL_SP_MATH)
 static const byte eccKeyExplicitCurve[] = {
     0x30, 0x81, 0xf5, 0x30, 0x81, 0xae, 0x06, 0x07,
     0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 0x30,
@@ -21770,7 +21770,7 @@ static int ecc_test_custom_curves(WC_RNG* rng)
 
     return ret;
 }
-#endif /* WOLFSSL_CUSTOM_CURVES */
+#endif /* WOLFSSL_CUSTOM_CURVES && !WOLFSSL_SP_MATH */
 
 
 #ifdef HAVE_ECC_SM2
@@ -22842,7 +22842,15 @@ WOLFSSL_TEST_SUBROUTINE int ecc_test(void)
     }
 #endif
 
-#if defined(WOLFSSL_CUSTOM_CURVES)
+#ifdef HAVE_ECC_BRAINPOOL
+    ret = ecc_test_curve(&rng, 32, ECC_BRAINPOOLP256R1);
+    if (ret < 0) {
+        fprintf(stderr, "Brainpool\n");
+        goto done;
+    }
+#endif
+
+#if defined(WOLFSSL_CUSTOM_CURVES) && !defined(WOLFSSL_SP_MATH)
     ret = ecc_test_custom_curves(&rng);
     if (ret != 0) {
         goto done;

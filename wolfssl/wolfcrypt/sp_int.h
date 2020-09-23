@@ -640,6 +640,10 @@ typedef struct sp_ecc_ctx {
 #define MP_MASK    SP_MASK
 
 
+#define sp_is_bit_set(a,n)  \
+         ((a)->used > (n % SP_WORD_SIZE) && \
+          ((a)->dp[n % SP_WORD_SIZE] & (n / SP_WORD_SIZE)) != 0)
+
 #ifdef HAVE_WOLF_BIGINT
     /* Raw big integer as a big-endian byte array.
      *
