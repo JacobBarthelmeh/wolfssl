@@ -733,8 +733,8 @@ void sp_rshb(sp_int* a, int n, sp_int* r)
     }
 }
 
-#if defined(WOLFSSL_SP_SMALL) || (defined(WOLFSSL_KEY_GEN) || \
-                                         !defined(NO_DH) && !defined(WC_NO_RNG))
+#if defined(WOLFSSL_SP_SMALL) || defined(HAVE_ECC_DHE) || \
+            (defined(WOLFSSL_KEY_GEN) || !defined(NO_DH) && !defined(WC_NO_RNG))
 /* Multiply a by digit n and put result into r shifting up o digits.
  *   r = (a * n) << (o * SP_WORD_SIZE)
  *
@@ -2364,7 +2364,7 @@ int sp_exch(sp_int* a, sp_int* b)
 #endif
 #endif
 
-#if defined(WOLFSSL_KEY_GEN) && !defined(NO_RSA)
+#if (defined(WOLFSSL_KEY_GEN) && !defined(NO_RSA)) || defined(HAVE_ECC_DHE)
 /* Multiply a by digit n and put result into r. r = a * n
  *
  * a  SP integer to be multiplied.

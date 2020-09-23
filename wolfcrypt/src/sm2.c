@@ -25,7 +25,7 @@
 
 #include <wolfssl/wolfcrypt/settings.h>
 
-#ifdef HAVE_ECC_SM2
+#if defined(HAVE_ECC_SM2) && defined(HAVE_ECC)
 
 #include <wolfssl/wolfcrypt/sm2.h>
 #include <wolfssl/wolfcrypt/sp.h>
@@ -199,6 +199,65 @@ int wc_ecc_sm2_create_digest(const byte *id, word16 idSz,
 
 
 #ifdef HAVE_ECC_VERIFY
+#ifndef WOLFSSL_SP_MATH
+static int ecc_sm2_mul2add(ecc_point* mG, mp_int* u1,
+                           ecc_point* mQ, mp_int* u2,
+                           ecc_point* mR, mp_int* a, mp_int* modulus,
+                           void* heap)
+{
+    int err;
+#ifndef ECC_SHAMIR
+    mp_digit mp = 0;
+
+    if (!mp_iszero(u1)) {
+        /* compute u1*mG + u2*mQ = mG */
+        err = wc_ecc_mulmod_ex(u1, mG, mG, a, modulus, 0, heap);
+        if (err == MP_OKAY) {
+            err = wc_ecc_mulmod_ex(u2, mQ, mQ, a, modulus, 0, heap);
+        }
+
+        /* find the montgomery mp */
+        if (err == MP_OKAY)
+            err = mp_montgomery_setup(modulus, &mp);
+
+        /* add them */
+        if (err == MP_OKAY)
+            err = ecc_projective_add_point(mQ, mG, mR, a, modulus, mp);
+        if (err == MP_OKAY && mp_iszero(mR->z)) {
+            /* When all zero then should have done an add */
+            if (mp_iszero(mR->x) && mp_iszero(mR->y)) {
+                err = ecc_projective_dbl_point(mQ, mR, a, modulus, mp);
+            }
+            /* When only Z zero then result is infinity */
+            else {
+                err = mp_set(mR->x, 0);
+                if (err == MP_OKAY)
+                    err = mp_set(mR->y, 0);
+                if (err == MP_OKAY)
+                    err = mp_set(mR->z, 1);
+            }
+        }
+    }
+    else {
+        /* compute 0*mG + u2*mQ = mR */
+        err = wc_ecc_mulmod_ex(u2, mQ, mR, a, modulus, 0, heap);
+        /* find the montgomery mp */
+        if (err == MP_OKAY)
+            err = mp_montgomery_setup(modulus, &mp);
+    }
+
+    /* reduce */
+    if (err == MP_OKAY)
+        err = ecc_map(mR, modulus, mp);
+#else
+    /* use Shamir's trick to compute u1*mG + u2*mQ using half the doubles */
+    err = ecc_mul2add(mG, u1, mQ, u2, mR, a, modulus, heap);
+#endif /* ECC_SHAMIR */
+
+    return err;
+}
+#endif /* !WOLFSSL_SP_MATH */
+
 /* verify a digest of hash(ZA || M) using SM2
  *
  * res gets set to 1 on successful verify and 0 on failure
@@ -210,9 +269,11 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
         word32 hashSz, int *res, ecc_key *key)
 {
     int err = MP_OKAY;
+#ifndef WOLFSSL_SP_MATH
     const ecc_set_type* dp;
     ecc_point *PO = NULL, *G = NULL;
     mp_int t, e, prime, Af, order;
+#endif
 
     if (key == NULL || res == NULL || r == NULL || s == NULL || hash == NULL) {
         return BAD_FUNC_ARG;
@@ -236,7 +297,19 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
     }
 #endif
 
+#ifndef WOLFSSL_SP_MATH
     *res = 0;
+
+#if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
+  if (key->handle != -1) {
+      return dsp_ecc_verify(key->handle, hash, hashSz, key, r, s, res,
+              key->heap);
+  }
+  if (wolfSSL_GetHandleCbSet() == 1) {
+      return dsp_ecc_verify(key->handle, hash, hashSz, key, r, s, res,
+              key->heap);
+  }
+#endif
 
     err = mp_init_multi(&e, &t, &prime, &Af, &order, NULL);
     if (err == MP_OKAY) {
@@ -276,7 +349,7 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
     if (err == MP_OKAY)
         err = mp_read_radix(&prime, dp->prime, MP_RADIX_HEX);
     if (err == MP_OKAY)
-        err = ecc_mul2add(G, s, &(key->pubkey), &t, PO, &Af, &prime,
+        err = ecc_sm2_mul2add(G, s, &(key->pubkey), &t, PO, &Af, &prime,
                 key->heap);
 #ifdef DEBUG_ECC_SM2
     printf("\n");
@@ -305,6 +378,9 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
     mp_free(&prime);
     mp_free(&Af);
     mp_free(&order);
+#else
+    err = NOT_COMPILED_IN;
+#endif
 
     return err;
 }
@@ -338,4 +414,4 @@ int wc_ecc_sm2_verify_hash(const byte* sig, word32 siglen, const byte* hash,
 #endif /* NO_ASN */
 #endif /* HAVE_ECC_VERIFY */
 
-#endif /* HAVE_ECC_SM2 */
+#endif /* HAVE_ECC_SM2 && HAVE_ECC */

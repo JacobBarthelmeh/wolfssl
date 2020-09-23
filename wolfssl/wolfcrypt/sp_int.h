@@ -163,6 +163,10 @@ typedef struct sp_ecc_ctx {
 #define sp_isone(a)  ((a)->used == 1 && (a)->dp[0] == 1)
 #define sp_abs(a, b)  sp_copy(a, b)
 
+#define sp_is_bit_set(a,n)  \
+         ((a)->used > (n % SP_WORD_SIZE) && \
+          ((a)->dp[n % SP_WORD_SIZE] & (n / SP_WORD_SIZE)) != 0)
+
 #ifdef HAVE_WOLF_BIGINT
     /* raw big integer */
     typedef struct WC_BIGINT {
@@ -260,6 +264,7 @@ MP_API int sp_mul_d(sp_int* a, sp_int_digit n, sp_int* r);
 #define mp_iszero                   sp_iszero
 #define mp_isone                    sp_isone
 #define mp_abs                      sp_abs
+#define mp_is_bit_set               sp_is_bit_set
 
 #define mp_init                     sp_init
 #define mp_init_multi               sp_init_multi
