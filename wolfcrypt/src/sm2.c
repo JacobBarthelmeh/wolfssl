@@ -28,6 +28,7 @@
 #ifdef HAVE_ECC_SM2
 
 #include <wolfssl/wolfcrypt/sm2.h>
+#include <wolfssl/wolfcrypt/sp.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/hash.h>
 #include <wolfssl/wolfcrypt/coding.h>
@@ -216,6 +217,14 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
     if (key == NULL || res == NULL || r == NULL || s == NULL || hash == NULL) {
         return BAD_FUNC_ARG;
     }
+
+#if defined(WOLFSSL_HAVE_SP_ECC) && !defined(WOLFSSL_SP_NO_256)
+    if (key->dp->id == ECC_SM2P256V1) {
+        return sp_ecc_verify_sm2_256(hash, hashSz, key->pubkey.x, key->pubkey.y,
+            key->pubkey.z, r, s, res, NULL);
+    }
+#endif
+
     *res = 0;
 
 #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)

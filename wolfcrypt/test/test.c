@@ -19144,12 +19144,12 @@ done:
 
 #undef  ECC_TEST_VERIFY_COUNT
 #define ECC_TEST_VERIFY_COUNT 2
-static int ecc_test_curve(WC_RNG* rng, int keySize)
+static int ecc_test_curve(WC_RNG* rng, int keySize, int curve_id)
 {
     int ret;
 
     ret = ecc_test_curve_size(rng, keySize, ECC_TEST_VERIFY_COUNT,
-        ECC_CURVE_DEF, NULL);
+        curve_id, NULL);
     if (ret < 0) {
         if (ret == ECC_CURVE_OID_E) {
             /* ignore error for curves not found */
@@ -20040,7 +20040,7 @@ static int ecc_test_custom_curves(WC_RNG* rng)
         #endif
         #define ecc_oid_sm2p256v1_sz CODED_SM2P256V1_SZ
     #endif /* HAVE_ECC_SM2 */
-    #define ECC_SM2P256V1_TEST 101
+    #define ECC_SM2P256V1_TEST 102
 static int test_sm2_verify_caseA2()
 {
     ecc_key key;
@@ -20969,44 +20969,45 @@ int ecc_test(void)
 #endif
 
 #if defined(HAVE_ECC112) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 14);
+    ret = ecc_test_curve(&rng, 14, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC112 */
 #if defined(HAVE_ECC128) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 16);
+    ret = ecc_test_curve(&rng, 16, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC128 */
 #if defined(HAVE_ECC160) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 20);
+    ret = ecc_test_curve(&rng, 20, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC160 */
 #if defined(HAVE_ECC192) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 24);
+    ret = ecc_test_curve(&rng, 24, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC192 */
 #if defined(HAVE_ECC224) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 28);
+    ret = ecc_test_curve(&rng, 28, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC224 */
 #if defined(HAVE_ECC239) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 30);
+    ret = ecc_test_curve(&rng, 30, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC239 */
 #if !defined(NO_ECC256) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 32);
+    ret = ecc_test_curve(&rng, 32, ECC_CURVE_DEF);
     if (ret < 0) {
+        fprintf(stderr, "NIST\n");
         goto done;
     }
 #if !defined(WOLFSSL_ATECC508A) && !defined(WOLFSSL_ATECC608A) && \
@@ -21022,29 +21023,36 @@ int ecc_test(void)
     }
 #endif /* !NO_ECC256 */
 #if defined(HAVE_ECC320) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 40);
+    ret = ecc_test_curve(&rng, 40, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC320 */
 #if defined(HAVE_ECC384) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 48);
+    ret = ecc_test_curve(&rng, 48, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC384 */
 #if defined(HAVE_ECC512) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 64);
+    ret = ecc_test_curve(&rng, 64, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC512 */
 #if defined(HAVE_ECC521) || defined(HAVE_ALL_CURVES)
-    ret = ecc_test_curve(&rng, 66);
+    ret = ecc_test_curve(&rng, 66, ECC_CURVE_DEF);
     if (ret < 0) {
         goto done;
     }
 #endif /* HAVE_ECC521 */
+#ifdef HAVE_ECC_SM2
+    ret = ecc_test_curve(&rng, 32, ECC_SM2P256V1);
+    if (ret < 0) {
+        fprintf(stderr, "SM2\n");
+        goto done;
+    }
+#endif
 
 #if defined(WOLFSSL_CUSTOM_CURVES)
     ret = ecc_test_custom_curves(&rng);
