@@ -794,6 +794,10 @@ int wc_ecc_set_handle(ecc_key* key, remote_handle64 handle);
 WOLFSSL_LOCAL
 int sp_dsp_ecc_verify_256(remote_handle64 handle, const byte* hash, word32 hashLen, mp_int* pX,
     mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, void* heap);
+WOLFSSL_LOCAL
+int dsp_ecc_verify(remote_handle64 handleIn, const byte* hash,
+        word32 hashLen, ecc_key *key, mp_int* r, mp_int* s, int* res,
+        void* heap);
 #endif
 
 #ifdef WC_ECC_NONBLOCK
