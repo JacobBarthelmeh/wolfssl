@@ -47,6 +47,9 @@
 #include <wolfssl/wolfcrypt/sp.h>
 
 #ifdef WOLFSSL_DSP
+#ifdef HAVE_ECC_SM2
+#include <wolfssl/wolfcrypt/sm2.h>
+#endif
 #include "remote.h"
 #include "hexagon_protos.h"
 #include "hexagon_types.h"
@@ -1266,7 +1269,7 @@ static void sp_256_mont_tpl_10(sp_digit* r, const sp_digit* a, const sp_digit* m
  * a  A single precision integer.
  * b  A single precision integer.
  */
-void sp_256_sub_10(sp_digit* r, const sp_digit* a,
+SP_NOINLINE static int sp_256_sub_10(sp_digit* r, const sp_digit* a,
         const sp_digit* b)
 {
 
@@ -1315,6 +1318,7 @@ void sp_256_sub_10(sp_digit* r, const sp_digit* a,
         : [a] "r" (a), [b] "r" (b)
         : "memory", "r4", "r5", "r6", "r7", "r8", "r8", "r9"
     );
+    return 0;
 }
 /* Conditionally add a and b using the mask m.
  * m is -1 to add and 0 when not.
@@ -6616,7 +6620,7 @@ static void sp_256_mod_reduce_sm2_10(sp_digit* r, const sp_digit* a, const sp_di
     sp_256_mod_10(r, a, m);
 }
 
-static void sp_256_mod_mul_sm2_10(sp_digit* r, sp_digit* a, sp_digit* b, sp_digit* m)
+static void sp_256_mod_mul_sm2_10(sp_digit* r, const sp_digit* a, const sp_digit* b, const sp_digit* m)
 {
     sp_digit t[20];
 
@@ -6637,41 +6641,6 @@ static int sp_256_mod_mul_norm_sm2_10(sp_digit* r, const sp_digit* a, const sp_d
 }
 
 #define sp_256_mont_reduce_order_sm2_10         sp_256_mont_reduce_sm2_10
-
-/* Mul a by scalar b and add into r. (r += a * b)
- *
- * r  A single precision integer.
- * a  A single precision integer.
- * b  A scalar.
- */
-SP_NOINLINE static void sp_256_mul_add_10(sp_digit* r, const sp_digit* a,
-        const sp_digit b)
-{
-    int64_t tb = b;
-    int64_t t[10];
-
-    t[0] = Q6_P_mpy_RR(tb, a[0]);
-    t[1] = Q6_P_mpy_RR(tb, a[1]);
-    t[2] = Q6_P_mpy_RR(tb, a[2]);
-    t[3] = Q6_P_mpy_RR(tb, a[3]);
-    t[4] = Q6_P_mpy_RR(tb, a[4]);
-    t[5] = Q6_P_mpy_RR(tb, a[5]);
-    t[6] = Q6_P_mpy_RR(tb, a[6]);
-    t[7] = Q6_P_mpy_RR(tb, a[7]);
-    t[8] = Q6_P_mpy_RR(tb, a[8]);
-    t[9] = Q6_P_mpy_RR(tb, a[9]);
-    r[0] += Q6_R_and_RR(t[0],0x3ffffff);
-    r[1] += Q6_P_asr_PI(t[0],26) + Q6_R_and_RR(t[1],0x3ffffff);
-    r[2] += Q6_P_asr_PI(t[1],26) + Q6_R_and_RR(t[2],0x3ffffff);
-    r[3] += Q6_P_asr_PI(t[2],26) + Q6_R_and_RR(t[3],0x3ffffff);
-    r[4] += Q6_P_asr_PI(t[3],26) + Q6_R_and_RR(t[4],0x3ffffff);
-    r[5] += Q6_P_asr_PI(t[4],26) + Q6_R_and_RR(t[5],0x3ffffff);
-    r[6] += Q6_P_asr_PI(t[5],26) + Q6_R_and_RR(t[6],0x3ffffff);
-    r[7] += Q6_P_asr_PI(t[6],26) + Q6_R_and_RR(t[7],0x3ffffff);
-    r[8] += Q6_P_asr_PI(t[7],26) + Q6_R_and_RR(t[8],0x3ffffff);
-    r[9] += Q6_P_asr_PI(t[8],26) + Q6_R_and_RR(t[9],0x3ffffff);
-    r[10] +=  Q6_P_asr_PI(t[9],26);
-}
 
 /* Reduce the number back to 256 bits using Montgomery reduction.
  *
@@ -11086,11 +11055,11 @@ int wolfSSL_DSP_ECC_Verify_256(remote_handle64 h, int32 *u1, int hashLen, int32*
         sp_256_mont_inv_order_10(s, s, tmp);
         sp_256_mont_mul_order_10(u1, u1, s);
         sp_256_mont_mul_order_10(u2, u2, s);
-        err = sp_256_ecc_mulmod_base_10(p1, u1, 0, heap);
+        err = sp_256_ecc_mulmod_base_10(p1, u1, 0, 0, heap);
     }
 
     if (err == MP_OKAY) {
-        err = sp_256_ecc_mulmod_10(p2, p2, u2, 0, heap);
+        err = sp_256_ecc_mulmod_10(p2, p2, u2, 0, 0, heap);
     }
 
     if (err == MP_OKAY) {
@@ -11208,7 +11177,19 @@ int wolfSSL_DSP_ECC_Verify(remote_handle64 h, const uint8* hash, int hashLen,
 
     *res = 0;
     if (ret == 0) {
-        {
+    #ifdef HAVE_ECC_SM2
+        if (curveId == ECC_SM2P256V1) {
+            ret = sp_ecc_verify_sm2_256(hash, hashLen, key.pubkey.x,
+                key.pubkey.y, key.pubkey.z, &r, &s, res, key.heap);
+        }
+        else
+    #endif
+        if (curveId == ECC_SECP256R1) {
+            ret = sp_ecc_verify_256(hash, hashLen, key.pubkey.x,
+                key.pubkey.y, key.pubkey.z, &r, &s, res, key.heap);
+
+        }
+        else {
             ret = wc_ecc_verify_hash_ex(&r, &s, hash, hashLen, res, &key);
         }
     }
