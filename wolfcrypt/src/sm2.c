@@ -218,14 +218,6 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
         return BAD_FUNC_ARG;
     }
 
-#if defined(WOLFSSL_HAVE_SP_ECC) && !defined(WOLFSSL_SP_NO_256)
-    if (key->dp->id == ECC_SM2P256V1) {
-        return sp_ecc_verify_sm2_256(hash, hashSz, key->pubkey.x, key->pubkey.y,
-            key->pubkey.z, r, s, res, NULL);
-    }
-#endif
-
-    *res = 0;
 
 #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
   if (key->handle != -1) {
@@ -237,6 +229,14 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
               key->heap);
   }
 #endif
+#if defined(WOLFSSL_HAVE_SP_ECC) && !defined(WOLFSSL_SP_NO_256)
+    if (key->dp->id == ECC_SM2P256V1) {
+        return sp_ecc_verify_sm2_256(hash, hashSz, key->pubkey.x, key->pubkey.y,
+            key->pubkey.z, r, s, res, NULL);
+    }
+#endif
+
+    *res = 0;
 
     err = mp_init_multi(&e, &t, &prime, &Af, &order, NULL);
     if (err == MP_OKAY) {
