@@ -5365,12 +5365,12 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 32; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
-            r->dp[j] &= (1L << DIGIT_BIT) - 1;
+            r->dp[j] &= (1LL << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
             while (s + DIGIT_BIT <= 64) {
                 s += DIGIT_BIT;
-                r->dp[j++] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j++] &= (1LL << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
                     r->dp[j] = 0;
                 }
@@ -5390,7 +5390,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
-                r->dp[j] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j] &= (1LL << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
                 r->dp[++j] = a[i] >> s;
@@ -13165,12 +13165,12 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 48; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
-            r->dp[j] &= (1L << DIGIT_BIT) - 1;
+            r->dp[j] &= (1LL << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
             while (s + DIGIT_BIT <= 64) {
                 s += DIGIT_BIT;
-                r->dp[j++] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j++] &= (1LL << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
                     r->dp[j] = 0;
                 }
@@ -13190,7 +13190,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
-                r->dp[j] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j] &= (1LL << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
                 r->dp[++j] = a[i] >> s;
@@ -18164,12 +18164,12 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 64; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
-            r->dp[j] &= (1L << DIGIT_BIT) - 1;
+            r->dp[j] &= (1LL << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
             while (s + DIGIT_BIT <= 64) {
                 s += DIGIT_BIT;
-                r->dp[j++] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j++] &= (1LL << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
                     r->dp[j] = 0;
                 }
@@ -18189,7 +18189,7 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
-                r->dp[j] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j] &= (1LL << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
                 r->dp[++j] = a[i] >> s;
@@ -19153,12 +19153,12 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 4; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
-            r->dp[j] &= (1L << DIGIT_BIT) - 1;
+            r->dp[j] &= (1LL << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
             while (s + DIGIT_BIT <= 64) {
                 s += DIGIT_BIT;
-                r->dp[j++] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j++] &= (1LL << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
                     r->dp[j] = 0;
                 }
@@ -19178,7 +19178,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
-                r->dp[j] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j] &= (1LL << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
                 r->dp[++j] = a[i] >> s;
@@ -21326,12 +21326,14 @@ static int sp_256_ecc_mulmod_win_add_sub_4(sp_point_256* r, const sp_point_256* 
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 /* A table entry for pre-computed points. */
 typedef struct sp_table_entry_256 {
     sp_digit x[4];
     sp_digit y[4];
 } sp_table_entry_256;
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* Add two Montgomery form projective points. The second point has a q value of
  * one.
  * Only the first point can be the same pointer as the result point.
@@ -21439,11 +21441,13 @@ static void sp_256_proj_to_affine_4(sp_point_256* a, sp_digit* t)
     XMEMCPY(a->z, p256_norm_mod, sizeof(p256_norm_mod));
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* FP_ECC */
 #ifndef WC_NO_CACHE_RESISTANT
 #if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
 #ifdef FP_ECC
+#ifndef WOLFSSL_NO_P256_NIST
 /* Generate the pre-computed table of points for the base point.
  *
  * a      The base point.
@@ -21677,7 +21681,9 @@ static int sp_256_ecc_mulmod_stripe_4(sp_point_256* r, const sp_point_256* g,
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
 #endif
+static int sp_cache_entries_256 = FP_ENTRIES;
 
+#ifndef FP_ECC_CONTROL
 typedef struct sp_cache_256_t {
     sp_digit x[4];
     sp_digit y[4];
@@ -21687,28 +21693,123 @@ typedef struct sp_cache_256_t {
 } sp_cache_256_t;
 
 static THREAD_LS_T sp_cache_256_t sp_cache_256[FP_ENTRIES];
-static THREAD_LS_T int sp_cache_256_last = -1;
+#else
+struct sp_cache_256_t {
+    sp_digit x[4];
+    sp_digit y[4];
+    sp_table_entry_256 table[64];
+    uint32_t cnt;
+    int set;
+};
+
+static THREAD_LS_T sp_cache_256_t *sp_cache_256 = NULL;
+
+/* get the size of a single entry in the cache table */
+int sp_ecc_get_cache_size_256()
+{
+    return sizeof(sp_cache_256_t);
+}
+
+/* set the cache table to void 't' pointer and 'tSz' bytes
+ * returns 0 on success, can return failure BAD_FUNC_ARG if too small
+ */
+int sp_ecc_set_cache_table_256(void* t, int tSz)
+{
+    if ((sp_ecc_get_cache_size_256() * sp_cache_entries_256) > tSz) {
+        return BAD_FUNC_ARG;
+    }
+    sp_cache_256 = (sp_cache_256_t*)t;
+    return 0;
+}
+
+
+/* Function to set the number of entries to use.
+ * Not thread safe, meant to be called once during wolfCrypt_Init()
+ * Use the macro CUSTOM_FP_ECC_ENTRIES to get entries to then set here
+ *     see wolfcrypt/src/wc_dsp.c function wolfSSL_DSPInit()
+ *
+ * returns 0 on success
+ */
+int sp_ecc_set_cache_entries_256(int numEntries)
+{
+    if (numEntries < 0) {
+        sp_cache_entries_256 = 0;
+    }
+    else {
+        sp_cache_entries_256 = numEntries;
+    }
+
+    return 0;
+}
+#endif
+
 static THREAD_LS_T int sp_cache_256_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(HAVE_THREAD_LS)
     static volatile int initCacheMutex_256 = 0;
     static wolfSSL_Mutex sp_cache_256_lock;
 #endif
 
-static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
+#ifndef FP_ECC_CONTROL
+static THREAD_LS_T int sp_cache_256_last = -1;
+
+/* return the index of which cached point to use */
+static int sp_ecc_get_cache_256_index(const sp_point_256* g)
 {
-    int i, j;
+    int i = -1;
+    int j;
     uint32_t least;
 
+    /* Find empty entry. */
+    i = (sp_cache_256_last + 1) % sp_cache_entries_256;
+    for (; i != sp_cache_256_last; i=(i+1)%sp_cache_entries_256) {
+        if (!sp_cache_256[i].set) {
+            break;
+        }
+    }
+
+    /* Evict least used. */
+    if (i == sp_cache_256_last) {
+        least = sp_cache_256[0].cnt;
+        for (j=1; j<sp_cache_entries_256; j++) {
+            if (sp_cache_256[j].cnt < least) {
+                i = j;
+                least = sp_cache_256[i].cnt;
+            }
+        }
+    }
+
+    /* sanity check on index */
+    if (i >= sp_cache_entries_256) {
+        /* Invalid cache table index choice (too large) */
+        i = -1;
+    }
+
+    return i;
+}
+
+static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
+{
+    int i;
+
+    *cache = NULL;
+
+#ifdef FP_ECC_CONTROL
+    if (sp_cache_256 == NULL) {
+        /* the cache table was not set */
+        return;
+    }
+#endif
+
     if (sp_cache_256_inited == 0) {
-        for (i=0; i<FP_ENTRIES; i++) {
+        for (i=0; i<sp_cache_entries_256; i++) {
             sp_cache_256[i].set = 0;
         }
         sp_cache_256_inited = 1;
     }
 
     /* Compare point with those in cache. */
-    for (i=0; i<FP_ENTRIES; i++) {
+    for (i=0; i<sp_cache_entries_256; i++) {
         if (!sp_cache_256[i].set)
             continue;
 
@@ -21720,38 +21821,46 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
     }
 
     /* No match. */
-    if (i == FP_ENTRIES) {
-        /* Find empty entry. */
-        i = (sp_cache_256_last + 1) % FP_ENTRIES;
-        for (; i != sp_cache_256_last; i=(i+1)%FP_ENTRIES) {
-            if (!sp_cache_256[i].set) {
-                break;
-            }
+    if (i == sp_cache_entries_256) {
+        i = sp_ecc_get_cache_256_index(g);
+        if (i >= 0) {
+            XMEMCPY(sp_cache_256[i].x, g->x, sizeof(sp_cache_256[i].x));
+            XMEMCPY(sp_cache_256[i].y, g->y, sizeof(sp_cache_256[i].y));
+            sp_cache_256[i].set = 1;
+            sp_cache_256[i].cnt = 1;
         }
-
-        /* Evict least used. */
-        if (i == sp_cache_256_last) {
-            least = sp_cache_256[0].cnt;
-            for (j=1; j<FP_ENTRIES; j++) {
-                if (sp_cache_256[j].cnt < least) {
-                    i = j;
-                    least = sp_cache_256[i].cnt;
-                }
-            }
-        }
-
-        XMEMCPY(sp_cache_256[i].x, g->x, sizeof(sp_cache_256[i].x));
-        XMEMCPY(sp_cache_256[i].y, g->y, sizeof(sp_cache_256[i].y));
-        sp_cache_256[i].set = 1;
-        sp_cache_256[i].cnt = 1;
     }
 
-    *cache = &sp_cache_256[i];
-    sp_cache_256_last = i;
+    if (i >= 0) {
+        *cache = &sp_cache_256[i];
+        sp_cache_256_last = i;
+    }
 }
+#endif /* !FP_ECC_CONTROL */
 #endif /* FP_ECC */
 
 #ifndef WOLFSSL_NO_P256_NIST
+#ifdef FP_ECC_CONTROL
+/* Multiply the base point of P256 by the scalar and return the result.
+ * If map is true then convert result to affine coordinates.
+ *
+ * r     Resulting point.
+ * g     Point to multiply.
+ * k     Scalar to multiply by.
+ * map   Indicates whether to convert result to affine.
+ * ct    Constant time required.
+ * cache cache entry to use
+ * heap  Heap to use for allocation.
+ * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
+ */
+static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g, const sp_digit* k,
+        int map, int ct, sp_cache_256_t* cache, void* heap)
+{
+    if (cache == NULL)
+        return sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
+    return sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k, map, ct, heap);
+}
+#else
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -21769,40 +21878,47 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g, const sp_
 #ifndef FP_ECC
     return sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
 #else
-    sp_digit tmp[2 * 4 * 5];
-    sp_cache_256_t* cache;
     int err = MP_OKAY;
 
-#ifndef HAVE_THREAD_LS
+    sp_digit tmp[2 * 4 * 5];
+    sp_cache_256_t* cache = NULL;
+
+    #ifndef HAVE_THREAD_LS
     if (initCacheMutex_256 == 0) {
          wc_InitMutex(&sp_cache_256_lock);
          initCacheMutex_256 = 1;
     }
     if (wc_LockMutex(&sp_cache_256_lock) != 0)
        err = BAD_MUTEX_E;
-#endif /* HAVE_THREAD_LS */
+    #endif /* HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
-        sp_ecc_get_cache_256(g, &cache);
-        if (cache->cnt == 2)
-            sp_256_gen_stripe_table_4(g, cache->table, tmp, heap);
-
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
-
-        if (cache->cnt < 2) {
-            err = sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
+        if (cache == NULL) {
+            sp_ecc_get_cache_256(g, &cache);
+            if (cache == NULL) /* no entry found, fall back to slower mulmod */
+                err = sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
         }
-        else {
-            err = sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k,
-                    map, ct, heap);
+        if (cache != NULL && cache->cnt == 2)
+            sp_256_gen_stripe_table_4(g, cache->table, tmp, heap);
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+    #endif /* HAVE_THREAD_LS */
+
+        if (cache != NULL) {
+            if (cache->cnt < 2) {
+                err = sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
+            }
+            else {
+                err = sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k,
+                        map, ct, heap);
+            }
         }
     }
 
     return err;
 #endif
 }
+#endif
 
 #endif /* !WOLFSSL_NO_P256_NIST */
 #else
@@ -22043,7 +22159,9 @@ static int sp_256_ecc_mulmod_stripe_4(sp_point_256* r, const sp_point_256* g,
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
 #endif
+static int sp_cache_entries_256 = FP_ENTRIES;
 
+#ifndef FP_ECC_CONTROL
 typedef struct sp_cache_256_t {
     sp_digit x[4];
     sp_digit y[4];
@@ -22053,28 +22171,123 @@ typedef struct sp_cache_256_t {
 } sp_cache_256_t;
 
 static THREAD_LS_T sp_cache_256_t sp_cache_256[FP_ENTRIES];
-static THREAD_LS_T int sp_cache_256_last = -1;
+#else
+struct sp_cache_256_t {
+    sp_digit x[4];
+    sp_digit y[4];
+    sp_table_entry_256 table[256];
+    uint32_t cnt;
+    int set;
+};
+
+static THREAD_LS_T sp_cache_256_t *sp_cache_256 = NULL;
+
+/* get the size of a single entry in the cache table */
+int sp_ecc_get_cache_size_256()
+{
+    return sizeof(sp_cache_256_t);
+}
+
+/* set the cache table to void 't' pointer and 'tSz' bytes
+ * returns 0 on success, can return failure BAD_FUNC_ARG if too small
+ */
+int sp_ecc_set_cache_table_256(void* t, int tSz)
+{
+    if ((sp_ecc_get_cache_size_256() * sp_cache_entries_256) > tSz) {
+        return BAD_FUNC_ARG;
+    }
+    sp_cache_256 = (sp_cache_256_t*)t;
+    return 0;
+}
+
+
+/* Function to set the number of entries to use.
+ * Not thread safe, meant to be called once during wolfCrypt_Init()
+ * Use the macro CUSTOM_FP_ECC_ENTRIES to get entries to then set here
+ *     see wolfcrypt/src/wc_dsp.c function wolfSSL_DSPInit()
+ *
+ * returns 0 on success
+ */
+int sp_ecc_set_cache_entries_256(int numEntries)
+{
+    if (numEntries < 0) {
+        sp_cache_entries_256 = 0;
+    }
+    else {
+        sp_cache_entries_256 = numEntries;
+    }
+
+    return 0;
+}
+#endif
+
 static THREAD_LS_T int sp_cache_256_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(HAVE_THREAD_LS)
     static volatile int initCacheMutex_256 = 0;
     static wolfSSL_Mutex sp_cache_256_lock;
 #endif
 
-static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
+#ifndef FP_ECC_CONTROL
+static THREAD_LS_T int sp_cache_256_last = -1;
+
+/* return the index of which cached point to use */
+static int sp_ecc_get_cache_256_index(const sp_point_256* g)
 {
-    int i, j;
+    int i = -1;
+    int j;
     uint32_t least;
 
+    /* Find empty entry. */
+    i = (sp_cache_256_last + 1) % sp_cache_entries_256;
+    for (; i != sp_cache_256_last; i=(i+1)%sp_cache_entries_256) {
+        if (!sp_cache_256[i].set) {
+            break;
+        }
+    }
+
+    /* Evict least used. */
+    if (i == sp_cache_256_last) {
+        least = sp_cache_256[0].cnt;
+        for (j=1; j<sp_cache_entries_256; j++) {
+            if (sp_cache_256[j].cnt < least) {
+                i = j;
+                least = sp_cache_256[i].cnt;
+            }
+        }
+    }
+
+    /* sanity check on index */
+    if (i >= sp_cache_entries_256) {
+        /* Invalid cache table index choice (too large) */
+        i = -1;
+    }
+
+    return i;
+}
+
+static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
+{
+    int i;
+
+    *cache = NULL;
+
+#ifdef FP_ECC_CONTROL
+    if (sp_cache_256 == NULL) {
+        /* the cache table was not set */
+        return;
+    }
+#endif
+
     if (sp_cache_256_inited == 0) {
-        for (i=0; i<FP_ENTRIES; i++) {
+        for (i=0; i<sp_cache_entries_256; i++) {
             sp_cache_256[i].set = 0;
         }
         sp_cache_256_inited = 1;
     }
 
     /* Compare point with those in cache. */
-    for (i=0; i<FP_ENTRIES; i++) {
+    for (i=0; i<sp_cache_entries_256; i++) {
         if (!sp_cache_256[i].set)
             continue;
 
@@ -22086,38 +22299,46 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
     }
 
     /* No match. */
-    if (i == FP_ENTRIES) {
-        /* Find empty entry. */
-        i = (sp_cache_256_last + 1) % FP_ENTRIES;
-        for (; i != sp_cache_256_last; i=(i+1)%FP_ENTRIES) {
-            if (!sp_cache_256[i].set) {
-                break;
-            }
+    if (i == sp_cache_entries_256) {
+        i = sp_ecc_get_cache_256_index(g);
+        if (i >= 0) {
+            XMEMCPY(sp_cache_256[i].x, g->x, sizeof(sp_cache_256[i].x));
+            XMEMCPY(sp_cache_256[i].y, g->y, sizeof(sp_cache_256[i].y));
+            sp_cache_256[i].set = 1;
+            sp_cache_256[i].cnt = 1;
         }
-
-        /* Evict least used. */
-        if (i == sp_cache_256_last) {
-            least = sp_cache_256[0].cnt;
-            for (j=1; j<FP_ENTRIES; j++) {
-                if (sp_cache_256[j].cnt < least) {
-                    i = j;
-                    least = sp_cache_256[i].cnt;
-                }
-            }
-        }
-
-        XMEMCPY(sp_cache_256[i].x, g->x, sizeof(sp_cache_256[i].x));
-        XMEMCPY(sp_cache_256[i].y, g->y, sizeof(sp_cache_256[i].y));
-        sp_cache_256[i].set = 1;
-        sp_cache_256[i].cnt = 1;
     }
 
-    *cache = &sp_cache_256[i];
-    sp_cache_256_last = i;
+    if (i >= 0) {
+        *cache = &sp_cache_256[i];
+        sp_cache_256_last = i;
+    }
 }
+#endif /* !FP_ECC_CONTROL */
 #endif /* FP_ECC */
 
 #ifndef WOLFSSL_NO_P256_NIST
+#ifdef FP_ECC_CONTROL
+/* Multiply the base point of P256 by the scalar and return the result.
+ * If map is true then convert result to affine coordinates.
+ *
+ * r     Resulting point.
+ * g     Point to multiply.
+ * k     Scalar to multiply by.
+ * map   Indicates whether to convert result to affine.
+ * ct    Constant time required.
+ * cache cache entry to use
+ * heap  Heap to use for allocation.
+ * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
+ */
+static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g, const sp_digit* k,
+        int map, int ct, sp_cache_256_t* cache, void* heap)
+{
+    if (cache == NULL)
+        return sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
+    return sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k, map, ct, heap);
+}
+#else
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -22135,40 +22356,47 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g, const sp_
 #ifndef FP_ECC
     return sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
 #else
-    sp_digit tmp[2 * 4 * 5];
-    sp_cache_256_t* cache;
     int err = MP_OKAY;
 
-#ifndef HAVE_THREAD_LS
+    sp_digit tmp[2 * 4 * 5];
+    sp_cache_256_t* cache = NULL;
+
+    #ifndef HAVE_THREAD_LS
     if (initCacheMutex_256 == 0) {
          wc_InitMutex(&sp_cache_256_lock);
          initCacheMutex_256 = 1;
     }
     if (wc_LockMutex(&sp_cache_256_lock) != 0)
        err = BAD_MUTEX_E;
-#endif /* HAVE_THREAD_LS */
+    #endif /* HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
-        sp_ecc_get_cache_256(g, &cache);
-        if (cache->cnt == 2)
-            sp_256_gen_stripe_table_4(g, cache->table, tmp, heap);
-
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
-
-        if (cache->cnt < 2) {
-            err = sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
+        if (cache == NULL) {
+            sp_ecc_get_cache_256(g, &cache);
+            if (cache == NULL) /* no entry found, fall back to slower mulmod */
+                err = sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
         }
-        else {
-            err = sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k,
-                    map, ct, heap);
+        if (cache != NULL && cache->cnt == 2)
+            sp_256_gen_stripe_table_4(g, cache->table, tmp, heap);
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+    #endif /* HAVE_THREAD_LS */
+
+        if (cache != NULL) {
+            if (cache->cnt < 2) {
+                err = sp_256_ecc_mulmod_win_add_sub_4(r, g, k, map, ct, heap);
+            }
+            else {
+                err = sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k,
+                        map, ct, heap);
+            }
         }
     }
 
     return err;
 #endif
 }
+#endif
 
 #endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* !WC_NO_CACHE_RESISTANT */
@@ -22209,7 +22437,11 @@ int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
         sp_256_from_mp(k, 4, km);
         sp_256_point_from_ecc_point_4(point, gm);
 
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_4(point, point, k, map, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_4(point, point, k, map, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         err = sp_256_point_to_ecc_point_4(point, r);
@@ -36291,7 +36523,11 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
 
 #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     if (err == MP_OKAY) {
-            err = sp_256_ecc_mulmod_4(infinity, point, p256_order, 1, 1, NULL);
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_4(infinity, point, p256_order, 1, 1, NULL, heap);
+#else
+            err = sp_256_ecc_mulmod_4(infinity, point, p256_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         if (sp_256_iszero_4(point->x) || sp_256_iszero_4(point->y)) {
@@ -36389,7 +36625,11 @@ int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
     if (err == MP_OKAY) {
         sp_256_from_mp(k, 4, priv);
         sp_256_point_from_ecc_point_4(point, pub);
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_4(point, point, k, 1, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_4(point, point, k, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         sp_256_to_bin(point->x, out);
@@ -36890,6 +37130,7 @@ static void sp_256_sqr_4(sp_digit* r, const sp_digit* a)
 }
 
 #ifndef WOLFSSL_NO_P256_NIST
+#ifdef HAVE_ECC_SIGN
 #ifdef WOLFSSL_SP_SMALL
 /* Order-2 for the P256 curve. */
 static const uint64_t p256_order_minus_2[4] = {
@@ -36903,6 +37144,7 @@ static const uint64_t p256_order_low[2] = {
 };
 #endif /* WOLFSSL_SP_SMALL */
 
+#endif /* HAVE_ECC_SIGN */
 /* Multiply two number mod the order of P256 curve. (r = a * b mod order)
  *
  * r  Result of the multiplication.
@@ -36915,6 +37157,7 @@ static void sp_256_mont_mul_order_4(sp_digit* r, const sp_digit* a, const sp_dig
     sp_256_mont_reduce_order_4(r, p256_order, p256_mp_order);
 }
 
+#ifdef HAVE_ECC_SIGN
 /* Square number mod the order of P256 curve. (r = a * a mod order)
  *
  * r  Result of the squaring.
@@ -36943,6 +37186,7 @@ static void sp_256_mont_sqr_n_order_4(sp_digit* r, const sp_digit* a, int n)
     }
 }
 #endif /* !WOLFSSL_SP_SMALL */
+#endif /* HAVE_ECC_SIGN */
 
 /* Invert the number, in Montgomery form, modulo the order of the P256 curve.
  * (r = 1 / a mod order)
@@ -36992,6 +37236,7 @@ static int sp_256_mont_inv_order_4_nb(sp_ecc_ctx_t* sp_ctx, sp_digit* r, const s
 }
 #endif /* WOLFSSL_SP_NONBLOCK */
 
+#ifdef HAVE_ECC_SIGN
 static void sp_256_mont_inv_order_4(sp_digit* r, const sp_digit* a,
         sp_digit* td)
 {
@@ -37084,6 +37329,7 @@ static void sp_256_mont_inv_order_4(sp_digit* r, const sp_digit* a,
     sp_256_mont_mul_order_4(r, t2, t3);
 #endif /* WOLFSSL_SP_SMALL */
 }
+#endif /* HAVE_ECC_SIGN */
 
 #endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
@@ -37166,7 +37412,7 @@ int sp_ecc_sign_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen, W
         break;
     case 2: /* MULMOD */
         err = sp_256_ecc_mulmod_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx,
-            &ctx->point, &p256_base, ctx->k, 1, 1, heap);
+            &ctx->point, &p256_base, ctx->k, 1, 1, -1, heap);
         if (err == MP_OKAY) {
             ctx->state = 3;
         }
@@ -37418,6 +37664,7 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
 }
 #endif /* HAVE_ECC_SIGN */
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #ifndef WOLFSSL_SP_SMALL
 /* Non-constant time modular inversion.
  *
@@ -37705,6 +37952,7 @@ static int sp_256_mod_inv_4(sp_digit* r, const sp_digit* a,
 }
 
 #endif /* WOLFSSL_SP_SMALL */
+#ifndef WOLFSSL_NO_P256_NIST
 #ifdef HAVE_ECC_VERIFY
 /* Verify the signature values with the hash and public key.
  *   e = Truncate(hash, 256)
@@ -37793,14 +38041,14 @@ int sp_ecc_verify_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen,
         ctx->state = 6;
         break;
     case 6: /* MULBASE */
-        err = sp_256_ecc_mulmod_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p1, &p256_base, ctx->u1, 0, 0, heap);
+        err = sp_256_ecc_mulmod_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p1, &p256_base, ctx->u1, 0, 0, -1, heap);
         if (err == MP_OKAY) {
             XMEMSET(&ctx->mulmod_ctx, 0, sizeof(ctx->mulmod_ctx));
             ctx->state = 7;
         }
         break;
     case 7: /* MULMOD */
-        err = sp_256_ecc_mulmod_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p2, &ctx->p2, ctx->u2, 0, 0, heap);
+        err = sp_256_ecc_mulmod_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p2, &ctx->p2, ctx->u2, 0, 0, -1, heap);
         if (err == MP_OKAY) {
             XMEMSET(&ctx->add_ctx, 0, sizeof(ctx->add_ctx));
             ctx->state = 8;
@@ -37892,8 +38140,10 @@ int sp_ecc_verify_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen,
 }
 #endif /* WOLFSSL_SP_NONBLOCK */
 
-int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
-    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, void* heap)
+
+static int sp_ecc_verify_256_ex(const byte* hash, word32 hashLen,
+    mp_int* pX, mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res,
+    sp_cache_256_t* cache, void* heap)
 {
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
     sp_digit* d = NULL;
@@ -37982,7 +38232,11 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
             err = sp_256_ecc_mulmod_base_4(p1, u1, 0, 0, heap);
     }
     if (err == MP_OKAY) {
-            err = sp_256_ecc_mulmod_4(p2, p2, u2, 0, 0, heap);
+#ifdef FP_ECC_CONTROL
+        err = sp_256_ecc_mulmod_4(p2, p2, u2, 0, 0, cache, heap);
+#else
+        err = sp_256_ecc_mulmod_4(p2, p2, u2, 0, 0, heap);
+#endif
     }
 
     if (err == MP_OKAY) {
@@ -38051,6 +38305,23 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
 
     return err;
 }
+
+
+int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, void* heap)
+{
+    return sp_ecc_verify_256_ex(hash, hashLen, pX, pY, pZ, r, sm, res, NULL, heap);
+}
+
+
+#ifdef FP_ECC_CONTROL
+int sp_ecc_cache_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, sp_cache_256_t* cache, void* heap)
+{
+    return sp_ecc_verify_256_ex(hash, hashLen, pX, pY, pZ, r, sm,
+                res, cache, heap);
+}
+#endif /* FP_ECC_CONTROL */
 #endif /* HAVE_ECC_VERIFY */
 
 #endif /* !WOLFSSL_NO_P256_NIST */
@@ -38230,7 +38501,11 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
 
     if (err == MP_OKAY) {
         /* Point * order = infinity */
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_4(p, pub, p256_order, 1, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_4(p, pub, p256_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         /* Check result is infinity */
@@ -38984,12 +39259,12 @@ static int sp_384_to_mp(const sp_digit* a, mp_int* r)
         r->dp[0] = 0;
         for (i = 0; i < 6; i++) {
             r->dp[j] |= (mp_digit)(a[i] << s);
-            r->dp[j] &= (1L << DIGIT_BIT) - 1;
+            r->dp[j] &= (1LL << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
             while (s + DIGIT_BIT <= 64) {
                 s += DIGIT_BIT;
-                r->dp[j++] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j++] &= (1LL << DIGIT_BIT) - 1;
                 if (s == SP_WORD_SIZE) {
                     r->dp[j] = 0;
                 }
@@ -39009,7 +39284,7 @@ static int sp_384_to_mp(const sp_digit* a, mp_int* r)
             r->dp[j] |= ((mp_digit)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
-                r->dp[j] &= (1L << DIGIT_BIT) - 1;
+                r->dp[j] &= (1LL << DIGIT_BIT) - 1;
     #endif
                 s = DIGIT_BIT - s;
                 r->dp[++j] = a[i] >> s;
@@ -41666,7 +41941,9 @@ static int sp_384_ecc_mulmod_stripe_6(sp_point_384* r, const sp_point_384* g,
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
 #endif
+static int sp_cache_entries_384 = FP_ENTRIES;
 
+#ifndef FP_ECC_CONTROL
 typedef struct sp_cache_384_t {
     sp_digit x[6];
     sp_digit y[6];
@@ -41676,28 +41953,123 @@ typedef struct sp_cache_384_t {
 } sp_cache_384_t;
 
 static THREAD_LS_T sp_cache_384_t sp_cache_384[FP_ENTRIES];
-static THREAD_LS_T int sp_cache_384_last = -1;
+#else
+struct sp_cache_384_t {
+    sp_digit x[6];
+    sp_digit y[6];
+    sp_table_entry_384 table[256];
+    uint32_t cnt;
+    int set;
+};
+
+static THREAD_LS_T sp_cache_384_t *sp_cache_384 = NULL;
+
+/* get the size of a single entry in the cache table */
+int sp_ecc_get_cache_size_384()
+{
+    return sizeof(sp_cache_384_t);
+}
+
+/* set the cache table to void 't' pointer and 'tSz' bytes
+ * returns 0 on success, can return failure BAD_FUNC_ARG if too small
+ */
+int sp_ecc_set_cache_table_384(void* t, int tSz)
+{
+    if ((sp_ecc_get_cache_size_384() * sp_cache_entries_384) > tSz) {
+        return BAD_FUNC_ARG;
+    }
+    sp_cache_384 = (sp_cache_384_t*)t;
+    return 0;
+}
+
+
+/* Function to set the number of entries to use.
+ * Not thread safe, meant to be called once during wolfCrypt_Init()
+ * Use the macro CUSTOM_FP_ECC_ENTRIES to get entries to then set here
+ *     see wolfcrypt/src/wc_dsp.c function wolfSSL_DSPInit()
+ *
+ * returns 0 on success
+ */
+int sp_ecc_set_cache_entries_384(int numEntries)
+{
+    if (numEntries < 0) {
+        sp_cache_entries_384 = 0;
+    }
+    else {
+        sp_cache_entries_384 = numEntries;
+    }
+
+    return 0;
+}
+#endif
+
 static THREAD_LS_T int sp_cache_384_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(HAVE_THREAD_LS)
     static volatile int initCacheMutex_384 = 0;
     static wolfSSL_Mutex sp_cache_384_lock;
 #endif
 
-static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
+#ifndef FP_ECC_CONTROL
+static THREAD_LS_T int sp_cache_384_last = -1;
+
+/* return the index of which cached point to use */
+static int sp_ecc_get_cache_384_index(const sp_point_384* g)
 {
-    int i, j;
+    int i = -1;
+    int j;
     uint32_t least;
 
+    /* Find empty entry. */
+    i = (sp_cache_384_last + 1) % sp_cache_entries_384;
+    for (; i != sp_cache_384_last; i=(i+1)%sp_cache_entries_384) {
+        if (!sp_cache_384[i].set) {
+            break;
+        }
+    }
+
+    /* Evict least used. */
+    if (i == sp_cache_384_last) {
+        least = sp_cache_384[0].cnt;
+        for (j=1; j<sp_cache_entries_384; j++) {
+            if (sp_cache_384[j].cnt < least) {
+                i = j;
+                least = sp_cache_384[i].cnt;
+            }
+        }
+    }
+
+    /* sanity check on index */
+    if (i >= sp_cache_entries_384) {
+        /* Invalid cache table index choice (too large) */
+        i = -1;
+    }
+
+    return i;
+}
+
+static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
+{
+    int i;
+
+    *cache = NULL;
+
+#ifdef FP_ECC_CONTROL
+    if (sp_cache_384 == NULL) {
+        /* the cache table was not set */
+        return;
+    }
+#endif
+
     if (sp_cache_384_inited == 0) {
-        for (i=0; i<FP_ENTRIES; i++) {
+        for (i=0; i<sp_cache_entries_384; i++) {
             sp_cache_384[i].set = 0;
         }
         sp_cache_384_inited = 1;
     }
 
     /* Compare point with those in cache. */
-    for (i=0; i<FP_ENTRIES; i++) {
+    for (i=0; i<sp_cache_entries_384; i++) {
         if (!sp_cache_384[i].set)
             continue;
 
@@ -41709,38 +42081,46 @@ static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
     }
 
     /* No match. */
-    if (i == FP_ENTRIES) {
-        /* Find empty entry. */
-        i = (sp_cache_384_last + 1) % FP_ENTRIES;
-        for (; i != sp_cache_384_last; i=(i+1)%FP_ENTRIES) {
-            if (!sp_cache_384[i].set) {
-                break;
-            }
+    if (i == sp_cache_entries_384) {
+        i = sp_ecc_get_cache_384_index(g);
+        if (i >= 0) {
+            XMEMCPY(sp_cache_384[i].x, g->x, sizeof(sp_cache_384[i].x));
+            XMEMCPY(sp_cache_384[i].y, g->y, sizeof(sp_cache_384[i].y));
+            sp_cache_384[i].set = 1;
+            sp_cache_384[i].cnt = 1;
         }
-
-        /* Evict least used. */
-        if (i == sp_cache_384_last) {
-            least = sp_cache_384[0].cnt;
-            for (j=1; j<FP_ENTRIES; j++) {
-                if (sp_cache_384[j].cnt < least) {
-                    i = j;
-                    least = sp_cache_384[i].cnt;
-                }
-            }
-        }
-
-        XMEMCPY(sp_cache_384[i].x, g->x, sizeof(sp_cache_384[i].x));
-        XMEMCPY(sp_cache_384[i].y, g->y, sizeof(sp_cache_384[i].y));
-        sp_cache_384[i].set = 1;
-        sp_cache_384[i].cnt = 1;
     }
 
-    *cache = &sp_cache_384[i];
-    sp_cache_384_last = i;
+    if (i >= 0) {
+        *cache = &sp_cache_384[i];
+        sp_cache_384_last = i;
+    }
 }
+#endif /* !FP_ECC_CONTROL */
 #endif /* FP_ECC */
 
 #ifndef WOLFSSL_NO_P384_NIST
+#ifdef FP_ECC_CONTROL
+/* Multiply the base point of P384 by the scalar and return the result.
+ * If map is true then convert result to affine coordinates.
+ *
+ * r     Resulting point.
+ * g     Point to multiply.
+ * k     Scalar to multiply by.
+ * map   Indicates whether to convert result to affine.
+ * ct    Constant time required.
+ * cache cache entry to use
+ * heap  Heap to use for allocation.
+ * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
+ */
+static int sp_384_ecc_mulmod_6(sp_point_384* r, const sp_point_384* g, const sp_digit* k,
+        int map, int ct, sp_cache_384_t* cache, void* heap)
+{
+    if (cache == NULL)
+        return sp_384_ecc_mulmod_win_add_sub_6(r, g, k, map, ct, heap);
+    return sp_384_ecc_mulmod_stripe_6(r, g, cache->table, k, map, ct, heap);
+}
+#else
 /* Multiply the base point of P384 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -41758,40 +42138,47 @@ static int sp_384_ecc_mulmod_6(sp_point_384* r, const sp_point_384* g, const sp_
 #ifndef FP_ECC
     return sp_384_ecc_mulmod_win_add_sub_6(r, g, k, map, ct, heap);
 #else
-    sp_digit tmp[2 * 6 * 7];
-    sp_cache_384_t* cache;
     int err = MP_OKAY;
 
-#ifndef HAVE_THREAD_LS
+    sp_digit tmp[2 * 6 * 7];
+    sp_cache_384_t* cache = NULL;
+
+    #ifndef HAVE_THREAD_LS
     if (initCacheMutex_384 == 0) {
          wc_InitMutex(&sp_cache_384_lock);
          initCacheMutex_384 = 1;
     }
     if (wc_LockMutex(&sp_cache_384_lock) != 0)
        err = BAD_MUTEX_E;
-#endif /* HAVE_THREAD_LS */
+    #endif /* HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
-        sp_ecc_get_cache_384(g, &cache);
-        if (cache->cnt == 2)
-            sp_384_gen_stripe_table_6(g, cache->table, tmp, heap);
-
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_384_lock);
-#endif /* HAVE_THREAD_LS */
-
-        if (cache->cnt < 2) {
-            err = sp_384_ecc_mulmod_win_add_sub_6(r, g, k, map, ct, heap);
+        if (cache == NULL) {
+            sp_ecc_get_cache_384(g, &cache);
+            if (cache == NULL) /* no entry found, fall back to slower mulmod */
+                err = sp_384_ecc_mulmod_win_add_sub_6(r, g, k, map, ct, heap);
         }
-        else {
-            err = sp_384_ecc_mulmod_stripe_6(r, g, cache->table, k,
-                    map, ct, heap);
+        if (cache != NULL && cache->cnt == 2)
+            sp_384_gen_stripe_table_6(g, cache->table, tmp, heap);
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_384_lock);
+    #endif /* HAVE_THREAD_LS */
+
+        if (cache != NULL) {
+            if (cache->cnt < 2) {
+                err = sp_384_ecc_mulmod_win_add_sub_6(r, g, k, map, ct, heap);
+            }
+            else {
+                err = sp_384_ecc_mulmod_stripe_6(r, g, cache->table, k,
+                        map, ct, heap);
+            }
         }
     }
 
     return err;
 #endif
 }
+#endif
 
 #endif /* !WOLFSSL_NO_P384_NIST */
 #ifndef WOLFSSL_NO_P384_NIST
@@ -41831,7 +42218,11 @@ int sp_ecc_mulmod_384(mp_int* km, ecc_point* gm, ecc_point* r, int map,
         sp_384_from_mp(k, 6, km);
         sp_384_point_from_ecc_point_6(point, gm);
 
+#ifdef FP_ECC_CONTROL
+            err = sp_384_ecc_mulmod_6(point, point, k, map, 1, NULL, heap);
+#else
             err = sp_384_ecc_mulmod_6(point, point, k, map, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         err = sp_384_point_to_ecc_point_6(point, r);
@@ -43376,7 +43767,11 @@ int sp_ecc_make_key_384(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
 
 #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     if (err == MP_OKAY) {
-            err = sp_384_ecc_mulmod_6(infinity, point, p384_order, 1, 1, NULL);
+#ifdef FP_ECC_CONTROL
+            err = sp_384_ecc_mulmod_6(infinity, point, p384_order, 1, 1, NULL, heap);
+#else
+            err = sp_384_ecc_mulmod_6(infinity, point, p384_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         if (sp_384_iszero_6(point->x) || sp_384_iszero_6(point->y)) {
@@ -43474,7 +43869,11 @@ int sp_ecc_secret_gen_384(mp_int* priv, ecc_point* pub, byte* out,
     if (err == MP_OKAY) {
         sp_384_from_mp(k, 6, priv);
         sp_384_point_from_ecc_point_6(point, pub);
+#ifdef FP_ECC_CONTROL
+            err = sp_384_ecc_mulmod_6(point, point, k, 1, 1, NULL, heap);
+#else
             err = sp_384_ecc_mulmod_6(point, point, k, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         sp_384_to_bin(point->x, out);
@@ -43863,7 +44262,7 @@ static int sp_384_mont_inv_order_6_nb(sp_ecc_ctx_t* sp_ctx, sp_digit* r, const s
     return err;
 }
 #endif /* WOLFSSL_SP_NONBLOCK */
-
+#ifdef HAVE_ECC_SIGN
 static void sp_384_mont_inv_order_6(sp_digit* r, const sp_digit* a,
         sp_digit* td)
 {
@@ -43927,7 +44326,7 @@ static void sp_384_mont_inv_order_6(sp_digit* r, const sp_digit* a,
     sp_384_mont_mul_order_6(r, t2, a);
 #endif /* WOLFSSL_SP_SMALL */
 }
-
+#endif /* HAVE_ECC_SIGN */
 #endif /* !WOLFSSL_NO_P384_NIST */
 #endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
 #ifndef WOLFSSL_NO_P384_NIST
@@ -44009,7 +44408,7 @@ int sp_ecc_sign_384_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen, W
         break;
     case 2: /* MULMOD */
         err = sp_384_ecc_mulmod_6_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx,
-            &ctx->point, &p384_base, ctx->k, 1, 1, heap);
+            &ctx->point, &p384_base, ctx->k, 1, 1, -1, heap);
         if (err == MP_OKAY) {
             ctx->state = 3;
         }
@@ -44261,6 +44660,7 @@ int sp_ecc_sign_384(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
 }
 #endif /* HAVE_ECC_SIGN */
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #ifndef WOLFSSL_SP_SMALL
 /* Divide the number by 2 mod the modulus. (r = a / 2 % m)
  *
@@ -44431,6 +44831,8 @@ static int sp_384_mod_inv_6(sp_digit* r, const sp_digit* a, const sp_digit* m)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
+#ifndef WOLFSSL_NO_P384_NIST
+#ifdef HAVE_ECC_VERIFY
 /* Verify the signature values with the hash and public key.
  *   e = Truncate(hash, 384)
  *   u1 = e/s mod order
@@ -44518,14 +44920,14 @@ int sp_ecc_verify_384_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen,
         ctx->state = 6;
         break;
     case 6: /* MULBASE */
-        err = sp_384_ecc_mulmod_6_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p1, &p384_base, ctx->u1, 0, 0, heap);
+        err = sp_384_ecc_mulmod_6_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p1, &p384_base, ctx->u1, 0, 0, -1, heap);
         if (err == MP_OKAY) {
             XMEMSET(&ctx->mulmod_ctx, 0, sizeof(ctx->mulmod_ctx));
             ctx->state = 7;
         }
         break;
     case 7: /* MULMOD */
-        err = sp_384_ecc_mulmod_6_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p2, &ctx->p2, ctx->u2, 0, 0, heap);
+        err = sp_384_ecc_mulmod_6_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p2, &ctx->p2, ctx->u2, 0, 0, -1, heap);
         if (err == MP_OKAY) {
             XMEMSET(&ctx->add_ctx, 0, sizeof(ctx->add_ctx));
             ctx->state = 8;
@@ -44617,8 +45019,10 @@ int sp_ecc_verify_384_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen,
 }
 #endif /* WOLFSSL_SP_NONBLOCK */
 
-int sp_ecc_verify_384(const byte* hash, word32 hashLen, mp_int* pX,
-    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, void* heap)
+
+static int sp_ecc_verify_384_ex(const byte* hash, word32 hashLen,
+    mp_int* pX, mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res,
+    sp_cache_384_t* cache, void* heap)
 {
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
     sp_digit* d = NULL;
@@ -44707,7 +45111,11 @@ int sp_ecc_verify_384(const byte* hash, word32 hashLen, mp_int* pX,
             err = sp_384_ecc_mulmod_base_6(p1, u1, 0, 0, heap);
     }
     if (err == MP_OKAY) {
-            err = sp_384_ecc_mulmod_6(p2, p2, u2, 0, 0, heap);
+#ifdef FP_ECC_CONTROL
+        err = sp_384_ecc_mulmod_6(p2, p2, u2, 0, 0, cache, heap);
+#else
+        err = sp_384_ecc_mulmod_6(p2, p2, u2, 0, 0, heap);
+#endif
     }
 
     if (err == MP_OKAY) {
@@ -44778,6 +45186,23 @@ int sp_ecc_verify_384(const byte* hash, word32 hashLen, mp_int* pX,
 
     return err;
 }
+
+
+int sp_ecc_verify_384(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, void* heap)
+{
+    return sp_ecc_verify_384_ex(hash, hashLen, pX, pY, pZ, r, sm, res, NULL, heap);
+}
+
+
+#ifdef FP_ECC_CONTROL
+int sp_ecc_cache_verify_384(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, sp_cache_384_t* cache, void* heap)
+{
+    return sp_ecc_verify_384_ex(hash, hashLen, pX, pY, pZ, r, sm,
+                res, cache, heap);
+}
+#endif /* FP_ECC_CONTROL */
 #endif /* HAVE_ECC_VERIFY */
 
 #endif /* !WOLFSSL_NO_P384_NIST */
@@ -44957,7 +45382,11 @@ int sp_ecc_check_key_384(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
 
     if (err == MP_OKAY) {
         /* Point * order = infinity */
+#ifdef FP_ECC_CONTROL
+            err = sp_384_ecc_mulmod_6(p, pub, p384_order, 1, 1, NULL, heap);
+#else
             err = sp_384_ecc_mulmod_6(p, pub, p384_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         /* Check result is infinity */
@@ -45413,14 +45842,14 @@ static const sp_digit p256_sm2_order2[4] = {
     0x53bbf40939d54121L,0x7203df6b21c6052bL,0xffffffffffffffffL,
     0xfffffffeffffffffL
 };
-#if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
+#if defined(HAVE_ECC_SIGN)
 /* The Montogmery normalizer for order of the curve P256. */
 static const sp_digit p256_sm2_norm_order[4] = {
     0xac440bf6c62abeddL,0x8dfc2094de39fad4L,0x0000000000000000L,
     0x0000000100000000L
 };
 #endif
-#if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
+#if defined(HAVE_ECC_SIGN)
 /* The Montogmery multiplier for order of the curve P256. */
 static const sp_digit p256_sm2_mp_order = 0x327f9e8872350975L;
 #endif
@@ -47264,9 +47693,6 @@ static int sp_256_ecc_mulmod_win_add_sub_sm2_4(sp_point_256* r, const sp_point_2
     return err;
 }
 
-#ifndef WC_NO_CACHE_RESISTANT
-#if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
-#endif /* FP_ECC || WOLFSSL_SP_SMALL */
 /* Add two Montgomery form projective points. The second point has a q value of
  * one.
  * Only the first point can be the same pointer as the result point.
@@ -47372,6 +47798,11 @@ static void sp_256_proj_to_affine_sm2_4(sp_point_256* a, sp_digit* t)
     XMEMCPY(a->z, p256_sm2_norm_mod, sizeof(p256_sm2_norm_mod));
 }
 
+#endif /* FP_ECC */
+#ifndef WC_NO_CACHE_RESISTANT
+#if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
+#endif /* FP_ECC || WOLFSSL_SP_SMALL */
+#ifdef FP_ECC
 /* Generate the pre-computed table of points for the base point.
  *
  * a      The base point.
@@ -47511,7 +47942,7 @@ static int sp_256_ecc_mulmod_stripe_sm2_4(sp_point_256* r, const sp_point_256* g
 
         y = 0;
         for (j=0,x=42; j<6 && x<256; j++,x+=43) {
-            y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+            y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
         }
     #ifndef WC_NO_CACHE_RESISTANT
         if (ct) {
@@ -47526,7 +47957,7 @@ static int sp_256_ecc_mulmod_stripe_sm2_4(sp_point_256* r, const sp_point_256* g
         for (i=41; i>=0; i--) {
             y = 0;
             for (j=0,x=i; j<6 && x<256; j++,x+=43) {
-                y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+                y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
             }
 
             sp_256_proj_point_dbl_sm2_4(rt, rt, t);
@@ -47564,6 +47995,27 @@ static int sp_256_ecc_mulmod_stripe_sm2_4(sp_point_256* r, const sp_point_256* g
 }
 
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
+#ifdef FP_ECC_CONTROL
+/* Multiply the base point of P256 by the scalar and return the result.
+ * If map is true then convert result to affine coordinates.
+ *
+ * r     Resulting point.
+ * g     Point to multiply.
+ * k     Scalar to multiply by.
+ * map   Indicates whether to convert result to affine.
+ * ct    Constant time required.
+ * cache cache entry to use
+ * heap  Heap to use for allocation.
+ * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
+ */
+static int sp_256_ecc_mulmod_sm2_4(sp_point_256* r, const sp_point_256* g, const sp_digit* k,
+        int map, int ct, sp_cache_256_t* cache, void* heap)
+{
+    if (cache == NULL)
+        return sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
+    return sp_256_ecc_mulmod_stripe_sm2_4(r, g, cache->table, k, map, ct, heap);
+}
+#else
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -47581,40 +48033,47 @@ static int sp_256_ecc_mulmod_sm2_4(sp_point_256* r, const sp_point_256* g, const
 #ifndef FP_ECC
     return sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
 #else
-    sp_digit tmp[2 * 4 * 6];
-    sp_cache_256_t* cache;
     int err = MP_OKAY;
 
-#ifndef HAVE_THREAD_LS
+    sp_digit tmp[2 * 4 * 6];
+    sp_cache_256_t* cache = NULL;
+
+    #ifndef HAVE_THREAD_LS
     if (initCacheMutex_256 == 0) {
          wc_InitMutex(&sp_cache_256_lock);
          initCacheMutex_256 = 1;
     }
     if (wc_LockMutex(&sp_cache_256_lock) != 0)
        err = BAD_MUTEX_E;
-#endif /* HAVE_THREAD_LS */
+    #endif /* HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
-        sp_ecc_get_cache_256(g, &cache);
-        if (cache->cnt == 2)
-            sp_256_gen_stripe_table_sm2_4(g, cache->table, tmp, heap);
-
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
-
-        if (cache->cnt < 2) {
-            err = sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
+        if (cache == NULL) {
+            sp_ecc_get_cache_256(g, &cache);
+            if (cache == NULL) /* no entry found, fall back to slower mulmod */
+                err = sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
         }
-        else {
-            err = sp_256_ecc_mulmod_stripe_sm2_4(r, g, cache->table, k,
-                    map, ct, heap);
+        if (cache != NULL && cache->cnt == 2)
+            sp_256_gen_stripe_table_sm2_4(g, cache->table, tmp, heap);
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+    #endif /* HAVE_THREAD_LS */
+
+        if (cache != NULL) {
+            if (cache->cnt < 2) {
+                err = sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
+            }
+            else {
+                err = sp_256_ecc_mulmod_stripe_sm2_4(r, g, cache->table, k,
+                        map, ct, heap);
+            }
         }
     }
 
     return err;
 #endif
 }
+#endif
 
 #else
 #if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
@@ -47759,7 +48218,7 @@ static int sp_256_ecc_mulmod_stripe_sm2_4(sp_point_256* r, const sp_point_256* g
 
         y = 0;
         for (j=0,x=31; j<8; j++,x+=32) {
-            y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+            y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
         }
     #ifndef WC_NO_CACHE_RESISTANT
         if (ct) {
@@ -47774,7 +48233,7 @@ static int sp_256_ecc_mulmod_stripe_sm2_4(sp_point_256* r, const sp_point_256* g
         for (i=30; i>=0; i--) {
             y = 0;
             for (j=0,x=i; j<8; j++,x+=32) {
-                y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+                y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
             }
 
             sp_256_proj_point_dbl_sm2_4(rt, rt, t);
@@ -47812,6 +48271,27 @@ static int sp_256_ecc_mulmod_stripe_sm2_4(sp_point_256* r, const sp_point_256* g
 }
 
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
+#ifdef FP_ECC_CONTROL
+/* Multiply the base point of P256 by the scalar and return the result.
+ * If map is true then convert result to affine coordinates.
+ *
+ * r     Resulting point.
+ * g     Point to multiply.
+ * k     Scalar to multiply by.
+ * map   Indicates whether to convert result to affine.
+ * ct    Constant time required.
+ * cache cache entry to use
+ * heap  Heap to use for allocation.
+ * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
+ */
+static int sp_256_ecc_mulmod_sm2_4(sp_point_256* r, const sp_point_256* g, const sp_digit* k,
+        int map, int ct, sp_cache_256_t* cache, void* heap)
+{
+    if (cache == NULL)
+        return sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
+    return sp_256_ecc_mulmod_stripe_sm2_4(r, g, cache->table, k, map, ct, heap);
+}
+#else
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -47829,40 +48309,47 @@ static int sp_256_ecc_mulmod_sm2_4(sp_point_256* r, const sp_point_256* g, const
 #ifndef FP_ECC
     return sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
 #else
-    sp_digit tmp[2 * 4 * 6];
-    sp_cache_256_t* cache;
     int err = MP_OKAY;
 
-#ifndef HAVE_THREAD_LS
+    sp_digit tmp[2 * 4 * 6];
+    sp_cache_256_t* cache = NULL;
+
+    #ifndef HAVE_THREAD_LS
     if (initCacheMutex_256 == 0) {
          wc_InitMutex(&sp_cache_256_lock);
          initCacheMutex_256 = 1;
     }
     if (wc_LockMutex(&sp_cache_256_lock) != 0)
        err = BAD_MUTEX_E;
-#endif /* HAVE_THREAD_LS */
+    #endif /* HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
-        sp_ecc_get_cache_256(g, &cache);
-        if (cache->cnt == 2)
-            sp_256_gen_stripe_table_sm2_4(g, cache->table, tmp, heap);
-
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
-
-        if (cache->cnt < 2) {
-            err = sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
+        if (cache == NULL) {
+            sp_ecc_get_cache_256(g, &cache);
+            if (cache == NULL) /* no entry found, fall back to slower mulmod */
+                err = sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
         }
-        else {
-            err = sp_256_ecc_mulmod_stripe_sm2_4(r, g, cache->table, k,
-                    map, ct, heap);
+        if (cache != NULL && cache->cnt == 2)
+            sp_256_gen_stripe_table_sm2_4(g, cache->table, tmp, heap);
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+    #endif /* HAVE_THREAD_LS */
+
+        if (cache != NULL) {
+            if (cache->cnt < 2) {
+                err = sp_256_ecc_mulmod_win_add_sub_sm2_4(r, g, k, map, ct, heap);
+            }
+            else {
+                err = sp_256_ecc_mulmod_stripe_sm2_4(r, g, cache->table, k,
+                        map, ct, heap);
+            }
         }
     }
 
     return err;
 #endif
 }
+#endif
 
 #endif /* !WC_NO_CACHE_RESISTANT */
 /* Multiply the point by the scalar and return the result.
@@ -47901,7 +48388,11 @@ int sp_ecc_mulmod_sm2_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
         sp_256_from_mp(k, 4, km);
         sp_256_point_from_ecc_point_4(point, gm);
 
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_sm2_4(point, point, k, map, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_sm2_4(point, point, k, map, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         err = sp_256_point_to_ecc_point_4(point, r);
@@ -61781,7 +62272,11 @@ int sp_ecc_make_key_sm2_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* hea
 
 #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     if (err == MP_OKAY) {
-            err = sp_256_ecc_mulmod_sm2_4(infinity, point, p256_sm2_order, 1, 1, NULL);
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_sm2_4(infinity, point, p256_sm2_order, 1, 1, NULL, heap);
+#else
+            err = sp_256_ecc_mulmod_sm2_4(infinity, point, p256_sm2_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         if (sp_256_iszero_4(point->x) || sp_256_iszero_4(point->y)) {
@@ -61855,7 +62350,11 @@ int sp_ecc_secret_gen_sm2_256(mp_int* priv, ecc_point* pub, byte* out,
     if (err == MP_OKAY) {
         sp_256_from_mp(k, 4, priv);
         sp_256_point_from_ecc_point_4(point, pub);
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_sm2_4(point, point, k, 1, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_sm2_4(point, point, k, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         sp_256_to_bin(point->x, out);
@@ -61911,7 +62410,7 @@ static sp_digit sp_256_cond_add_4(sp_digit* r, const sp_digit* a, const sp_digit
     return (sp_digit)r;
 }
 
-#if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
+#if defined(HAVE_ECC_SIGN)
 #ifdef WOLFSSL_SP_SMALL
 /* Order-2 for the SM2 P256 curve. */
 static const uint64_t p256_sm2_order_minus_2[4] = {
@@ -61965,7 +62464,7 @@ static void sp_256_mont_sqr_n_order_sm2_4(sp_digit* r, const sp_digit* a, int n)
     }
 }
 #endif /* !WOLFSSL_SP_SMALL */
-
+#ifdef HAVE_ECC_SIGN
 /* Invert the number, in Montgomery form, modulo the order of the P256 curve.
  * (r = 1 / a mod order)
  *
@@ -62068,8 +62567,9 @@ static void sp_256_mont_inv_order_sm2_4(sp_digit* r, const sp_digit* a,
     sp_256_mont_mul_order_sm2_4(r, t2, a);
 #endif /* WOLFSSL_SP_SMALL */
 }
+#endif /* HAVE_ECC_SIGN */
 
-#endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
+#endif /* HAVE_ECC_SIGN */
 #ifdef HAVE_ECC_SIGN
 #ifndef SP_ECC_MAX_SIG_GEN
 #define SP_ECC_MAX_SIG_GEN  64
@@ -62249,10 +62749,8 @@ int sp_ecc_sign_sm2_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* p
 #endif /* HAVE_ECC_SIGN */
 
 #ifdef HAVE_ECC_VERIFY
-/* Verify the signature values with the hash and public key.
- */
-int sp_ecc_verify_sm2_256(const byte* hash, word32 hashLen, mp_int* pX,
-    mp_int* pY, mp_int* pZ, mp_int* rm, mp_int* sm, int* res, void* heap)
+static int sp_ecc_verify_sm2_256_ex(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* rm, mp_int* sm, int* res, sp_cache_256_t* cache, void* heap)
 {
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
     sp_digit* d = NULL;
@@ -62338,7 +62836,11 @@ int sp_ecc_verify_sm2_256(const byte* hash, word32 hashLen, mp_int* pX,
             err = sp_256_ecc_mulmod_base_sm2_4(p1, s, 0, 0, heap);
     }
     if ((err == MP_OKAY) && (!done)) {
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_sm2_4(p2, p2, e, 0, 0, cache, heap);
+#else
             err = sp_256_ecc_mulmod_sm2_4(p2, p2, e, 0, 0, heap);
+#endif
     }
 
     if ((err == MP_OKAY) && (!done)) {
@@ -62393,6 +62895,21 @@ int sp_ecc_verify_sm2_256(const byte* hash, word32 hashLen, mp_int* pX,
     sp_256_point_free_4(p2, 0, heap);
 
     return err;
+}
+
+#ifdef FP_ECC_CONTROL
+int sp_ecc_cache_verify_sm2_256(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* rm, mp_int* sm, int* res, sp_cache_256_t* cache, void* heap)
+{
+    return sp_ecc_verify_sm2_256_ex(hash, hashLen, pX, pY, pZ, rm, sm, res, cache, heap);
+}
+#endif
+
+
+int sp_ecc_verify_sm2_256(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* rm, mp_int* sm, int* res, void* heap)
+{
+    return sp_ecc_verify_sm2_256_ex(hash, hashLen, pX, pY, pZ, rm, sm, res, NULL, heap);
 }
 #endif /* HAVE_ECC_VERIFY */
 
@@ -62520,7 +63037,7 @@ int sp_ecc_check_key_sm2_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
         err = sp_256_point_new_4(heap, pd, p);
     }
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
-    if (err == MP_OKAY) {
+    if (err == MP_OKAY && privm) {
         priv = (sp_digit*)XMALLOC(sizeof(sp_digit) * 4, heap,
                                                               DYNAMIC_TYPE_ECC);
         if (priv == NULL) {
@@ -62528,6 +63045,15 @@ int sp_ecc_check_key_sm2_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
         }
     }
 #endif
+
+    /* Quick check the lengs of public key ordinates and private key are in
+     * range. Proper check later.
+     */
+    if ((err == MP_OKAY) && ((mp_count_bits(pX) > 256) ||
+        (mp_count_bits(pY) > 256) ||
+        ((privm != NULL) && (mp_count_bits(privm) > 256)))) {
+        err = ECC_OUT_OF_RANGE_E;
+    }
 
     if (err == MP_OKAY) {
 #if (!defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SMALL_STACK)) || defined(WOLFSSL_SP_NO_MALLOC)
@@ -62537,7 +63063,8 @@ int sp_ecc_check_key_sm2_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
         sp_256_from_mp(pub->x, 4, pX);
         sp_256_from_mp(pub->y, 4, pY);
         sp_256_from_bin(pub->z, 4, one, (int)sizeof(one));
-        sp_256_from_mp(priv, 4, privm);
+        if (privm)
+            sp_256_from_mp(priv, 4, privm);
 
         /* Check point at infinitiy. */
         if ((sp_256_iszero_4(pub->x) != 0) &&
@@ -62561,7 +63088,11 @@ int sp_ecc_check_key_sm2_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
 
     if (err == MP_OKAY) {
         /* Point * order = infinity */
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_sm2_4(p, pub, p256_sm2_order, 1, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_sm2_4(p, pub, p256_sm2_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         /* Check result is infinity */
@@ -62571,15 +63102,17 @@ int sp_ecc_check_key_sm2_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
         }
     }
 
-    if (err == MP_OKAY) {
-        /* Base * private = point */
-            err = sp_256_ecc_mulmod_base_sm2_4(p, priv, 1, 1, heap);
-    }
-    if (err == MP_OKAY) {
-        /* Check result is public key */
-        if (sp_256_cmp_4(p->x, pub->x) != 0 ||
-            sp_256_cmp_4(p->y, pub->y) != 0) {
-            err = ECC_PRIV_KEY_E;
+    if (privm) {
+        if (err == MP_OKAY) {
+            /* Base * private = point */
+                err = sp_256_ecc_mulmod_base_sm2_4(p, priv, 1, 1, heap);
+        }
+        if (err == MP_OKAY) {
+            /* Check result is public key */
+            if (sp_256_cmp_4(p->x, pub->x) != 0 ||
+                sp_256_cmp_4(p->y, pub->y) != 0) {
+                err = ECC_PRIV_KEY_E;
+            }
         }
     }
 
@@ -64473,9 +65006,6 @@ static int sp_256_ecc_mulmod_win_add_sub_brainpool_4(sp_point_256* r, const sp_p
     return err;
 }
 
-#ifndef WC_NO_CACHE_RESISTANT
-#if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
-#endif /* FP_ECC || WOLFSSL_SP_SMALL */
 /* Add two Montgomery form projective points. The second point has a q value of
  * one.
  * Only the first point can be the same pointer as the result point.
@@ -64581,6 +65111,11 @@ static void sp_256_proj_to_affine_brainpool_4(sp_point_256* a, sp_digit* t)
     XMEMCPY(a->z, p256_brainpool_norm_mod, sizeof(p256_brainpool_norm_mod));
 }
 
+#endif /* FP_ECC */
+#ifndef WC_NO_CACHE_RESISTANT
+#if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
+#endif /* FP_ECC || WOLFSSL_SP_SMALL */
+#ifdef FP_ECC
 /* Generate the pre-computed table of points for the base point.
  *
  * a      The base point.
@@ -64720,7 +65255,7 @@ static int sp_256_ecc_mulmod_stripe_brainpool_4(sp_point_256* r, const sp_point_
 
         y = 0;
         for (j=0,x=42; j<6 && x<256; j++,x+=43) {
-            y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+            y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
         }
     #ifndef WC_NO_CACHE_RESISTANT
         if (ct) {
@@ -64735,7 +65270,7 @@ static int sp_256_ecc_mulmod_stripe_brainpool_4(sp_point_256* r, const sp_point_
         for (i=41; i>=0; i--) {
             y = 0;
             for (j=0,x=i; j<6 && x<256; j++,x+=43) {
-                y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+                y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
             }
 
             sp_256_proj_point_dbl_brainpool_4(rt, rt, t);
@@ -64773,6 +65308,27 @@ static int sp_256_ecc_mulmod_stripe_brainpool_4(sp_point_256* r, const sp_point_
 }
 
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
+#ifdef FP_ECC_CONTROL
+/* Multiply the base point of P256 by the scalar and return the result.
+ * If map is true then convert result to affine coordinates.
+ *
+ * r     Resulting point.
+ * g     Point to multiply.
+ * k     Scalar to multiply by.
+ * map   Indicates whether to convert result to affine.
+ * ct    Constant time required.
+ * cache cache entry to use
+ * heap  Heap to use for allocation.
+ * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
+ */
+static int sp_256_ecc_mulmod_brainpool_4(sp_point_256* r, const sp_point_256* g, const sp_digit* k,
+        int map, int ct, sp_cache_256_t* cache, void* heap)
+{
+    if (cache == NULL)
+        return sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
+    return sp_256_ecc_mulmod_stripe_brainpool_4(r, g, cache->table, k, map, ct, heap);
+}
+#else
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -64790,40 +65346,47 @@ static int sp_256_ecc_mulmod_brainpool_4(sp_point_256* r, const sp_point_256* g,
 #ifndef FP_ECC
     return sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
 #else
-    sp_digit tmp[2 * 4 * 5];
-    sp_cache_256_t* cache;
     int err = MP_OKAY;
 
-#ifndef HAVE_THREAD_LS
+    sp_digit tmp[2 * 4 * 5];
+    sp_cache_256_t* cache = NULL;
+
+    #ifndef HAVE_THREAD_LS
     if (initCacheMutex_256 == 0) {
          wc_InitMutex(&sp_cache_256_lock);
          initCacheMutex_256 = 1;
     }
     if (wc_LockMutex(&sp_cache_256_lock) != 0)
        err = BAD_MUTEX_E;
-#endif /* HAVE_THREAD_LS */
+    #endif /* HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
-        sp_ecc_get_cache_256(g, &cache);
-        if (cache->cnt == 2)
-            sp_256_gen_stripe_table_brainpool_4(g, cache->table, tmp, heap);
-
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
-
-        if (cache->cnt < 2) {
-            err = sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
+        if (cache == NULL) {
+            sp_ecc_get_cache_256(g, &cache);
+            if (cache == NULL) /* no entry found, fall back to slower mulmod */
+                err = sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
         }
-        else {
-            err = sp_256_ecc_mulmod_stripe_brainpool_4(r, g, cache->table, k,
-                    map, ct, heap);
+        if (cache != NULL && cache->cnt == 2)
+            sp_256_gen_stripe_table_brainpool_4(g, cache->table, tmp, heap);
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+    #endif /* HAVE_THREAD_LS */
+
+        if (cache != NULL) {
+            if (cache->cnt < 2) {
+                err = sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
+            }
+            else {
+                err = sp_256_ecc_mulmod_stripe_brainpool_4(r, g, cache->table, k,
+                        map, ct, heap);
+            }
         }
     }
 
     return err;
 #endif
 }
+#endif
 
 #else
 #if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
@@ -64968,7 +65531,7 @@ static int sp_256_ecc_mulmod_stripe_brainpool_4(sp_point_256* r, const sp_point_
 
         y = 0;
         for (j=0,x=31; j<8; j++,x+=32) {
-            y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+            y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
         }
     #ifndef WC_NO_CACHE_RESISTANT
         if (ct) {
@@ -64983,7 +65546,7 @@ static int sp_256_ecc_mulmod_stripe_brainpool_4(sp_point_256* r, const sp_point_
         for (i=30; i>=0; i--) {
             y = 0;
             for (j=0,x=i; j<8; j++,x+=32) {
-                y |= ((k[x / 64] >> (x % 64)) & 1) << j;
+                y |= (int)(((k[x / 64] >> (x % 64)) & 1) << j);
             }
 
             sp_256_proj_point_dbl_brainpool_4(rt, rt, t);
@@ -65021,6 +65584,27 @@ static int sp_256_ecc_mulmod_stripe_brainpool_4(sp_point_256* r, const sp_point_
 }
 
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
+#ifdef FP_ECC_CONTROL
+/* Multiply the base point of P256 by the scalar and return the result.
+ * If map is true then convert result to affine coordinates.
+ *
+ * r     Resulting point.
+ * g     Point to multiply.
+ * k     Scalar to multiply by.
+ * map   Indicates whether to convert result to affine.
+ * ct    Constant time required.
+ * cache cache entry to use
+ * heap  Heap to use for allocation.
+ * returns MEMORY_E when memory allocation fails and MP_OKAY on success.
+ */
+static int sp_256_ecc_mulmod_brainpool_4(sp_point_256* r, const sp_point_256* g, const sp_digit* k,
+        int map, int ct, sp_cache_256_t* cache, void* heap)
+{
+    if (cache == NULL)
+        return sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
+    return sp_256_ecc_mulmod_stripe_brainpool_4(r, g, cache->table, k, map, ct, heap);
+}
+#else
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -65038,40 +65622,47 @@ static int sp_256_ecc_mulmod_brainpool_4(sp_point_256* r, const sp_point_256* g,
 #ifndef FP_ECC
     return sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
 #else
-    sp_digit tmp[2 * 4 * 5];
-    sp_cache_256_t* cache;
     int err = MP_OKAY;
 
-#ifndef HAVE_THREAD_LS
+    sp_digit tmp[2 * 4 * 5];
+    sp_cache_256_t* cache = NULL;
+
+    #ifndef HAVE_THREAD_LS
     if (initCacheMutex_256 == 0) {
          wc_InitMutex(&sp_cache_256_lock);
          initCacheMutex_256 = 1;
     }
     if (wc_LockMutex(&sp_cache_256_lock) != 0)
        err = BAD_MUTEX_E;
-#endif /* HAVE_THREAD_LS */
+    #endif /* HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
-        sp_ecc_get_cache_256(g, &cache);
-        if (cache->cnt == 2)
-            sp_256_gen_stripe_table_brainpool_4(g, cache->table, tmp, heap);
-
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
-
-        if (cache->cnt < 2) {
-            err = sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
+        if (cache == NULL) {
+            sp_ecc_get_cache_256(g, &cache);
+            if (cache == NULL) /* no entry found, fall back to slower mulmod */
+                err = sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
         }
-        else {
-            err = sp_256_ecc_mulmod_stripe_brainpool_4(r, g, cache->table, k,
-                    map, ct, heap);
+        if (cache != NULL && cache->cnt == 2)
+            sp_256_gen_stripe_table_brainpool_4(g, cache->table, tmp, heap);
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+    #endif /* HAVE_THREAD_LS */
+
+        if (cache != NULL) {
+            if (cache->cnt < 2) {
+                err = sp_256_ecc_mulmod_win_add_sub_brainpool_4(r, g, k, map, ct, heap);
+            }
+            else {
+                err = sp_256_ecc_mulmod_stripe_brainpool_4(r, g, cache->table, k,
+                        map, ct, heap);
+            }
         }
     }
 
     return err;
 #endif
 }
+#endif
 
 #endif /* !WC_NO_CACHE_RESISTANT */
 /* Multiply the point by the scalar and return the result.
@@ -65110,7 +65701,11 @@ int sp_ecc_mulmod_brainpool_256(mp_int* km, ecc_point* gm, ecc_point* r, int map
         sp_256_from_mp(k, 4, km);
         sp_256_point_from_ecc_point_4(point, gm);
 
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_brainpool_4(point, point, k, map, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_brainpool_4(point, point, k, map, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         err = sp_256_point_to_ecc_point_4(point, r);
@@ -78990,7 +79585,11 @@ int sp_ecc_make_key_brainpool_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, voi
 
 #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     if (err == MP_OKAY) {
-            err = sp_256_ecc_mulmod_brainpool_4(infinity, point, p256_brainpool_order, 1, 1, NULL);
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_brainpool_4(infinity, point, p256_brainpool_order, 1, 1, NULL, heap);
+#else
+            err = sp_256_ecc_mulmod_brainpool_4(infinity, point, p256_brainpool_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         if (sp_256_iszero_4(point->x) || sp_256_iszero_4(point->y)) {
@@ -79064,7 +79663,11 @@ int sp_ecc_secret_gen_brainpool_256(mp_int* priv, ecc_point* pub, byte* out,
     if (err == MP_OKAY) {
         sp_256_from_mp(k, 4, priv);
         sp_256_point_from_ecc_point_4(point, pub);
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_brainpool_4(point, point, k, 1, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_brainpool_4(point, point, k, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         sp_256_to_bin(point->x, out);
@@ -79113,7 +79716,7 @@ static void sp_256_mont_sqr_order_brainpool_4(sp_digit* r, sp_digit* a)
     sp_256_sqr_4(r, a);
     sp_256_mont_reduce_order_brainpool_4(r, p256_brainpool_order, p256_brainpool_mp_order);
 }
-
+#if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
 /* Invert the number, in Montgomery form, modulo the order of the P256 curve.
  * (r = 1 / a mod order)
  *
@@ -79135,7 +79738,7 @@ static void sp_256_mont_inv_order_brainpool_4(sp_digit* r, sp_digit* a,
     }
     XMEMCPY(r, t, sizeof(sp_digit) * 4);
 }
-
+#endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
 #endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
 #ifdef HAVE_ECC_SIGN
 #ifndef SP_ECC_MAX_SIG_GEN
@@ -79215,7 +79818,7 @@ int sp_ecc_sign_brainpool_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 
         break;
     case 2: /* MULMOD */
         err = sp_256_ecc_mulmod_brainpool_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx,
-            &ctx->point, &p256_brainpool_base, ctx->k, 1, 1, heap);
+            &ctx->point, &p256_brainpool_base, ctx->k, 1, 1, -1, heap);
         if (err == MP_OKAY) {
             ctx->state = 3;
         }
@@ -79555,14 +80158,14 @@ int sp_ecc_verify_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen,
         ctx->state = 6;
         break;
     case 6: /* MULBASE */
-        err = sp_256_ecc_mulmod_brainpool_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p1, &p256_brainpool_base, ctx->u1, 0, 0, heap);
+        err = sp_256_ecc_mulmod_brainpool_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p1, &p256_brainpool_base, ctx->u1, 0, 0, -1, heap);
         if (err == MP_OKAY) {
             XMEMSET(&ctx->mulmod_ctx, 0, sizeof(ctx->mulmod_ctx));
             ctx->state = 7;
         }
         break;
     case 7: /* MULMOD */
-        err = sp_256_ecc_mulmod_brainpool_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p2, &ctx->p2, ctx->u2, 0, 0, heap);
+        err = sp_256_ecc_mulmod_brainpool_4_nb((sp_ecc_ctx_t*)&ctx->mulmod_ctx, &ctx->p2, &ctx->p2, ctx->u2, 0, 0, -1, heap);
         if (err == MP_OKAY) {
             XMEMSET(&ctx->add_ctx, 0, sizeof(ctx->add_ctx));
             ctx->state = 8;
@@ -79654,8 +80257,10 @@ int sp_ecc_verify_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash, word32 hashLen,
 }
 #endif /* WOLFSSL_SP_NONBLOCK */
 
-int sp_ecc_verify_brainpool_256(const byte* hash, word32 hashLen, mp_int* pX,
-    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, void* heap)
+
+static int sp_ecc_verify_brainpool_256_ex(const byte* hash, word32 hashLen,
+    mp_int* pX, mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res,
+    sp_cache_256_t* cache, void* heap)
 {
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
     sp_digit* d = NULL;
@@ -79731,7 +80336,11 @@ int sp_ecc_verify_brainpool_256(const byte* hash, word32 hashLen, mp_int* pX,
             err = sp_256_ecc_mulmod_base_brainpool_4(p1, u1, 0, 0, heap);
     }
     if (err == MP_OKAY) {
-            err = sp_256_ecc_mulmod_brainpool_4(p2, p2, u2, 0, 0, heap);
+#ifdef FP_ECC_CONTROL
+        err = sp_256_ecc_mulmod_brainpool_4(p2, p2, u2, 0, 0, cache, heap);
+#else
+        err = sp_256_ecc_mulmod_brainpool_4(p2, p2, u2, 0, 0, heap);
+#endif
     }
 
     if (err == MP_OKAY) {
@@ -79800,6 +80409,23 @@ int sp_ecc_verify_brainpool_256(const byte* hash, word32 hashLen, mp_int* pX,
 
     return err;
 }
+
+
+int sp_ecc_verify_brainpool_256(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, void* heap)
+{
+    return sp_ecc_verify_brainpool_256_ex(hash, hashLen, pX, pY, pZ, r, sm, res, NULL, heap);
+}
+
+
+#ifdef FP_ECC_CONTROL
+int sp_ecc_cache_verify_brainpool_256(const byte* hash, word32 hashLen, mp_int* pX,
+    mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm, int* res, sp_cache_256_t* cache, void* heap)
+{
+    return sp_ecc_verify_brainpool_256_ex(hash, hashLen, pX, pY, pZ, r, sm,
+                res, cache, heap);
+}
+#endif /* FP_ECC_CONTROL */
 #endif /* HAVE_ECC_VERIFY */
 
 #ifdef HAVE_ECC_CHECK_KEY
@@ -79925,7 +80551,7 @@ int sp_ecc_check_key_brainpool_256(mp_int* pX, mp_int* pY, mp_int* privm, void* 
         err = sp_256_point_new_4(heap, pd, p);
     }
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
-    if (err == MP_OKAY) {
+    if (err == MP_OKAY && privm) {
         priv = (sp_digit*)XMALLOC(sizeof(sp_digit) * 4, heap,
                                                               DYNAMIC_TYPE_ECC);
         if (priv == NULL) {
@@ -79933,6 +80559,15 @@ int sp_ecc_check_key_brainpool_256(mp_int* pX, mp_int* pY, mp_int* privm, void* 
         }
     }
 #endif
+
+    /* Quick check the lengs of public key ordinates and private key are in
+     * range. Proper check later.
+     */
+    if ((err == MP_OKAY) && ((mp_count_bits(pX) > 256) ||
+        (mp_count_bits(pY) > 256) ||
+        ((privm != NULL) && (mp_count_bits(privm) > 256)))) {
+        err = ECC_OUT_OF_RANGE_E;
+    }
 
     if (err == MP_OKAY) {
 #if (!defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SMALL_STACK)) || defined(WOLFSSL_SP_NO_MALLOC)
@@ -79942,7 +80577,8 @@ int sp_ecc_check_key_brainpool_256(mp_int* pX, mp_int* pY, mp_int* privm, void* 
         sp_256_from_mp(pub->x, 4, pX);
         sp_256_from_mp(pub->y, 4, pY);
         sp_256_from_bin(pub->z, 4, one, (int)sizeof(one));
-        sp_256_from_mp(priv, 4, privm);
+        if (privm)
+            sp_256_from_mp(priv, 4, privm);
 
         /* Check point at infinitiy. */
         if ((sp_256_iszero_4(pub->x) != 0) &&
@@ -79966,7 +80602,11 @@ int sp_ecc_check_key_brainpool_256(mp_int* pX, mp_int* pY, mp_int* privm, void* 
 
     if (err == MP_OKAY) {
         /* Point * order = infinity */
+#ifdef FP_ECC_CONTROL
+            err = sp_256_ecc_mulmod_brainpool_4(p, pub, p256_brainpool_order, 1, 1, NULL, heap);
+#else
             err = sp_256_ecc_mulmod_brainpool_4(p, pub, p256_brainpool_order, 1, 1, heap);
+#endif
     }
     if (err == MP_OKAY) {
         /* Check result is infinity */
@@ -79976,15 +80616,17 @@ int sp_ecc_check_key_brainpool_256(mp_int* pX, mp_int* pY, mp_int* privm, void* 
         }
     }
 
-    if (err == MP_OKAY) {
-        /* Base * private = point */
-            err = sp_256_ecc_mulmod_base_brainpool_4(p, priv, 1, 1, heap);
-    }
-    if (err == MP_OKAY) {
-        /* Check result is public key */
-        if (sp_256_cmp_4(p->x, pub->x) != 0 ||
-            sp_256_cmp_4(p->y, pub->y) != 0) {
-            err = ECC_PRIV_KEY_E;
+    if (privm) {
+        if (err == MP_OKAY) {
+            /* Base * private = point */
+                err = sp_256_ecc_mulmod_base_brainpool_4(p, priv, 1, 1, heap);
+        }
+        if (err == MP_OKAY) {
+            /* Check result is public key */
+            if (sp_256_cmp_4(p->x, pub->x) != 0 ||
+                sp_256_cmp_4(p->y, pub->y) != 0) {
+                err = ECC_PRIV_KEY_E;
+            }
         }
     }
 
@@ -80325,6 +80967,85 @@ int sp_ecc_uncompress_brainpool_256(mp_int* xm, int odd, mp_int* ym)
 #endif
 #endif /* !WOLFSSL_SP_NO_256 */
 #endif /* HAVE_ECC_BRAINPOOL */
+#if defined(FP_ECC_CONTROL) && defined(FP_ECC)
+/* returns the pointer to ecc_point 'g' location in the cache table if it has
+ * been generated
+ */
+sp_cache_256_t* sp_ecc_get_cache_entry_256(ecc_point* g, int curveId,
+        int idx, byte bld, void* heap)
+{
+#if (!defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SMALL_STACK)) || defined(WOLFSSL_SP_NO_MALLOC)
+    sp_point_256 ps;
+#endif
+    sp_point_256 *point;
+    sp_cache_256_t *ret = NULL;
+    int i;
+
+    if (idx >= sp_cache_entries_256 || idx < 0 ||
+        sp_cache_256 == NULL) {
+        return NULL;
+    }
+
+    if (sp_cache_256_inited == 0) {
+        for (i=0; i<sp_cache_entries_256; i++) {
+            sp_cache_256[i].set = 0;
+        }
+        sp_cache_256_inited = 1;
+    }
+
+    if (sp_256_point_new_4(heap, ps, point) == 0) {
+        sp_256_point_from_ecc_point_4(point, g);
+    #ifndef HAVE_THREAD_LS
+        if (initCacheMutex_256 == 0) {
+            wc_InitMutex(&sp_cache_256_lock);
+            initCacheMutex_256 = 1;
+        }
+        if (wc_LockMutex(&sp_cache_256_lock) != 0) {
+            sp_256_point_free_4(point, 0, heap);
+            return NULL;
+        }
+    #endif /* HAVE_THREAD_LS */
+        ret = &sp_cache_256[idx];
+        if (ret != NULL && bld) {
+            /* overwriting index */
+            XMEMSET(ret, 0, sizeof(sp_cache_256_t));
+            ret->set = 1;
+            XMEMCPY(ret->x, point->x, 32);
+            XMEMCPY(ret->y, point->y, 32);
+        }
+
+        /* for now generate table to share after selected */
+        if (ret != NULL && bld) {
+            sp_digit tmp[2 * 4 * 6]; /* value of 6 from most generated table count size */
+            switch (curveId) {
+                case ECC_SECP256R1:
+                    sp_256_gen_stripe_table_4(point, ret->table, tmp, heap);
+                    break;
+
+            #ifdef HAVE_ECC_SM2
+                case ECC_SM2P256V1:
+                    sp_256_gen_stripe_table_sm2_4(point, ret->table, tmp, heap);
+                    break;
+            #endif
+            #ifdef HAVE_ECC_BRAINPOOL
+                case ECC_BRAINPOOLP256R1:
+                    sp_256_gen_stripe_table_brainpool_4(point, ret->table, tmp, heap);
+                    break;
+            #endif
+                default:
+                    /* unknown curve type */
+                    ret = NULL;
+            }
+        }
+    #ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+    #endif /* HAVE_THREAD_LS */
+        sp_256_point_free_4(point, 0, heap);
+    }
+    
+    return ret;
+}
+#endif /* FP_ECC_CONTROL && FP_ECC */
 #endif /* WOLFSSL_HAVE_SP_ECC */
 #endif /* WOLFSSL_SP_ARM64_ASM */
 #endif /* WOLFSSL_HAVE_SP_RSA || WOLFSSL_HAVE_SP_DH || WOLFSSL_HAVE_SP_ECC */

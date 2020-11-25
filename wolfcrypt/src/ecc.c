@@ -3963,7 +3963,7 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
     }
 #endif
 
-#ifdef WOLFSSL_HAVE_SP_ECC
+#ifdef wOLFSSL_HAVE_SP_ECC
 #ifndef WOLFSSL_SP_NO_256
 #ifndef WOLFSSL_NO_P256_NIST
     if (private_key->idx != ECC_CUSTOM_IDX &&
@@ -3998,6 +3998,7 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
     else
 #endif
 #endif
+#endif /* WOLFSSL_HAVE_SP_ECC */
 #if defined(WOLFSSL_SP_MATH)
     {
         err = WC_KEY_SIZE_E;
@@ -4453,6 +4454,7 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
     else
 #endif
 #endif
+#endif /* WOLFSSL_HAVE_SP_ECC */
 #if defined(WOLFSSL_SP_MATH)
         err = WC_KEY_SIZE_E;
 #else
@@ -4923,6 +4925,9 @@ int wc_ecc_init_ex(ecc_key* key, void* heap, int devId)
     (void)devId;
 #endif
 
+#ifdef FP_ECC_CONTROL
+    key->fpIdx = -1; /* default to not in cache */
+#endif
 #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A)
     key->slot = ATECC_INVALID_SLOT;
 #else
@@ -6716,7 +6721,15 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
             return err;
             #endif
         #endif /* WC_ECC_NONBLOCK */
-        #if !defined(WC_ECC_NONBLOCK) || (defined(WC_ECC_NONBLOCK) && !defined(WC_ECC_NONBLOCK_ONLY))
+        #if defined(FP_ECC_CONTROL) && !defined(WOLFSSL_DSP_BUILD)
+            return sp_ecc_cache_verify_256(hash, hashlen, key->pubkey.x,
+                key->pubkey.y, key->pubkey.z, r, s, res,
+                sp_ecc_get_cache_entry_256(&(key->pubkey), ECC_SECP256R1,
+                                          key->fpIdx, key->fpBuild, key->heap),
+                key->heap);
+        #endif
+        #if !defined(FP_ECC_CONTROL) || !defined(WC_ECC_NONBLOCK) || \
+            (defined(WC_ECC_NONBLOCK) && !defined(WC_ECC_NONBLOCK_ONLY))
             return sp_ecc_verify_256(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
         #endif
@@ -6724,14 +6737,32 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
         #endif /* WOLFSSL_NO_P256_NIST */
         #ifdef HAVE_ECC_SM2
         if (ecc_sets[key->idx].id == ECC_SM2P256V1) {
+            #if defined(FP_ECC_CONTROL) && !defined(WOLFSSL_DSP_BUILD)
+            return sp_ecc_cache_verify_sm2_256(hash, hashlen, key->pubkey.x,
+                key->pubkey.y, key->pubkey.z, r, s, res,
+                sp_ecc_get_cache_entry_256(&(key->pubkey), ECC_SM2P256V1,
+                                          key->fpIdx, key->fpBuild, key->heap),
+                key->heap);
+            #endif
+            #if !defined(FP_ECC_CONTROL)
             return sp_ecc_verify_sm2_256(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+            #endif
         }
         #endif
         #ifdef HAVE_ECC_BRAINPOOL
         if (ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+            #if defined(FP_ECC_CONTROL) && !defined(WOLFSSL_DSP_BUILD)
+            return sp_ecc_cache_verify_brainpool_256(hash, hashlen,
+                key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res,
+                sp_ecc_get_cache_entry_256(&(key->pubkey), ECC_BRAINPOOLP256R1,
+                                          key->fpIdx, key->fpBuild, key->heap),
+                key->heap);
+            #endif
+            #if !defined(FP_ECC_CONTROL)
             return sp_ecc_verify_brainpool_256(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+            #endif
         }
         #endif
     #endif
@@ -10569,6 +10600,24 @@ void wc_ecc_fp_free(void)
 }
 
 
+#ifdef FP_ECC_CONTROL
+/* currently for use with SP
+ * sets the index into cache table to use
+ *
+ * idx the index into the cached point array to use
+ * buildFlag set to 1 for building the look up table, 0 to just use the index
+ *
+ * returns 0 on success */
+int wc_ecc_fp_set_idx(ecc_key* key, int idx, byte buildFlag)
+{
+    if (key == NULL)
+        return BAD_FUNC_ARG;
+
+    key->fpBuild = buildFlag;
+    key->fpIdx   = idx;
+    return 0;
+}
+#endif /* FP_ECC_CONTROL */
 #endif /* FP_ECC */
 
 #ifdef ECC_TIMING_RESISTANT

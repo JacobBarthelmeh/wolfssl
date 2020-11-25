@@ -292,8 +292,17 @@ int wc_ecc_sm2_verify_hash_ex(mp_int *r, mp_int *s, const byte *hash,
 #endif
 #if defined(WOLFSSL_HAVE_SP_ECC) && !defined(WOLFSSL_SP_NO_256)
     if (key->dp->id == ECC_SM2P256V1) {
-        return sp_ecc_verify_sm2_256(hash, hashSz, key->pubkey.x, key->pubkey.y,
-            key->pubkey.z, r, s, res, NULL);
+        #if defined(FP_ECC_CONTROL) && !defined(WOLFSSL_DSP_BUILD)
+        return sp_ecc_cache_verify_sm2_256(hash, hashSz, key->pubkey.x,
+            key->pubkey.y, key->pubkey.z, r, s, res,
+            sp_ecc_get_cache_entry_256(&(key->pubkey), ECC_SM2P256V1,
+                                       key->fpIdx, key->fpBuild, key->heap),
+            key->heap);
+        #endif
+        #if !defined(FP_ECC_CONTROL)
+        return sp_ecc_verify_sm2_256(hash, hashSz, key->pubkey.x,
+            key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+        #endif
     }
 #endif
 
