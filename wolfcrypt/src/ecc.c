@@ -3916,6 +3916,7 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
 
 #ifdef WOLFSSL_HAVE_SP_ECC
 #ifndef WOLFSSL_SP_NO_256
+#ifndef WOLFSSL_NO_P256_NIST
     if (private_key->idx != ECC_CUSTOM_IDX &&
                                ecc_sets[private_key->idx].id == ECC_SECP256R1) {
         err = sp_ecc_secret_gen_256(k, point, out, outlen, private_key->heap);
@@ -3932,12 +3933,15 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
 #endif
 #endif
 #ifdef WOLFSSL_SP_384
+#ifndef WOLFSSL_NO_P384_NIST
     if (private_key->idx != ECC_CUSTOM_IDX &&
                                ecc_sets[private_key->idx].id == ECC_SECP384R1) {
         err = sp_ecc_secret_gen_384(k, point, out, outlen, private_key->heap);
     }
     else
 #endif
+#endif
+#endif /* WOLFSSL_HAVE_SP_ECC */
 #if defined(WOLFSSL_SP_MATH)
     {
         err = WC_KEY_SIZE_E;
@@ -4373,6 +4377,7 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
     else
 #ifdef WOLFSSL_HAVE_SP_ECC
 #ifndef WOLFSSL_SP_NO_256
+#ifndef WOLFSSL_NO_P256_NIST
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SECP256R1) {
         err = sp_ecc_mulmod_base_256(&key->k, pub, 1, key->heap);
     }
@@ -4391,6 +4396,7 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
     else
 #endif
 #endif
+#endif /* WOLFSSL_HAVE_SP_ECC */
 #if defined(WOLFSSL_SP_MATH)
         err = WC_KEY_SIZE_E;
 #else
@@ -4636,6 +4642,7 @@ int wc_ecc_make_key_ex2(WC_RNG* rng, int keysize, ecc_key* key, int curve_id,
 
 #ifdef WOLFSSL_HAVE_SP_ECC
 #ifndef WOLFSSL_SP_NO_256
+#ifndef WOLFSSL_NO_P256_NIST
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SECP256R1) {
         err = sp_ecc_make_key_256(rng, &key->k, &key->pubkey, key->heap);
         if (err == MP_OKAY) {
@@ -4653,7 +4660,9 @@ int wc_ecc_make_key_ex2(WC_RNG* rng, int keysize, ecc_key* key, int curve_id,
     }
     else
 #endif
+#endif
 #ifdef WOLFSSL_SP_384
+#ifndef WOLFSSL_NO_P384_NIST
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SECP384R1) {
         err = sp_ecc_make_key_384(rng, &key->k, &key->pubkey, key->heap);
         if (err == MP_OKAY) {
@@ -4661,6 +4670,7 @@ int wc_ecc_make_key_ex2(WC_RNG* rng, int keysize, ecc_key* key, int curve_id,
         }
     }
     else
+#endif
 #endif
 #endif /* WOLFSSL_HAVE_SP_ECC */
 
@@ -4848,6 +4858,9 @@ int wc_ecc_init_ex(ecc_key* key, void* heap, int devId)
     (void)devId;
 #endif
 
+#ifdef FP_ECC_CONTROL
+    key->fpIdx = -1; /* default to not in cache */
+#endif
 #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A)
     key->slot = ATECC_INVALID_SLOT;
 #else
@@ -5340,12 +5353,12 @@ int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
         if (ecc_sets[key->idx].id == ECC_SECP256R1) {
         #ifdef WC_ECC_NONBLOCK
             if (key->nb_ctx) {
-                return sp_ecc_sign_256_nb(&key->nb_ctx->sp_ctx, in, inlen, rng, 
+                return sp_ecc_sign_256_nb(&key->nb_ctx->sp_ctx, in, inlen, rng,
                     &key->k, r, s, sign_k, key->heap);
             }
             #ifdef WC_ECC_NONBLOCK_ONLY
             do { /* perform blocking call to non-blocking function */
-                err = sp_ecc_sign_256_nb(&nb_ctx.sp_ctx, in, inlen, rng, 
+                err = sp_ecc_sign_256_nb(&nb_ctx.sp_ctx, in, inlen, rng,
                     &key->k, r, s, sign_k, key->heap);
             } while (err == FP_WOULDBLOCK);
             return err;
@@ -5365,25 +5378,27 @@ int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
         #endif
     #endif
     #ifdef WOLFSSL_SP_384
+        #ifndef WOLFSSL_NO_P384_NIST
         if (ecc_sets[key->idx].id == ECC_SECP384R1) {
         #ifdef WC_ECC_NONBLOCK
             if (key->nb_ctx) {
-                return sp_ecc_sign_384_nb(&key->nb_ctx->sp_ctx, in, inlen, rng, 
+                return sp_ecc_sign_384_nb(&key->nb_ctx->sp_ctx, in, inlen, rng,
                     &key->k, r, s, sign_k, key->heap);
             }
             #ifdef WC_ECC_NONBLOCK_ONLY
             do { /* perform blocking call to non-blocking function */
-                err = sp_ecc_sign_384_nb(&nb_ctx.sp_ctx, in, inlen, rng, 
+                err = sp_ecc_sign_384_nb(&nb_ctx.sp_ctx, in, inlen, rng,
                     &key->k, r, s, sign_k, key->heap);
             } while (err == FP_WOULDBLOCK);
             return err;
             #endif
         #endif /* WC_ECC_NONBLOCK */
         #if !defined(WC_ECC_NONBLOCK) || (defined(WC_ECC_NONBLOCK) && !defined(WC_ECC_NONBLOCK_ONLY))
-            return sp_ecc_sign_384(in, inlen, rng, &key->k, r, s, sign_k, 
+            return sp_ecc_sign_384(in, inlen, rng, &key->k, r, s, sign_k,
                 key->heap);
         #endif
         }
+        #endif /* WOLFSSL_NO_P384_NIST */
     #endif
     }
 #else
@@ -6583,14 +6598,14 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
       }
   }
 
-#if defined(WOLFSSL_DSP) && !defined(FREESCALE_LTC_ECC)
+#if defined(WOLFSSL_DSP) && !defined(FREESCALE_LTC_ECC) && \
+   !defined(WOLFSSL_DSP_BUILD)
   if (key->handle != -1) {
-      return sp_dsp_ecc_verify_256(key->handle, hash, hashlen, key->pubkey.x, 
-        key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+      return dsp_ecc_verify(key->handle, hash, hashlen, key, r, s, res,
+               key->heap);
   }
   if (wolfSSL_GetHandleCbSet() == 1) {
-      return sp_dsp_ecc_verify_256(0, hash, hashlen, key->pubkey.x, 
-        key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+      return dsp_ecc_verify(0, hash, hashlen, key, r, s, res, key->heap);
   }
 #endif
 
@@ -6623,20 +6638,28 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
         if (ecc_sets[key->idx].id == ECC_SECP256R1) {
         #ifdef WC_ECC_NONBLOCK
             if (key->nb_ctx) {
-                return sp_ecc_verify_256_nb(&key->nb_ctx->sp_ctx, hash, hashlen, 
-                    key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res, 
+                return sp_ecc_verify_256_nb(&key->nb_ctx->sp_ctx, hash, hashlen,
+                    key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res,
                     key->heap);
             }
             #ifdef WC_ECC_NONBLOCK_ONLY
             do { /* perform blocking call to non-blocking function */
-                err = sp_ecc_verify_256_nb(&nb_ctx.sp_ctx, hash, hashlen, 
-                    key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res, 
+                err = sp_ecc_verify_256_nb(&nb_ctx.sp_ctx, hash, hashlen,
+                    key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res,
                     key->heap);
             } while (err == FP_WOULDBLOCK);
             return err;
             #endif
         #endif /* WC_ECC_NONBLOCK */
-        #if !defined(WC_ECC_NONBLOCK) || (defined(WC_ECC_NONBLOCK) && !defined(WC_ECC_NONBLOCK_ONLY))
+        #if defined(FP_ECC_CONTROL) && !defined(WOLFSSL_DSP_BUILD)
+            return sp_ecc_cache_verify_256(hash, hashlen, key->pubkey.x,
+                key->pubkey.y, key->pubkey.z, r, s, res,
+                sp_ecc_get_cache_entry_256(&(key->pubkey), ECC_SECP256R1,
+                                          key->fpIdx, key->fpBuild, key->heap),
+                key->heap);
+        #endif
+        #if !defined(FP_ECC_CONTROL) || !defined(WC_ECC_NONBLOCK) || \
+            (defined(WC_ECC_NONBLOCK) && !defined(WC_ECC_NONBLOCK_ONLY))
             return sp_ecc_verify_256(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
         #endif
@@ -6644,33 +6667,44 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
         #endif /* WOLFSSL_NO_P256_NIST */
         #ifdef HAVE_ECC_BRAINPOOL
         if (ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
+            #if defined(FP_ECC_CONTROL) && !defined(WOLFSSL_DSP_BUILD)
+            return sp_ecc_cache_verify_brainpool_256(hash, hashlen,
+                key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res,
+                sp_ecc_get_cache_entry_256(&(key->pubkey), ECC_BRAINPOOLP256R1,
+                                          key->fpIdx, key->fpBuild, key->heap),
+                key->heap);
+            #endif
+            #if !defined(FP_ECC_CONTROL)
             return sp_ecc_verify_brainpool_256(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+            #endif
         }
         #endif
     #endif
     #ifdef WOLFSSL_SP_384
+        #ifndef WOLFSSL_NO_P384_NIST
         if (ecc_sets[key->idx].id == ECC_SECP384R1) {
         #ifdef WC_ECC_NONBLOCK
             if (key->nb_ctx) {
-                return sp_ecc_verify_384_nb(&key->nb_ctx->sp_ctx, hash, hashlen, 
-                    key->pubkey.x,  key->pubkey.y, key->pubkey.z, r, s, res, 
+                return sp_ecc_verify_384_nb(&key->nb_ctx->sp_ctx, hash, hashlen,
+                    key->pubkey.x,  key->pubkey.y, key->pubkey.z, r, s, res,
                     key->heap);
             }
             #ifdef WC_ECC_NONBLOCK_ONLY
             do { /* perform blocking call to non-blocking function */
-                err = sp_ecc_verify_384_nb(&nb_ctx.sp_ctx, hash, hashlen, 
-                    key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res, 
+                err = sp_ecc_verify_384_nb(&nb_ctx.sp_ctx, hash, hashlen,
+                    key->pubkey.x, key->pubkey.y, key->pubkey.z, r, s, res,
                     key->heap);
             } while (err == FP_WOULDBLOCK);
             return err;
             #endif
         #endif /* WC_ECC_NONBLOCK */
         #if !defined(WC_ECC_NONBLOCK) || (defined(WC_ECC_NONBLOCK) && !defined(WC_ECC_NONBLOCK_ONLY))
-            return sp_ecc_verify_384(hash, hashlen, key->pubkey.x, 
+            return sp_ecc_verify_384(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
         #endif
         }
+        #endif /* WOLFSSL_NO_P384_NIST */
     #endif
     }
 #endif
@@ -7505,12 +7539,13 @@ int wc_ecc_is_point(ecc_point* ecp, mp_int* a, mp_int* b, mp_int* prime)
    #endif
    #ifndef WOLFSSL_NO_P256_NIST
        return sp_ecc_is_point_256(ecp->x, ecp->y);
-   }
    #endif
 #endif
 #ifdef WOLFSSL_SP_384
    if (mp_count_bits(prime) == 384) {
+   #ifndef WOLFSSL_NO_P384_NIST
        return sp_ecc_is_point_384(ecp->x, ecp->y);
+   #endif
    }
 #endif
 #else
@@ -7559,12 +7594,14 @@ static int ecc_check_privkey_gen(ecc_key* key, mp_int* a, mp_int* prime)
     #endif
 #endif
 #ifdef WOLFSSL_SP_384
+    #ifndef WOLFSSL_NO_P384_NIST
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SECP384R1) {
         if (err == MP_OKAY) {
             err = sp_ecc_mulmod_base_384(&key->k, res, 1, key->heap);
         }
     }
     else
+    #endif
 #endif
 #endif
     {
@@ -7688,11 +7725,13 @@ static int ecc_check_pubkey_order(ecc_key* key, ecc_point* pubkey, mp_int* a,
     #endif
 #endif
 #ifdef WOLFSSL_SP_384
+    #ifndef WOLFSSL_NO_P384_NIST
         if (key->idx != ECC_CUSTOM_IDX &&
                                        ecc_sets[key->idx].id == ECC_SECP384R1) {
             err = sp_ecc_mulmod_384(order, pubkey, inf, 1, key->heap);
         }
         else
+    #endif
 #endif
 #endif
 #if !defined(WOLFSSL_SP_MATH)
@@ -8067,10 +8106,12 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
         #endif
     #endif
     #ifdef WOLFSSL_SP_384
+        #ifndef WOLFSSL_NO_P384_NIST
         if (key->dp->id == ECC_SECP384R1) {
             sp_ecc_uncompress_384(key->pubkey.x, pointType, key->pubkey.y);
         }
         else
+        #endif
     #endif
         {
             err = WC_KEY_SIZE_E;
@@ -10249,12 +10290,14 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
     #endif
     #ifndef WOLFSSL_NO_P256_NIST
         return sp_ecc_mulmod_256(k, G, R, map, heap);
-    }
     #endif
+    }
 #endif
 #ifdef WOLFSSL_SP_384
     if (mp_count_bits(modulus) == 384) {
+    #ifndef WOLFSSL_NO_P384_NIST
         return sp_ecc_mulmod_384(k, G, R, map, heap);
+    #endif
     }
 #endif
     return WC_KEY_SIZE_E;
@@ -10375,12 +10418,14 @@ int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
     #endif
     #ifndef WOLFSSL_NO_P256_NIST
         return sp_ecc_mulmod_256(k, G, R, map, heap);
-    }
     #endif
+    }
 #endif
 #ifdef WOLFSSL_SP_384
     if (mp_count_bits(modulus) == 384) {
+    #ifndef WOLFSSL_NO_P384_NIST
         return sp_ecc_mulmod_384(k, G, R, map, heap);
+    #endif
     }
 #endif
     return WC_KEY_SIZE_E;
@@ -10450,6 +10495,24 @@ void wc_ecc_fp_free(void)
 }
 
 
+#ifdef FP_ECC_CONTROL
+/* currently for use with SP
+ * sets the index into cache table to use
+ *
+ * idx the index into the cached point array to use
+ * buildFlag set to 1 for building the look up table, 0 to just use the index
+ *
+ * returns 0 on success */
+int wc_ecc_fp_set_idx(ecc_key* key, int idx, byte buildFlag)
+{
+    if (key == NULL)
+        return BAD_FUNC_ARG;
+
+    key->fpBuild = buildFlag;
+    key->fpIdx   = idx;
+    return 0;
+}
+#endif /* FP_ECC_CONTROL */
 #endif /* FP_ECC */
 
 #ifdef ECC_TIMING_RESISTANT

@@ -279,10 +279,9 @@ int wolfCrypt_Init(void)
 #endif
 
 #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
-	if ((ret = wolfSSL_InitHandle()) != 0) {
+	if ((ret = wolfSSL_DSPInit()) != 0) {
             return ret;
         }
-        rpcmem_init();
 #endif
     }
     initRefCount++;
@@ -353,8 +352,7 @@ int wolfCrypt_Cleanup(void)
         tsip_Close();
     #endif
     #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
-        rpcmem_deinit();
-        wolfSSL_CleanupHandle();
+        wolfSSL_DSPCleanup();
     #endif
     }
 
