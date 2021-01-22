@@ -7540,6 +7540,7 @@ int wc_ecc_is_point(ecc_point* ecp, mp_int* a, mp_int* b, mp_int* prime)
    #ifndef WOLFSSL_NO_P256_NIST
        return sp_ecc_is_point_256(ecp->x, ecp->y);
    #endif
+   }
 #endif
 #ifdef WOLFSSL_SP_384
    if (mp_count_bits(prime) == 384) {
