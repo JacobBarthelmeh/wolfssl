@@ -18851,6 +18851,7 @@ typedef struct sp_point_256 {
     int infinity;
 } sp_point_256;
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* The modulus (prime) of the curve P256. */
 static const sp_digit p256_mod[4] = {
     0xffffffffffffffffL,0x00000000ffffffffL,0x0000000000000000L,
@@ -18918,6 +18919,7 @@ static const sp_digit p256_b[4] = {
     0x5ac635d8aa3a93e7L
 };
 #endif
+#endif /* !WOLFSSL_NO_P256_NIST */
 
 static int sp_256_point_new_ex_4(void* heap, sp_point_256* sp, sp_point_256** p)
 {
@@ -18963,6 +18965,7 @@ static void sp_256_point_free_4(sp_point_256* p, int clear, void* heap)
     (void)heap;
 }
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply a number by Montogmery normalizer mod modulus (prime).
  *
  * r  The resulting Montgomery form number.
@@ -19030,6 +19033,7 @@ static int sp_256_mod_mul_norm_4(sp_digit* r, const sp_digit* a, const sp_digit*
     return MP_OKAY;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 /* Convert an mp_int to an array of sp_digit.
  *
  * r  A single precision integer.
@@ -19248,6 +19252,7 @@ static void sp_256_cond_copy_4(sp_digit* r, const sp_digit* a, sp_digit m)
     );
 }
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply two Montogmery form numbers mod the modulus (prime).
  * (r = a * b mod m)
  *
@@ -19439,6 +19444,8 @@ SP_NOINLINE static void sp_256_mont_mul_4(sp_digit* r, const sp_digit* a, const 
     );
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Square the Montgomery form number mod the modulus (prime). (r = a * a mod m)
  *
  * r   Result of squaring.
@@ -19591,7 +19598,9 @@ SP_NOINLINE static void sp_256_mont_sqr_4(sp_digit* r, const sp_digit* a, const 
     );
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #if !defined(WOLFSSL_SP_SMALL) || defined(HAVE_COMP_KEY)
+#ifndef WOLFSSL_NO_P256_NIST
 /* Square the Montgomery form number a number of times. (r = a ^ n mod m)
  *
  * r   Result of squaring.
@@ -19609,7 +19618,9 @@ static void sp_256_mont_sqr_n_4(sp_digit* r, const sp_digit* a, int n,
     }
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* !WOLFSSL_SP_SMALL || HAVE_COMP_KEY */
+#ifndef WOLFSSL_NO_P256_NIST
 #ifdef WOLFSSL_SP_SMALL
 /* Mod-2 for the P256 curve. */
 static const uint64_t p256_mod_minus_2[4] = {
@@ -19687,6 +19698,7 @@ static void sp_256_mont_inv_4(sp_digit* r, const sp_digit* a, sp_digit* td)
 #endif /* WOLFSSL_SP_SMALL */
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 /* Compare a with b in constant time.
  *
  * a  A single precision integer.
@@ -19834,6 +19846,7 @@ static sp_digit sp_256_sub_4(sp_digit* r, const sp_digit* a,
 
 #define sp_256_mont_reduce_order_4    sp_256_mont_reduce_4
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* Reduce the number back to 256 bits using Montgomery reduction.
  *
  * a   A single precision number to reduce in place.
@@ -19990,6 +20003,8 @@ SP_NOINLINE static void sp_256_mont_reduce_4(sp_digit* a, const sp_digit* m,
     );
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Map the Montgomery form projective coordinate point to an affine point.
  *
  * r  Resulting affine coordinate point.
@@ -20032,6 +20047,8 @@ static void sp_256_map_4(sp_point_256* r, const sp_point_256* p, sp_digit* t)
 
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Add two Montgomery form numbers (r = a + b % m).
  *
  * r   Result of addition.
@@ -20067,6 +20084,8 @@ static void sp_256_mont_add_4(sp_digit* r, const sp_digit* a, const sp_digit* b,
     );
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Double a Montgomery form number (r = a + a % m).
  *
  * r   Result of doubling.
@@ -20148,6 +20167,8 @@ static void sp_256_mont_tpl_4(sp_digit* r, const sp_digit* a, const sp_digit* m)
     (void)m;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Subtract two Montgomery form numbers (r = a - b % m).
  *
  * r   Result of subtration.
@@ -20183,6 +20204,8 @@ static void sp_256_mont_sub_4(sp_digit* r, const sp_digit* a, const sp_digit* b,
     );
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
  *
  * r  Result of division by 2.
@@ -20220,6 +20243,8 @@ static void sp_256_div2_4(sp_digit* r, const sp_digit* a, const sp_digit* m)
 
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Double the Montgomery form projective point p.
  *
  * r  Result of doubling point.
@@ -20416,6 +20441,8 @@ static void sp_256_proj_point_dbl_4(sp_point_256* r, const sp_point_256* p, sp_d
 
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Subtract two Montgomery form numbers (r = a - b % m).
  *
  * r   Result of subtration.
@@ -20463,6 +20490,8 @@ static void sp_256_mont_sub_dbl_4(sp_digit* r, const sp_digit* a, const sp_digit
     );
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Subtract two Montgomery form numbers (r = a - b % m).
  *
  * r   Result of subtration.
@@ -20510,6 +20539,8 @@ static void sp_256_mont_dbl_sub_4(sp_digit* r, const sp_digit* a, const sp_digit
     );
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -20519,17 +20550,24 @@ static void sp_256_mont_dbl_sub_4(sp_digit* r, const sp_digit* a, const sp_digit
  */
 static void sp_256_proj_point_dbl_n_4(sp_point_256* p, int n, sp_digit* t)
 {
+    sp_point_256* rp[2];
     sp_digit* w = t;
     sp_digit* a = t + 2*4;
     sp_digit* b = t + 4*4;
     sp_digit* t1 = t + 6*4;
+    sp_digit* t2 = t + 8*4;
     sp_digit* x;
     sp_digit* y;
     sp_digit* z;
 
-    x = p->x;
-    y = p->y;
-    z = p->z;
+    rp[0] = p;
+
+    /*lint allow cast to different type of pointer*/
+    rp[1] = (sp_point_256*)t; /*lint !e9087 !e740*/
+    XMEMSET(rp[1], 0, sizeof(sp_point_256));
+    x = rp[p->infinity]->x;
+    y = rp[p->infinity]->y;
+    z = rp[p->infinity]->z;
 
     /* Y = 2*Y */
     sp_256_mont_dbl_4(y, y, p256_mod);
@@ -20537,62 +20575,35 @@ static void sp_256_proj_point_dbl_n_4(sp_point_256* p, int n, sp_digit* t)
     sp_256_mont_sqr_4(w, z, p256_mod, p256_mp_mod);
     sp_256_mont_sqr_4(w, w, p256_mod, p256_mp_mod);
 
-#ifndef WOLFSSL_SP_SMALL
-    while (--n > 0)
-#else
-    while (--n >= 0)
-#endif
-    {
+    while (n-- > 0) {
         /* A = 3*(X^2 - W) */
         sp_256_mont_sqr_4(t1, x, p256_mod, p256_mp_mod);
         sp_256_mont_sub_4(t1, t1, w, p256_mod);
         sp_256_mont_tpl_4(a, t1, p256_mod);
         /* B = X*Y^2 */
-        sp_256_mont_sqr_4(t1, y, p256_mod, p256_mp_mod);
-        sp_256_mont_mul_4(b, t1, x, p256_mod, p256_mp_mod);
+        sp_256_mont_sqr_4(t2, y, p256_mod, p256_mp_mod);
+        sp_256_mont_mul_4(b, t2, x, p256_mod, p256_mp_mod);
         /* X = A^2 - 2B */
         sp_256_mont_sqr_4(x, a, p256_mod, p256_mp_mod);
         sp_256_mont_sub_dbl_4(x, x, b, p256_mod);
         /* Z = Z*Y */
         sp_256_mont_mul_4(z, z, y, p256_mod, p256_mp_mod);
         /* t2 = Y^4 */
-        sp_256_mont_sqr_4(t1, t1, p256_mod, p256_mp_mod);
-#ifdef WOLFSSL_SP_SMALL
-        if (n != 0)
-#endif
-        {
+        sp_256_mont_sqr_4(t2, t2, p256_mod, p256_mp_mod);
+        if (n != 0) {
             /* W = W*Y^4 */
-            sp_256_mont_mul_4(w, w, t1, p256_mod, p256_mp_mod);
+            sp_256_mont_mul_4(w, w, t2, p256_mod, p256_mp_mod);
         }
         /* y = 2*A*(B - X) - Y^4 */
         sp_256_mont_sub_4(y, b, x, p256_mod);
         sp_256_mont_mul_4(y, y, a, p256_mod, p256_mp_mod);
-        sp_256_mont_dbl_sub_4(y, y, t1, p256_mod);
+        sp_256_mont_dbl_sub_4(y, y, t2, p256_mod);
     }
-#ifndef WOLFSSL_SP_SMALL
-    /* A = 3*(X^2 - W) */
-    sp_256_mont_sqr_4(t1, x, p256_mod, p256_mp_mod);
-    sp_256_mont_sub_4(t1, t1, w, p256_mod);
-    sp_256_mont_tpl_4(a, t1, p256_mod);
-    /* B = X*Y^2 */
-    sp_256_mont_sqr_4(t1, y, p256_mod, p256_mp_mod);
-    sp_256_mont_mul_4(b, t1, x, p256_mod, p256_mp_mod);
-    /* X = A^2 - 2B */
-    sp_256_mont_sqr_4(x, a, p256_mod, p256_mp_mod);
-    sp_256_mont_sub_dbl_4(x, x, b, p256_mod);
-    /* Z = Z*Y */
-    sp_256_mont_mul_4(z, z, y, p256_mod, p256_mp_mod);
-    /* t2 = Y^4 */
-    sp_256_mont_sqr_4(t1, t1, p256_mod, p256_mp_mod);
-    /* y = 2*A*(B - X) - Y^4 */
-    sp_256_mont_sub_4(y, b, x, p256_mod);
-    sp_256_mont_mul_4(y, y, a, p256_mod, p256_mp_mod);
-    sp_256_mont_dbl_sub_4(y, y, t1, p256_mod);
-#endif
     /* Y = Y/2 */
     sp_256_div2_4(y, y, p256_mod);
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 /* Compare two numbers to determine if they are equal.
  * Constant time implementation.
  *
@@ -20605,6 +20616,7 @@ static int sp_256_cmp_equal_4(const sp_digit* a, const sp_digit* b)
     return ((a[0] ^ b[0]) | (a[1] ^ b[1]) | (a[2] ^ b[2]) | (a[3] ^ b[3])) == 0;
 }
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* Add two Montgomery form projective points.
  *
  * r  Result of addition.
@@ -20902,6 +20914,8 @@ static void sp_256_proj_point_add_4(sp_point_256* r, const sp_point_256* p, cons
     }
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -20971,6 +20985,8 @@ static void sp_256_proj_point_dbl_n_store_4(sp_point_256* r, const sp_point_256*
     }
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Add two Montgomery form projective points.
  *
  * ra  Result of addition.
@@ -21049,6 +21065,7 @@ static void sp_256_proj_point_add_sub_4(sp_point_256* ra, sp_point_256* rs,
     sp_256_mont_sub_4(ys, ys, t5, p256_mod);
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 /* Structure used to describe recoding of scalar multiplication. */
 typedef struct ecc_recode_256 {
     /* Index into pre-computation table. */
@@ -21161,6 +21178,7 @@ static void sp_256_get_point_33_4(sp_point_256* r, const sp_point_256* table,
     }
 }
 #endif /* !WC_NO_CACHE_RESISTANT */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -21398,7 +21416,9 @@ static void sp_256_proj_point_add_qz1_4(sp_point_256* r, const sp_point_256* p,
     }
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #ifdef FP_ECC
+#ifndef WOLFSSL_NO_P256_NIST
 /* Convert the projective point to affine.
  * Ordinates are in Montgomery form.
  *
@@ -21509,6 +21529,7 @@ static int sp_256_gen_stripe_table_4(const sp_point_256* a,
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* FP_ECC */
 #if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
 #ifndef WC_NO_CACHE_RESISTANT
@@ -21545,6 +21566,7 @@ static void sp_256_get_entry_64_4(sp_point_256* r,
     }
 }
 #endif /* !WC_NO_CACHE_RESISTANT */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -21653,6 +21675,7 @@ static int sp_256_ecc_mulmod_stripe_4(sp_point_256* r, const sp_point_256* g,
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
 #ifdef FP_ECC
 #ifndef FP_ENTRIES
@@ -21897,10 +21920,12 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g, const sp_
 }
 #endif
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #else
 #if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
 #ifdef FP_ECC
+#ifndef WOLFSSL_NO_P256_NIST
 /* Generate the pre-computed table of points for the base point.
  *
  * a      The base point.
@@ -21982,6 +22007,7 @@ static int sp_256_gen_stripe_table_4(const sp_point_256* a,
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* FP_ECC */
 #if defined(FP_ECC) || defined(WOLFSSL_SP_SMALL)
 #ifndef WC_NO_CACHE_RESISTANT
@@ -22018,6 +22044,7 @@ static void sp_256_get_entry_256_4(sp_point_256* r,
     }
 }
 #endif /* !WC_NO_CACHE_RESISTANT */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -22126,6 +22153,7 @@ static int sp_256_ecc_mulmod_stripe_4(sp_point_256* r, const sp_point_256* g,
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* FP_ECC || WOLFSSL_SP_SMALL */
 #ifdef FP_ECC
 #ifndef FP_ENTRIES
@@ -22370,7 +22398,9 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g, const sp_
 }
 #endif
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* !WC_NO_CACHE_RESISTANT */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -22427,6 +22457,7 @@ int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #ifdef WOLFSSL_SP_SMALL
 #ifndef WC_NO_CACHE_RESISTANT
 #ifndef WOLFSSL_NO_P256_NIST
@@ -22755,6 +22786,8 @@ static const sp_table_entry_256 p256_table[64] = {
         0x2403ea21830c388bL } },
 };
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -22772,6 +22805,7 @@ static int sp_256_ecc_mulmod_base_4(sp_point_256* r, const sp_digit* k,
                                       k, map, ct, heap);
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #else
 #ifndef WOLFSSL_NO_P256_NIST
 /* Stripe table
@@ -24059,6 +24093,8 @@ static const sp_table_entry_256 p256_table[256] = {
         0x019f8b9a1b7924f7L } },
 };
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -24076,6 +24112,7 @@ static int sp_256_ecc_mulmod_base_4(sp_point_256* r, const sp_digit* k,
                                       k, map, ct, heap);
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* WC_NO_CACHE_RESISTANT */
 #else
 /* The index into pre-computation table to use. */
@@ -24182,6 +24219,9 @@ static void sp_256_get_entry_65_4(sp_point_256* r,
     }
 }
 #endif /* !WC_NO_CACHE_RESISTANT */
+#ifndef WOLFSSL_NO_P256_NIST
+/* Add only table.
+ */
 static const sp_table_entry_256 p256_table[2405] = {
     /* 0 << 0 */
     { { 0x00, 0x00, 0x00, 0x00 },
@@ -36136,6 +36176,8 @@ static const sp_table_entry_256 p256_table[2405] = {
         0x82ceb1dd8a37b527L } },
 };
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -36242,6 +36284,8 @@ static int sp_256_ecc_mulmod_add_only_4(sp_point_256* r, const sp_point_256* g,
     return MP_OKAY;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -36259,7 +36303,9 @@ static int sp_256_ecc_mulmod_base_4(sp_point_256* r, const sp_digit* k,
                                       k, map, ct, heap);
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* WOLFSSL_SP_SMALL */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -36310,6 +36356,7 @@ int sp_ecc_mulmod_base_256(mp_int* km, ecc_point* r, int map, void* heap)
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #if defined(WOLFSSL_VALIDATE_ECC_KEYGEN) || defined(HAVE_ECC_SIGN) || \
                                                         defined(HAVE_ECC_VERIFY)
 /* Returns 1 if the number of zero.
@@ -36391,6 +36438,7 @@ static void sp_256_from_bin(sp_digit* r, int size, const byte* a, int n)
     }
 }
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* Generates a scalar that is in the range 1..order-1.
  *
  * rng  Random number generator.
@@ -36409,6 +36457,7 @@ static int sp_256_ecc_gen_k_4(WC_RNG* rng, sp_digit* k)
             sp_256_from_bin(k, 4, buf, (int)sizeof(buf));
             if (sp_256_cmp_4(k, p256_order2) < 0) {
                 sp_256_add_one_4(k);
+                sp_256_norm_4(k);
                 break;
             }
         }
@@ -36418,6 +36467,8 @@ static int sp_256_ecc_gen_k_4(WC_RNG* rng, sp_digit* k)
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 /* Makes a random EC key pair.
  *
  * rng   Random number generator.
@@ -36505,6 +36556,7 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #ifdef HAVE_ECC_DHE
 /* Write r as big endian to byte array.
  * Fixed length number of bytes written: 32
@@ -36528,6 +36580,7 @@ static void sp_256_to_bin(sp_digit* r, byte* a)
     }
 }
 
+#ifndef WOLFSSL_NO_P256_NIST
 /* Multiply the point by the scalar and serialize the X ordinate.
  * The number is 0 padded to maximum size on output.
  *
@@ -36594,6 +36647,7 @@ int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
 }
 #endif /* HAVE_ECC_DHE */
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
 /* Add b to a into r. (r = a + b)
  *
@@ -37277,7 +37331,9 @@ static void sp_256_mont_inv_order_4(sp_digit* r, const sp_digit* a,
 }
 #endif /* HAVE_ECC_SIGN */
 
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
+#ifndef WOLFSSL_NO_P256_NIST
 #ifdef HAVE_ECC_SIGN
 #ifndef SP_ECC_MAX_SIG_GEN
 #define SP_ECC_MAX_SIG_GEN  64
@@ -38261,6 +38317,7 @@ static int sp_ecc_verify_256_ex(const byte* hash, word32 hashLen,
     sp_256_point_free_4(p1, 0, heap);
     sp_256_point_free_4(p2, 0, heap);
 
+    (void)cache;
     return err;
 }
 
@@ -38282,6 +38339,8 @@ int sp_ecc_cache_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
 #endif /* FP_ECC_CONTROL */
 #endif /* HAVE_ECC_VERIFY */
 
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 #ifdef HAVE_ECC_CHECK_KEY
 /* Check that the x and y oridinates are a valid point on the curve.
  *
@@ -38496,6 +38555,8 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
     return err;
 }
 #endif
+#endif /* !WOLFSSL_NO_P256_NIST */
+#ifndef WOLFSSL_NO_P256_NIST
 #ifdef WOLFSSL_PUBLIC_ECC_ADD_DBL
 /* Add two projective EC points together.
  * (pX, pY, pZ) + (qX, qY, qZ) = (rX, rY, rZ)
@@ -38647,7 +38708,7 @@ int sp_ecc_proj_dbl_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
 int sp_ecc_map_256(mp_int* pX, mp_int* pY, mp_int* pZ)
 {
 #if (!defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SMALL_STACK)) || defined(WOLFSSL_SP_NO_MALLOC)
-    sp_digit tmpd[2 * 4 * 4];
+    sp_digit tmpd[2 * 4 * 5];
     sp_point_256 pd;
 #endif
     sp_digit* tmp = NULL;
@@ -38657,7 +38718,7 @@ int sp_ecc_map_256(mp_int* pX, mp_int* pY, mp_int* pZ)
     err = sp_256_point_new_4(NULL, pd, p);
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
     if (err == MP_OKAY) {
-        tmp = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 4 * 4, NULL,
+        tmp = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 4 * 5, NULL,
                                                               DYNAMIC_TYPE_ECC);
         if (tmp == NULL) {
             err = MEMORY_E;
@@ -38694,7 +38755,9 @@ int sp_ecc_map_256(mp_int* pX, mp_int* pY, mp_int* pZ)
     return err;
 }
 #endif /* WOLFSSL_PUBLIC_ECC_ADD_DBL */
+#endif /* !WOLFSSL_NO_P256_NIST */
 #ifdef HAVE_COMP_KEY
+#ifndef WOLFSSL_NO_P256_NIST
 /* Find the square root of a number mod the prime of the curve.
  *
  * y  The number to operate on and the result.
@@ -38846,6 +38909,7 @@ int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
     return err;
 }
 #endif
+#endif /* !WOLFSSL_NO_P256_NIST */
 #endif /* !WOLFSSL_SP_NO_256 */
 #ifdef WOLFSSL_SP_384
 
@@ -38857,6 +38921,7 @@ typedef struct sp_point_384 {
     int infinity;
 } sp_point_384;
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* The modulus (prime) of the curve P384. */
 static const sp_digit p384_mod[6] = {
     0x00000000ffffffffL,0xffffffff00000000L,0xfffffffffffffffeL,
@@ -38922,6 +38987,7 @@ static const sp_digit p384_b[6] = {
     0x181d9c6efe814112L,0x988e056be3f82d19L,0xb3312fa7e23ee7e4L
 };
 #endif
+#endif /* !WOLFSSL_NO_P384_NIST */
 
 static int sp_384_point_new_ex_6(void* heap, sp_point_384* sp, sp_point_384** p)
 {
@@ -38967,6 +39033,7 @@ static void sp_384_point_free_6(sp_point_384* p, int clear, void* heap)
     (void)heap;
 }
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply a number by Montogmery normalizer mod modulus (prime).
  *
  * r  The resulting Montgomery form number.
@@ -39087,6 +39154,7 @@ static int sp_384_mod_mul_norm_6(sp_digit* r, const sp_digit* a, const sp_digit*
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 /* Convert an mp_int to an array of sp_digit.
  *
  * r  A single precision integer.
@@ -39663,6 +39731,7 @@ static sp_digit sp_384_cond_sub_6(sp_digit* r, const sp_digit* a, const sp_digit
 
 #define sp_384_mont_reduce_order_6    sp_384_mont_reduce_6
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* Reduce the number back to 384 bits using Montgomery reduction.
  *
  * a   A single precision number to reduce in place.
@@ -39747,6 +39816,8 @@ SP_NOINLINE static void sp_384_mont_reduce_6(sp_digit* a, const sp_digit* m,
     sp_384_cond_sub_6(a - 6, a, m, (sp_digit)0 - ca);
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply two Montogmery form numbers mod the modulus (prime).
  * (r = a * b mod m)
  *
@@ -39763,6 +39834,7 @@ static void sp_384_mont_mul_6(sp_digit* r, const sp_digit* a, const sp_digit* b,
     sp_384_mont_reduce_6(r, m, mp);
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #ifdef WOLFSSL_SP_SMALL
 /* Square a and put result in r. (r = a * a)
  *
@@ -39979,6 +40051,7 @@ static void sp_384_sqr_6(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Square the Montgomery form number. (r = a * a mod m)
  *
  * r   Result of squaring.
@@ -39993,7 +40066,9 @@ static void sp_384_mont_sqr_6(sp_digit* r, const sp_digit* a, const sp_digit* m,
     sp_384_mont_reduce_6(r, m, mp);
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #if !defined(WOLFSSL_SP_SMALL) || defined(HAVE_COMP_KEY)
+#ifndef WOLFSSL_NO_P384_NIST
 /* Square the Montgomery form number a number of times. (r = a ^ n mod m)
  *
  * r   Result of squaring.
@@ -40011,7 +40086,9 @@ static void sp_384_mont_sqr_n_6(sp_digit* r, const sp_digit* a, int n,
     }
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #endif /* !WOLFSSL_SP_SMALL || HAVE_COMP_KEY */
+#ifndef WOLFSSL_NO_P384_NIST
 #ifdef WOLFSSL_SP_SMALL
 /* Mod-2 for the P384 curve. */
 static const uint64_t p384_mod_minus_2[6] = {
@@ -40105,6 +40182,7 @@ static void sp_384_mont_inv_6(sp_digit* r, const sp_digit* a, sp_digit* td)
 #endif /* WOLFSSL_SP_SMALL */
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 /* Compare a with b in constant time.
  *
  * a  A single precision integer.
@@ -40199,6 +40277,7 @@ static int64_t sp_384_cmp_6(const sp_digit* a, const sp_digit* b)
  */
 #define sp_384_norm_6(a)
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* Map the Montgomery form projective coordinate point to an affine point.
  *
  * r  Resulting affine coordinate point.
@@ -40241,6 +40320,7 @@ static void sp_384_map_6(sp_point_384* r, const sp_point_384* p, sp_digit* t)
 
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 /* Add b to a into r. (r = a + b)
  *
  * r  A single precision integer.
@@ -40502,6 +40582,7 @@ static void sp_384_rshift1_6(sp_digit* r, sp_digit* a)
     );
 }
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
  *
  * r  Result of division by 2.
@@ -40517,6 +40598,8 @@ static void sp_384_div2_6(sp_digit* r, const sp_digit* a, const sp_digit* m)
     r[5] |= o << 63;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Double the Montgomery form projective point p.
  *
  * r  Result of doubling point.
@@ -40713,6 +40796,8 @@ static void sp_384_proj_point_dbl_6(sp_point_384* r, const sp_point_384* p, sp_d
 
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -40722,6 +40807,7 @@ static void sp_384_proj_point_dbl_6(sp_point_384* r, const sp_point_384* p, sp_d
  */
 static void sp_384_proj_point_dbl_n_6(sp_point_384* p, int n, sp_digit* t)
 {
+    sp_point_384* rp[2];
     sp_digit* w = t;
     sp_digit* a = t + 2*6;
     sp_digit* b = t + 4*6;
@@ -40731,9 +40817,14 @@ static void sp_384_proj_point_dbl_n_6(sp_point_384* p, int n, sp_digit* t)
     sp_digit* y;
     sp_digit* z;
 
-    x = p->x;
-    y = p->y;
-    z = p->z;
+    rp[0] = p;
+
+    /*lint allow cast to different type of pointer*/
+    rp[1] = (sp_point_384*)t; /*lint !e9087 !e740*/
+    XMEMSET(rp[1], 0, sizeof(sp_point_384));
+    x = rp[p->infinity]->x;
+    y = rp[p->infinity]->y;
+    z = rp[p->infinity]->z;
 
     /* Y = 2*Y */
     sp_384_mont_dbl_6(y, y, p384_mod);
@@ -40741,66 +40832,37 @@ static void sp_384_proj_point_dbl_n_6(sp_point_384* p, int n, sp_digit* t)
     sp_384_mont_sqr_6(w, z, p384_mod, p384_mp_mod);
     sp_384_mont_sqr_6(w, w, p384_mod, p384_mp_mod);
 
-#ifndef WOLFSSL_SP_SMALL
-    while (--n > 0)
-#else
-    while (--n >= 0)
-#endif
-    {
+    while (n-- > 0) {
         /* A = 3*(X^2 - W) */
         sp_384_mont_sqr_6(t1, x, p384_mod, p384_mp_mod);
         sp_384_mont_sub_6(t1, t1, w, p384_mod);
         sp_384_mont_tpl_6(a, t1, p384_mod);
         /* B = X*Y^2 */
-        sp_384_mont_sqr_6(t1, y, p384_mod, p384_mp_mod);
-        sp_384_mont_mul_6(b, t1, x, p384_mod, p384_mp_mod);
+        sp_384_mont_sqr_6(t2, y, p384_mod, p384_mp_mod);
+        sp_384_mont_mul_6(b, t2, x, p384_mod, p384_mp_mod);
         /* X = A^2 - 2B */
         sp_384_mont_sqr_6(x, a, p384_mod, p384_mp_mod);
-        sp_384_mont_dbl_6(t2, b, p384_mod);
-        sp_384_mont_sub_6(x, x, t2, p384_mod);
+        sp_384_mont_dbl_6(t1, b, p384_mod);
+        sp_384_mont_sub_6(x, x, t1, p384_mod);
         /* Z = Z*Y */
         sp_384_mont_mul_6(z, z, y, p384_mod, p384_mp_mod);
         /* t2 = Y^4 */
-        sp_384_mont_sqr_6(t1, t1, p384_mod, p384_mp_mod);
-#ifdef WOLFSSL_SP_SMALL
-        if (n != 0)
-#endif
-        {
+        sp_384_mont_sqr_6(t2, t2, p384_mod, p384_mp_mod);
+        if (n != 0) {
             /* W = W*Y^4 */
-            sp_384_mont_mul_6(w, w, t1, p384_mod, p384_mp_mod);
+            sp_384_mont_mul_6(w, w, t2, p384_mod, p384_mp_mod);
         }
         /* y = 2*A*(B - X) - Y^4 */
         sp_384_mont_sub_6(y, b, x, p384_mod);
         sp_384_mont_mul_6(y, y, a, p384_mod, p384_mp_mod);
         sp_384_mont_dbl_6(y, y, p384_mod);
-        sp_384_mont_sub_6(y, y, t1, p384_mod);
+        sp_384_mont_sub_6(y, y, t2, p384_mod);
     }
-#ifndef WOLFSSL_SP_SMALL
-    /* A = 3*(X^2 - W) */
-    sp_384_mont_sqr_6(t1, x, p384_mod, p384_mp_mod);
-    sp_384_mont_sub_6(t1, t1, w, p384_mod);
-    sp_384_mont_tpl_6(a, t1, p384_mod);
-    /* B = X*Y^2 */
-    sp_384_mont_sqr_6(t1, y, p384_mod, p384_mp_mod);
-    sp_384_mont_mul_6(b, t1, x, p384_mod, p384_mp_mod);
-    /* X = A^2 - 2B */
-    sp_384_mont_sqr_6(x, a, p384_mod, p384_mp_mod);
-    sp_384_mont_dbl_6(t2, b, p384_mod);
-    sp_384_mont_sub_6(x, x, t2, p384_mod);
-    /* Z = Z*Y */
-    sp_384_mont_mul_6(z, z, y, p384_mod, p384_mp_mod);
-    /* t2 = Y^4 */
-    sp_384_mont_sqr_6(t1, t1, p384_mod, p384_mp_mod);
-    /* y = 2*A*(B - X) - Y^4 */
-    sp_384_mont_sub_6(y, b, x, p384_mod);
-    sp_384_mont_mul_6(y, y, a, p384_mod, p384_mp_mod);
-    sp_384_mont_dbl_6(y, y, p384_mod);
-    sp_384_mont_sub_6(y, y, t1, p384_mod);
-#endif
     /* Y = Y/2 */
     sp_384_div2_6(y, y, p384_mod);
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 /* Compare two numbers to determine if they are equal.
  * Constant time implementation.
  *
@@ -40814,6 +40876,7 @@ static int sp_384_cmp_equal_6(const sp_digit* a, const sp_digit* b)
             (a[4] ^ b[4]) | (a[5] ^ b[5])) == 0;
 }
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* Add two Montgomery form projective points.
  *
  * r  Result of addition.
@@ -41111,6 +41174,8 @@ static void sp_384_proj_point_add_6(sp_point_384* r, const sp_point_384* p, cons
     }
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Double the Montgomery form projective point p a number of times.
  *
  * r  Result of repeated doubling of point.
@@ -41180,6 +41245,8 @@ static void sp_384_proj_point_dbl_n_store_6(sp_point_384* r, const sp_point_384*
     }
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Add two Montgomery form projective points.
  *
  * ra  Result of addition.
@@ -41258,6 +41325,7 @@ static void sp_384_proj_point_add_sub_6(sp_point_384* ra, sp_point_384* rs,
     sp_384_mont_sub_6(ys, ys, t5, p384_mod);
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 /* Structure used to describe recoding of scalar multiplication. */
 typedef struct ecc_recode_384 {
     /* Index into pre-computation table. */
@@ -41382,6 +41450,7 @@ static void sp_384_get_point_33_6(sp_point_384* r, const sp_point_384* table,
     }
 }
 #endif /* !WC_NO_CACHE_RESISTANT */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -41406,7 +41475,7 @@ static int sp_384_ecc_mulmod_win_add_sub_6(sp_point_384* r, const sp_point_384* 
 #if (!defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SMALL_STACK)) || defined(WOLFSSL_SP_NO_MALLOC)
     sp_point_384 td[33];
     sp_point_384 rtd, pd;
-    sp_digit tmpd[2 * 6 * 6];
+    sp_digit tmpd[2 * 6 * 7];
 #endif
     sp_point_384* t;
     sp_point_384* rt;
@@ -41428,7 +41497,7 @@ static int sp_384_ecc_mulmod_win_add_sub_6(sp_point_384* r, const sp_point_384* 
     t = (sp_point_384*)XMALLOC(sizeof(sp_point_384) * 33, heap, DYNAMIC_TYPE_ECC);
     if (t == NULL)
         err = MEMORY_E;
-    tmp = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 6 * 6, heap,
+    tmp = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 6 * 7, heap,
                              DYNAMIC_TYPE_ECC);
     if (tmp == NULL)
         err = MEMORY_E;
@@ -41529,6 +41598,7 @@ static int sp_384_ecc_mulmod_win_add_sub_6(sp_point_384* r, const sp_point_384* 
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 /* A table entry for pre-computed points. */
 typedef struct sp_table_entry_384 {
     sp_digit x[6];
@@ -41537,6 +41607,7 @@ typedef struct sp_table_entry_384 {
 
 #ifdef FP_ECC
 #endif /* FP_ECC */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Add two Montgomery form projective points. The second point has a q value of
  * one.
  * Only the first point can be the same pointer as the result point.
@@ -41619,7 +41690,9 @@ static void sp_384_proj_point_add_qz1_6(sp_point_384* r, const sp_point_384* p,
     }
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #ifdef FP_ECC
+#ifndef WOLFSSL_NO_P384_NIST
 /* Convert the projective point to affine.
  * Ordinates are in Montgomery form.
  *
@@ -41642,6 +41715,8 @@ static void sp_384_proj_to_affine_6(sp_point_384* a, sp_digit* t)
     XMEMCPY(a->z, p384_norm_mod, sizeof(p384_norm_mod));
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Generate the pre-computed table of points for the base point.
  *
  * a      The base point.
@@ -41723,6 +41798,7 @@ static int sp_384_gen_stripe_table_6(const sp_point_384* a,
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #endif /* FP_ECC */
 #ifndef WC_NO_CACHE_RESISTANT
 /* Touch each possible entry that could be being copied.
@@ -41766,6 +41842,7 @@ static void sp_384_get_entry_256_6(sp_point_384* r,
     }
 }
 #endif /* !WC_NO_CACHE_RESISTANT */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -41787,7 +41864,7 @@ static int sp_384_ecc_mulmod_stripe_6(sp_point_384* r, const sp_point_384* g,
 #if (!defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SMALL_STACK)) || defined(WOLFSSL_SP_NO_MALLOC)
     sp_point_384 rtd;
     sp_point_384 pd;
-    sp_digit td[2 * 6 * 6];
+    sp_digit td[2 * 6 * 7];
 #endif
     sp_point_384* rt;
     sp_point_384* p = NULL;
@@ -41807,7 +41884,7 @@ static int sp_384_ecc_mulmod_stripe_6(sp_point_384* r, const sp_point_384* g,
         err = sp_384_point_new_6(heap, pd, p);
     }
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
-    t = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 6 * 6, heap,
+    t = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 6 * 7, heap,
                            DYNAMIC_TYPE_ECC);
     if (t == NULL) {
         err = MEMORY_E;
@@ -41874,6 +41951,7 @@ static int sp_384_ecc_mulmod_stripe_6(sp_point_384* r, const sp_point_384* g,
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #ifdef FP_ECC
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
@@ -42117,6 +42195,8 @@ static int sp_384_ecc_mulmod_6(sp_point_384* r, const sp_point_384* g, const sp_
 }
 #endif
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply the point by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -43460,6 +43540,8 @@ static const sp_table_entry_384 p384_table[256] = {
         0x23d7b93f432299bbL,0x1fe1a0578590e4a3L,0x8e1d0586f58c0ce6L } },
 };
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply the base point of P384 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -43477,6 +43559,8 @@ static int sp_384_ecc_mulmod_base_6(sp_point_384* r, const sp_digit* k,
                                       k, map, ct, heap);
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply the base point of P384 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -43527,6 +43611,7 @@ int sp_ecc_mulmod_base_384(mp_int* km, ecc_point* r, int map, void* heap)
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #if defined(WOLFSSL_VALIDATE_ECC_KEYGEN) || defined(HAVE_ECC_SIGN) || \
                                                         defined(HAVE_ECC_VERIFY)
 /* Returns 1 if the number of zero.
@@ -43612,6 +43697,7 @@ static void sp_384_from_bin(sp_digit* r, int size, const byte* a, int n)
     }
 }
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* Generates a scalar that is in the range 1..order-1.
  *
  * rng  Random number generator.
@@ -43630,6 +43716,7 @@ static int sp_384_ecc_gen_k_6(WC_RNG* rng, sp_digit* k)
             sp_384_from_bin(k, 6, buf, (int)sizeof(buf));
             if (sp_384_cmp_6(k, p384_order2) < 0) {
                 sp_384_add_one_6(k);
+                sp_384_norm_6(k);
                 break;
             }
         }
@@ -43639,6 +43726,8 @@ static int sp_384_ecc_gen_k_6(WC_RNG* rng, sp_digit* k)
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 /* Makes a random EC key pair.
  *
  * rng   Random number generator.
@@ -43726,6 +43815,7 @@ int sp_ecc_make_key_384(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     return err;
 }
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #ifdef HAVE_ECC_DHE
 /* Write r as big endian to byte array.
  * Fixed length number of bytes written: 48
@@ -43749,6 +43839,7 @@ static void sp_384_to_bin(sp_digit* r, byte* a)
     }
 }
 
+#ifndef WOLFSSL_NO_P384_NIST
 /* Multiply the point by the scalar and serialize the X ordinate.
  * The number is 0 padded to maximum size on output.
  *
@@ -43815,6 +43906,7 @@ int sp_ecc_secret_gen_384(mp_int* priv, ecc_point* pub, byte* out,
 }
 #endif /* HAVE_ECC_DHE */
 
+#endif /* !WOLFSSL_NO_P384_NIST */
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
 #endif
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
@@ -44082,6 +44174,7 @@ static WC_INLINE int sp_384_mod_6(sp_digit* r, const sp_digit* a, const sp_digit
 
 #endif
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
+#ifndef WOLFSSL_NO_P384_NIST
 #ifdef WOLFSSL_SP_SMALL
 /* Order-2 for the P384 curve. */
 static const uint64_t p384_order_minus_2[6] = {
@@ -44251,6 +44344,7 @@ static void sp_384_mont_inv_order_6(sp_digit* r, const sp_digit* a,
 #endif /* HAVE_ECC_SIGN */
 #endif /* !WOLFSSL_NO_P384_NIST */
 #endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
+#ifndef WOLFSSL_NO_P384_NIST
 #ifdef HAVE_ECC_SIGN
 #ifndef SP_ECC_MAX_SIG_GEN
 #define SP_ECC_MAX_SIG_GEN  64
@@ -45119,6 +45213,7 @@ static int sp_ecc_verify_384_ex(const byte* hash, word32 hashLen,
     sp_384_point_free_6(p1, 0, heap);
     sp_384_point_free_6(p2, 0, heap);
 
+    (void)cache;
     return err;
 }
 
@@ -45140,6 +45235,8 @@ int sp_ecc_cache_verify_384(const byte* hash, word32 hashLen, mp_int* pX,
 #endif /* FP_ECC_CONTROL */
 #endif /* HAVE_ECC_VERIFY */
 
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 #ifdef HAVE_ECC_CHECK_KEY
 /* Check that the x and y oridinates are a valid point on the curve.
  *
@@ -45354,6 +45451,8 @@ int sp_ecc_check_key_384(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
     return err;
 }
 #endif
+#endif /* !WOLFSSL_NO_P384_NIST */
+#ifndef WOLFSSL_NO_P384_NIST
 #ifdef WOLFSSL_PUBLIC_ECC_ADD_DBL
 /* Add two projective EC points together.
  * (pX, pY, pZ) + (qX, qY, qZ) = (rX, rY, rZ)
@@ -45505,7 +45604,7 @@ int sp_ecc_proj_dbl_point_384(mp_int* pX, mp_int* pY, mp_int* pZ,
 int sp_ecc_map_384(mp_int* pX, mp_int* pY, mp_int* pZ)
 {
 #if (!defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SMALL_STACK)) || defined(WOLFSSL_SP_NO_MALLOC)
-    sp_digit tmpd[2 * 6 * 6];
+    sp_digit tmpd[2 * 6 * 7];
     sp_point_384 pd;
 #endif
     sp_digit* tmp = NULL;
@@ -45515,7 +45614,7 @@ int sp_ecc_map_384(mp_int* pX, mp_int* pY, mp_int* pZ)
     err = sp_384_point_new_6(NULL, pd, p);
 #if (defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)) && !defined(WOLFSSL_SP_NO_MALLOC)
     if (err == MP_OKAY) {
-        tmp = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 6 * 6, NULL,
+        tmp = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 6 * 7, NULL,
                                                               DYNAMIC_TYPE_ECC);
         if (tmp == NULL) {
             err = MEMORY_E;
@@ -45552,7 +45651,9 @@ int sp_ecc_map_384(mp_int* pX, mp_int* pY, mp_int* pZ)
     return err;
 }
 #endif /* WOLFSSL_PUBLIC_ECC_ADD_DBL */
+#endif /* !WOLFSSL_NO_P384_NIST */
 #ifdef HAVE_COMP_KEY
+#ifndef WOLFSSL_NO_P384_NIST
 /* Find the square root of a number mod the prime of the curve.
  *
  * y  The number to operate on and the result.
@@ -45741,6 +45842,7 @@ int sp_ecc_uncompress_384(mp_int* xm, int odd, mp_int* ym)
     return err;
 }
 #endif
+#endif /* !WOLFSSL_NO_P384_NIST */
 #endif /* WOLFSSL_SP_384 */
 #ifdef HAVE_ECC_BRAINPOOL
 #ifndef WOLFSSL_SP_NO_256
@@ -62696,6 +62798,7 @@ static int sp_ecc_verify_brainpool_256_ex(const byte* hash, word32 hashLen,
     sp_256_point_free_4(p1, 0, heap);
     sp_256_point_free_4(p2, 0, heap);
 
+    (void)cache;
     return err;
 }
 
@@ -63310,7 +63413,6 @@ sp_cache_256_t* sp_ecc_get_cache_entry_256(ecc_point* g, int curveId,
                 case ECC_SECP256R1:
                     sp_256_gen_stripe_table_4(point, ret->table, tmp, heap);
                     break;
-
             #ifdef HAVE_ECC_BRAINPOOL
                 case ECC_BRAINPOOLP256R1:
                     sp_256_gen_stripe_table_brainpool_4(point, ret->table, tmp, heap);
@@ -63326,7 +63428,7 @@ sp_cache_256_t* sp_ecc_get_cache_entry_256(ecc_point* g, int curveId,
     #endif /* HAVE_THREAD_LS */
         sp_256_point_free_4(point, 0, heap);
     }
-    
+
     return ret;
 }
 #endif /* FP_ECC_CONTROL && FP_ECC */

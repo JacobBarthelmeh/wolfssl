@@ -18559,6 +18559,7 @@ static int sp_ecc_verify_256_ex(const byte* hash, word32 hashLen,
     sp_256_point_free_4(p1, 0, heap);
     sp_256_point_free_4(p2, 0, heap);
 
+    (void)cache;
     return err;
 }
 
@@ -35740,6 +35741,7 @@ static int sp_ecc_verify_brainpool_256_ex(const byte* hash, word32 hashLen,
     sp_256_point_free_4(p1, 0, heap);
     sp_256_point_free_4(p2, 0, heap);
 
+    (void)cache;
     return err;
 }
 
@@ -36354,7 +36356,6 @@ sp_cache_256_t* sp_ecc_get_cache_entry_256(ecc_point* g, int curveId,
                 case ECC_SECP256R1:
                     sp_256_gen_stripe_table_4(point, ret->table, tmp, heap);
                     break;
-
             #ifdef HAVE_ECC_BRAINPOOL
                 case ECC_BRAINPOOLP256R1:
                     sp_256_gen_stripe_table_brainpool_4(point, ret->table, tmp, heap);
@@ -36370,7 +36371,7 @@ sp_cache_256_t* sp_ecc_get_cache_entry_256(ecc_point* g, int curveId,
     #endif /* HAVE_THREAD_LS */
         sp_256_point_free_4(point, 0, heap);
     }
-    
+
     return ret;
 }
 #endif /* FP_ECC_CONTROL && FP_ECC */
