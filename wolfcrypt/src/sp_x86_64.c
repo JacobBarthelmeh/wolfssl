@@ -9188,7 +9188,7 @@ static THREAD_LS_T int sp_cache_256_inited = 0;
 static THREAD_LS_T int sp_cache_256_last = -1;
 
 /* return the index of which cached point to use */
-static int sp_ecc_get_cache_256_index(const sp_point_256* g)
+static int sp_ecc_get_cache_256_index()
 {
     int i = -1;
     int j;
@@ -9256,7 +9256,7 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
 
     /* No match. */
     if (i == sp_cache_entries_256) {
-        i = sp_ecc_get_cache_256_index(g);
+        i = sp_ecc_get_cache_256_index();
         if (i >= 0) {
             XMEMCPY(sp_cache_256[i].x, g->x, sizeof(sp_cache_256[i].x));
             XMEMCPY(sp_cache_256[i].y, g->y, sizeof(sp_cache_256[i].y));
@@ -27872,7 +27872,7 @@ static THREAD_LS_T int sp_cache_384_inited = 0;
 static THREAD_LS_T int sp_cache_384_last = -1;
 
 /* return the index of which cached point to use */
-static int sp_ecc_get_cache_384_index(const sp_point_384* g)
+static int sp_ecc_get_cache_384_index()
 {
     int i = -1;
     int j;
@@ -27940,7 +27940,7 @@ static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
 
     /* No match. */
     if (i == sp_cache_entries_384) {
-        i = sp_ecc_get_cache_384_index(g);
+        i = sp_ecc_get_cache_384_index();
         if (i >= 0) {
             XMEMCPY(sp_cache_384[i].x, g->x, sizeof(sp_cache_384[i].x));
             XMEMCPY(sp_cache_384[i].y, g->y, sizeof(sp_cache_384[i].y));
