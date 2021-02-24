@@ -107,6 +107,60 @@
 /* prevent multiple mutex initializations */
 static volatile int initRefCount = 0;
 
+
+#if defined(WOLFSSL_HAVE_SP_ECC) && defined(FP_ECC_CONTROL) && \
+       !defined(WOLFSSL_DSP_BUILD)
+static void* cache_table_256 = NULL;
+static int fp_entries_dynamic;
+
+/* sets up the dynamic cache buffer and gives user chance to set value
+ * returns 0 on success */
+static int InitDynamicCache()
+{
+    int sz, ret;
+#ifndef FP_ENTRIES
+    #define FP_ENTRIES 16
+#endif
+    fp_entries_dynamic = FP_ENTRIES;
+
+#ifdef CUSTOM_FP_ECC_ENTRIES
+    fp_entries_dynamic = CUSTOM_FP_ECC_ENTRIES(FP_ENTRIES,
+                                               sp_ecc_get_cache_size_256());
+    sp_ecc_set_cache_entries_256(fp_entries_dynamic);
+#endif
+
+    sz = sp_ecc_get_cache_size_256() * fp_entries_dynamic;
+    cache_table_256 = NULL;
+
+    /* If using a shared cache create buffer and pass it to SP file */
+    if (sz > 0) {
+        cache_table_256 = XMALLOC(sz, NULL, DYNAMIC_TYPE_ECC);
+        if (cache_table_256 == NULL) {
+            WOLFSSL_MSG("Error malloc'ing FP_ECC table");
+            return MEMORY_E;
+        }
+    }
+    ret = sp_ecc_set_cache_table_256(cache_table_256, sz);
+    if (ret != 0) {
+        if (cache_table_256 != NULL)
+            XFREE(cache_table_256, NULL, DYNAMIC_TYPE_ECC);
+        cache_table_256 = NULL;
+    }
+
+    return 0;
+}
+
+static void FreeDynamicCache()
+{
+    /* if shared memory was used free the allocated memory */
+    if (cache_table_256 != NULL) {
+        XFREE(cache_table_256, NULL, DYNAMIC_TYPE_ECC);
+        cache_table_256 = NULL;
+    }
+}
+#endif
+
+
 /* Used to initialize state for wolfcrypt
    return 0 on success
  */
@@ -279,7 +333,14 @@ int wolfCrypt_Init(void)
 #endif
 
 #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
-	if ((ret = wolfSSL_DSPInit()) != 0) {
+        if ((ret = wolfSSL_DSPInit()) != 0) {
+            return ret;
+        }
+#endif
+
+#if defined(WOLFSSL_HAVE_SP_ECC) && defined(FP_ECC_CONTROL) && \
+       !defined(WOLFSSL_DSP_BUILD)
+        if ((ret = InitDynamicCache()) != 0) {
             return ret;
         }
 #endif
@@ -353,6 +414,10 @@ int wolfCrypt_Cleanup(void)
     #endif
     #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
         wolfSSL_DSPCleanup();
+    #endif
+    #if defined(WOLFSSL_HAVE_SP_ECC) && defined(FP_ECC_CONTROL) && \
+       !defined(WOLFSSL_DSP_BUILD)
+        FreeDynamicCache();
     #endif
     }
 

@@ -106,14 +106,10 @@ int wolfSSL_InitHandle()
     return 0;
 }
 
-#ifdef FP_ECC_CONTROL
-static void* cache_table_256 = NULL;
-static int fp_entries_dynamic;
-#endif
 
 int wolfSSL_DSPInit()
 {
-    int ret, sz, fd;
+    int ret;
 
     rpcmem_init();
     ret = wolfSSL_InitHandle();
@@ -121,39 +117,6 @@ int wolfSSL_DSPInit()
         return ret;
     }
 
-#ifdef FP_ECC_CONTROL
-    /* setup the buffer for caching points */
-#ifndef FP_ENTRIES
-    #define FP_ENTRIES 16
-#endif
-    fp_entries_dynamic = FP_ENTRIES;
-
-#ifdef CUSTOM_FP_ECC_ENTRIES
-    fp_entries_dynamic = CUSTOM_FP_ECC_ENTRIES(FP_ENTRIES,
-                                               sp_ecc_get_cache_size_256());
-    sp_ecc_set_cache_entries_256(fp_entries_dynamic);
-#endif
-
-    sz = sp_ecc_get_cache_size_256() * fp_entries_dynamic;
-    cache_table_256 = NULL;
-
-    /* If using a shared cache create buffer and pass it to SP file */
-    if (sz > 0) {
-        cache_table_256 = XMALLOC(sz, NULL, DYNAMIC_TYPE_ECC);
-        if (cache_table_256 == NULL) {
-            WOLFSSL_MSG("Error malloc'ing FP_ECC table");
-            return MEMORY_E;
-        }
-    }
-    ret = sp_ecc_set_cache_table_256(cache_table_256, sz);
-    if (ret != 0) {
-        if (cache_table_256 != NULL)
-            XFREE(cache_table_256, NULL, DYNAMIC_TYPE_ECC);
-        cache_table_256 = NULL;
-    }
-#endif
-    (void)sz;
-    (void)fd;
     return ret;
 }
 
@@ -169,13 +132,6 @@ void wolfSSL_DSPCleanup()
 {
     wolfSSL_CleanupHandle();
 
-#ifdef FP_ECC_CONTROL
-    /* if shared memory was used free the allocated memory */
-    if (cache_table_256 != NULL) {
-        XFREE(cache_table_256, NULL, DYNAMIC_TYPE_ECC);
-        cache_table_256 = NULL;
-    }
-#endif
     rpcmem_deinit();
 }
 #if defined(WOLFSSL_HAVE_SP_ECC)
