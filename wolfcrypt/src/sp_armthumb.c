@@ -19425,7 +19425,13 @@ static int sp_256_ecc_mulmod_stripe_8(sp_point_256* r, const sp_point_256* g,
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
 #endif
-static int sp_cache_entries_256 = FP_ENTRIES;
+
+/* disconnect the size of SP cache table from ecc.c cache table */
+#ifndef SP_ENTRIES
+    #define SP_ENTRIES FP_ENTRIES
+#endif
+
+static int sp_cache_entries_256 = SP_ENTRIES;
 
 #ifndef FP_ECC_CONTROL
 typedef struct sp_cache_256_t {
@@ -19436,7 +19442,7 @@ typedef struct sp_cache_256_t {
     int set;
 } sp_cache_256_t;
 
-static THREAD_LS_T sp_cache_256_t sp_cache_256[FP_ENTRIES];
+static THREAD_LS_T sp_cache_256_t sp_cache_256[SP_ENTRIES];
 #else
 struct sp_cache_256_t {
     sp_digit x[8];
@@ -19892,7 +19898,13 @@ static int sp_256_ecc_mulmod_stripe_8(sp_point_256* r, const sp_point_256* g,
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
 #endif
-static int sp_cache_entries_256 = FP_ENTRIES;
+
+/* disconnect the size of SP cache table from ecc.c cache table */
+#ifndef SP_ENTRIES
+    #define SP_ENTRIES FP_ENTRIES
+#endif
+
+static int sp_cache_entries_256 = SP_ENTRIES;
 
 #ifndef FP_ECC_CONTROL
 typedef struct sp_cache_256_t {
@@ -19903,7 +19915,7 @@ typedef struct sp_cache_256_t {
     int set;
 } sp_cache_256_t;
 
-static THREAD_LS_T sp_cache_256_t sp_cache_256[FP_ENTRIES];
+static THREAD_LS_T sp_cache_256_t sp_cache_256[SP_ENTRIES];
 #else
 struct sp_cache_256_t {
     sp_digit x[8];
@@ -27220,7 +27232,13 @@ static int sp_384_ecc_mulmod_stripe_12(sp_point_384* r, const sp_point_384* g,
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
 #endif
-static int sp_cache_entries_384 = FP_ENTRIES;
+
+/* disconnect the size of SP cache table from ecc.c cache table */
+#ifndef SP_ENTRIES
+    #define SP_ENTRIES FP_ENTRIES
+#endif
+
+static int sp_cache_entries_384 = SP_ENTRIES;
 
 #ifndef FP_ECC_CONTROL
 typedef struct sp_cache_384_t {
@@ -27231,7 +27249,7 @@ typedef struct sp_cache_384_t {
     int set;
 } sp_cache_384_t;
 
-static THREAD_LS_T sp_cache_384_t sp_cache_384[FP_ENTRIES];
+static THREAD_LS_T sp_cache_384_t sp_cache_384[SP_ENTRIES];
 #else
 struct sp_cache_384_t {
     sp_digit x[12];
@@ -27703,7 +27721,13 @@ static int sp_384_ecc_mulmod_stripe_12(sp_point_384* r, const sp_point_384* g,
 #ifndef FP_ENTRIES
     #define FP_ENTRIES 16
 #endif
-static int sp_cache_entries_384 = FP_ENTRIES;
+
+/* disconnect the size of SP cache table from ecc.c cache table */
+#ifndef SP_ENTRIES
+    #define SP_ENTRIES FP_ENTRIES
+#endif
+
+static int sp_cache_entries_384 = SP_ENTRIES;
 
 #ifndef FP_ECC_CONTROL
 typedef struct sp_cache_384_t {
@@ -27714,7 +27738,7 @@ typedef struct sp_cache_384_t {
     int set;
 } sp_cache_384_t;
 
-static THREAD_LS_T sp_cache_384_t sp_cache_384[FP_ENTRIES];
+static THREAD_LS_T sp_cache_384_t sp_cache_384[SP_ENTRIES];
 #else
 struct sp_cache_384_t {
     sp_digit x[12];
