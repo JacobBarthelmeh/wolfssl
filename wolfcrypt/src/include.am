@@ -43,7 +43,8 @@ EXTRA_DIST += \
               wolfcrypt/src/fp_sqr_comba_8.i \
               wolfcrypt/src/fp_sqr_comba_9.i \
               wolfcrypt/src/fp_sqr_comba_small_set.i \
-              wolfcrypt/src/fe_x25519_128.i
+              wolfcrypt/src/fe_x25519_128.i \
+              wolfcrypt/src/sm2.c
 
 EXTRA_DIST += wolfcrypt/src/port/ti/ti-aes.c \
               wolfcrypt/src/port/ti/ti-des3.c \
@@ -95,6 +96,10 @@ EXTRA_DIST += wolfcrypt/src/port/ti/ti-aes.c \
               wolfcrypt/src/port/Renesas/README.md \
               wolfcrypt/src/port/cypress/psoc6_crypto.c
 
+
+if BUILD_SM2
+src_libwolfssl_la_SOURCES += wolfcrypt/src/sm2.c
+endif
 
 if BUILD_CRYPTOCB
 src_libwolfssl_la_SOURCES += wolfcrypt/src/cryptocb.c

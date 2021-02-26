@@ -30870,6 +30870,8 @@ const WOLFSSL_ObjectInfo wolfssl_object_info[] = {
         { NID_brainpoolP320r1, ECC_BRAINPOOLP320R1_OID,  oidCurveType, "brainpoolP320r1", "brainpoolP320r1"},
         { NID_brainpoolP384r1, ECC_BRAINPOOLP384R1_OID,  oidCurveType, "brainpoolP384r1", "brainpoolP384r1"},
         { NID_brainpoolP512r1, ECC_BRAINPOOLP512R1_OID,  oidCurveType, "brainpoolP512r1", "brainpoolP512r1"},
+
+        { NID_sm2, ECC_SM2P256V1_OID, oidCurveType, "sm2", "sm2"},
     #endif /* HAVE_ECC */
 
         /* oidBlkType */

@@ -388,6 +388,7 @@ then
     test "$enable_hashflags" = "" && enable_hashflags=yes
     test "$enable_defaultdhparams" = "" && enable_defaultdhparams=yes
     test "$enable_base64encode" = "" && enable_base64encode=yes
+    test "$enable_sm2" = "" && enable_sm2=yes
     test "$enable_arc4" = "" && enable_arc4=yes
     test "$enable_des3" = "" && enable_des3=yes
     test "$enable_nullcipher" = "" && enable_nullcipher=yes
@@ -1975,6 +1976,12 @@ then
     ENABLED_CERTS=yes
 fi
 
+# SM2
+AC_ARG_ENABLE([sm2],
+    [AS_HELP_STRING([--enable-sm2],[Enable ECC SM2 (default: disabled)])],
+    [ ENABLED_SM2=$enableval ],
+    [ ENABLED_SM2=no ]
+    )
 
 # ECC Custom Curves
 AC_ARG_ENABLE([ecccustcurves],
@@ -5801,6 +5808,12 @@ AS_IF([test "x$ENABLED_CMAC" = "xyes" && \
 AS_IF([test "x$ENABLED_MCAPI" = "xyes"],
       [AS_IF([test "x$ENABLED_DES3" = "xno"],[ENABLED_DES3="yes"])])
 
+if test "$ENABLED_SM2" = "yes"
+then
+    AM_CFLAGS="$AM_CFLAGS -DHAVE_ECC_SM2"
+    AM_CCASFLAGS="$AM_CCASFLAGS -DHAVE_ECC_SM2"
+fi
+
 if test "$ENABLED_WOLFSCEP" = "yes"
 then
     # Enable prereqs if not already enabled
@@ -6212,6 +6225,7 @@ AM_CONDITIONAL([BUILD_HASHFLAGS],[test "x$ENABLED_HASHFLAGS" = "xyes"])
 AM_CONDITIONAL([BUILD_LINUXKM],[test "$ENABLED_LINUXKM" = "yes"])
 AM_CONDITIONAL([BUILD_NO_LIBRARY],[test "$ENABLED_NO_LIBRARY" = "yes"])
 AM_CONDITIONAL([BUILD_RC2],[test "x$ENABLED_RC2" = "xyes"])
+AM_CONDITIONAL([BUILD_SM2],[test "x$ENABLED_SM2" = "xyes"])
 
 if test "$ax_enable_debug" = "yes" ||
         test "$ENABLED_STACKSIZE" != "no" ||
@@ -6451,6 +6465,7 @@ echo "   * DSA:                        $ENABLED_DSA"
 echo "   * DH:                         $ENABLED_DH"
 echo "   * DH Default Parameters:      $ENABLED_DHDEFAULTPARAMS"
 echo "   * ECC:                        $ENABLED_ECC"
+echo "   * ECC SM2:                    $ENABLED_SM2"
 echo "   * ECC Custom Curves           $ENABLED_ECCCUSTCURVES"
 echo "   * ECC Minimum Bits            $ENABLED_ECCMINSZ"
 echo "   * CURVE25519:                 $ENABLED_CURVE25519"

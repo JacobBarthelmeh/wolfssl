@@ -188,6 +188,35 @@ int sp_ecc_uncompress_brainpool_256(mp_int* xm, int odd, mp_int* ym);
 
 #endif
 
+#ifdef HAVE_ECC_SM2
+
+int sp_ecc_mulmod_sm2_256(mp_int* km, ecc_point* gm, ecc_point* rm, int map,
+                          void* heap);
+int sp_ecc_mulmod_base_sm2_256(mp_int* km, ecc_point* rm, int map, void* heap);
+
+int sp_ecc_make_key_sm2_256(WC_RNG* rng, mp_int* priv, ecc_point* pub,
+                            void* heap);
+int sp_ecc_secret_gen_sm2_256(mp_int* priv, ecc_point* pub, byte* out,
+                              word32* outlen, void* heap);
+int sp_ecc_sign_sm2_256(const byte* hash, word32 hashLen, WC_RNG* rng,
+                        mp_int* priv, mp_int* rm, mp_int* sm, mp_int* km,
+                        void* heap);
+int sp_ecc_verify_sm2_256(const byte* hash, word32 hashLen, mp_int* pX,
+                          mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm,
+                          int* res, void* heap);
+int sp_ecc_is_point_sm2_256(mp_int* pX, mp_int* pY);
+int sp_ecc_check_key_sm2_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap);
+int sp_ecc_proj_add_point_sm2_256(mp_int* pX, mp_int* pY, mp_int* pZ,
+                                  mp_int* qX, mp_int* qY, mp_int* qZ,
+                                  mp_int* rX, mp_int* rY, mp_int* rZ);
+int sp_ecc_proj_dbl_point_sm2_256(mp_int* pX, mp_int* pY, mp_int* pZ,
+                                  mp_int* rX, mp_int* rY, mp_int* rZ);
+int sp_ecc_map_sm2_256(mp_int* pX, mp_int* pY, mp_int* pZ);
+int sp_ecc_uncompress_sm2_256(mp_int* xm, int odd, mp_int* ym);
+
+#endif
+
+
 typedef struct sp_cache_256_t sp_cache_256_t;
 typedef struct sp_cache_384_t sp_cache_384_t;
 
@@ -199,6 +228,11 @@ WOLFSSL_LOCAL sp_cache_256_t* sp_ecc_get_cache_entry_256(ecc_point* g,
 WOLFSSL_LOCAL int sp_ecc_cache_verify_256(const byte* hash, word32 hashLen,
                       mp_int* pX, mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm,
                       int* res, sp_cache_256_t* cache, void* heap);
+#ifdef HAVE_ECC_SM2
+WOLFSSL_LOCAL int sp_ecc_cache_verify_sm2_256(const byte* hash, word32 hashLen,
+                      mp_int* pX, mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm,
+                      int* res, sp_cache_256_t* cache, void* heap);
+#endif
 #ifdef HAVE_ECC_BRAINPOOL
 WOLFSSL_LOCAL int sp_ecc_cache_verify_brainpool_256(const byte* hash,
                       word32 hashLen, mp_int* pX, mp_int* pY, mp_int* pZ,
@@ -221,6 +255,9 @@ WOLFSSL_LOCAL int sp_ecc_set_cache_entries_384(int numEntries);
 #if defined(WOLFSSL_DSP_HVX)
 /* needed as local functions, HVX is in seperate sp file from main DSP code */
 WOLFSSL_LOCAL int sp_ecc_verify_256_hvx(const byte* hash, word32 hashLen, mp_int* pX,
+                          mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm,
+                          int* res, void* heap);
+WOLFSSL_LOCAL int sp_ecc_verify_sm2_256_hvx(const byte* hash, word32 hashLen, mp_int* pX,
                           mp_int* pY, mp_int* pZ, mp_int* r, mp_int* sm,
                           int* res, void* heap);
 #endif

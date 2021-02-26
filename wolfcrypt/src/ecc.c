@@ -56,9 +56,9 @@ Possible ECC enable options:
  * WOLFSSL_ECC_CURVE_STATIC:                                    default off (on for windows)
                         For the ECC curve paramaters `ecc_set_type` use fixed
                         array for hex string
- * WC_ECC_NONBLOCK:     Enable non-blocking support for sign/verify. 
+ * WC_ECC_NONBLOCK:     Enable non-blocking support for sign/verify.
                         Requires SP with WOLFSSL_SP_NONBLOCK
- * WC_ECC_NONBLOCK_ONLY Enable the non-blocking function only, no fall-back to 
+ * WC_ECC_NONBLOCK_ONLY Enable the non-blocking function only, no fall-back to
                         normal blocking API's
  * WOLFSSL_ECDSA_SET_K: Enables the setting of the 'k' value to use during ECDSA
  *                      signing. If the value is invalid, a new random 'k' is
@@ -78,6 +78,7 @@ ECC Curve Types:
  * HAVE_ECC_SECPR3      Enables SECP R3 curves                  default: off
  * HAVE_ECC_BRAINPOOL   Enables Brainpool curves                default: off
  * HAVE_ECC_KOBLITZ     Enables Koblitz curves                  default: off
+ * HAVE_ECC_SM2         Enables SM2 curves                      default: off
  */
 
 /*
@@ -567,6 +568,21 @@ enum {
         #endif
         #define ecc_oid_brainpoolp256r1_sz CODED_BRAINPOOLP256R1_SZ
     #endif /* HAVE_ECC_BRAINPOOL */
+    #ifdef HAVE_ECC_SM2
+        #ifdef HAVE_OID_ENCODING
+            #define CODED_SM2P256V1    {1,2,156,10197,1,301}
+            #define CODED_SM2P256V1_SZ 6
+        #else
+            #define CODED_SM2P256V1 {0x06,0x08,0x2A,0x81,0x1C,0xCF,0x55,0x01,0x82,0x2D}
+            #define CODED_SM2P256V1_SZ 10
+        #endif
+        #ifndef WOLFSSL_ECC_CURVE_STATIC
+            static const ecc_oid_t ecc_oid_sm2p256v1[] = CODED_SM2P256V1;
+        #else
+            #define ecc_oid_sm2p256v1 CODED_SM2P256V1
+        #endif
+        #define ecc_oid_sm2p256v1_sz CODED_SM2P256V1_SZ
+    #endif /* HAVE_ECC_SM2 */
 #endif /* ECC256 */
 #ifdef ECC320
     #ifdef HAVE_ECC_BRAINPOOL
@@ -1045,6 +1061,25 @@ const ecc_set_type ecc_sets[] = {
         1,                                                                  /* cofactor   */
     },
     #endif /* HAVE_ECC_BRAINPOOL */
+    #ifdef HAVE_ECC_SM2
+    {
+        32,                                                     /* size/bytes */
+        ECC_SM2P256V1,                                          /* ID         */
+        "SM2P256V1",                                            /* curve name */
+
+        /* bottom of draft-shen-sm2-ecdsa-02, recommended values */
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF", /* prime */
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC", /* A */
+        "28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93", /* B */
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123", /* order */
+        "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7", /* Gx */
+        "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0", /* Gy */
+        ecc_oid_sm2p256v1,                                      /* oid/oidSz  */
+        ecc_oid_sm2p256v1_sz,
+        ECC_SM2P256V1_OID,                                      /* oid sum    */
+        1,                                                      /* cofactor   */
+    },
+    #endif /* HAVE_ECC_SM2 */
 #endif /* ECC256 */
 #ifdef ECC320
     #ifdef HAVE_ECC_BRAINPOOL
@@ -1327,7 +1362,7 @@ static void wc_ecc_curve_free(ecc_curve_spec* curve)
     }
 }
 
-static int wc_ecc_curve_cache_load_item(ecc_curve_spec* curve, const char* src, 
+static int wc_ecc_curve_cache_load_item(ecc_curve_spec* curve, const char* src,
     mp_int** dst, byte mask)
 {
     int err;
@@ -1904,19 +1939,26 @@ done:
     #ifdef HAVE_ECC_BRAINPOOL
         if (!mp_is_bit_set(modulus, 3)) {
            return sp_ecc_proj_add_point_brainpool_256(P->x, P->y, P->z, Q->x, Q->y,
+        }
+    #endif
+    #ifdef HAVE_ECC_SM2
+        if (!mp_is_bit_set(modulus, 224)) {
+           return sp_ecc_proj_add_point_sm2_256(P->x, P->y, P->z, Q->x, Q->y,
                                                 Q->z, R->x, R->y, R->z);
         }
     #endif
     #ifndef WOLFSSL_NO_P256_NIST
         return sp_ecc_proj_add_point_256(P->x, P->y, P->z, Q->x, Q->y, Q->z,
                                          R->x, R->y, R->z);
-    }
     #endif
+    }
 #endif
 #ifdef WOLFSSL_SP_384
     if (mp_count_bits(modulus) == 384) {
+    #ifndef WOLFSSL_NO_P384_NIST
         return sp_ecc_proj_add_point_384(P->x, P->y, P->z, Q->x, Q->y, Q->z,
                                          R->x, R->y, R->z);
+    #endif
     }
 #endif
     return ECC_BAD_ARG_E;
@@ -2249,17 +2291,24 @@ int ecc_projective_dbl_point(ecc_point *P, ecc_point *R, mp_int* a,
     #ifdef HAVE_ECC_BRAINPOOL
         if (!mp_is_bit_set(modulus, 3)) {
            return sp_ecc_proj_dbl_point_brainpool_256(P->x, P->y, P->z, R->x, R->y,
+        }
+    #endif
+    #ifdef HAVE_ECC_SM2
+        if (!mp_is_bit_set(modulus, 224)) {
+           return sp_ecc_proj_dbl_point_sm2_256(P->x, P->y, P->z, R->x, R->y,
                                                 R->z);
         }
     #endif
     #ifndef WOLFSSL_NO_P256_NIST
         return sp_ecc_proj_dbl_point_256(P->x, P->y, P->z, R->x, R->y, R->z);
-    }
     #endif
+    }
 #endif
 #ifdef WOLFSSL_SP_384
     if (mp_count_bits(modulus) == 384) {
+    #ifndef WOLFSSL_NO_P384_NIST
         return sp_ecc_proj_dbl_point_384(P->x, P->y, P->z, R->x, R->y, R->z);
+    #endif
     }
 #endif
     return ECC_BAD_ARG_E;
@@ -2479,14 +2528,21 @@ done:
            return sp_ecc_map_brainpool_256(P->x, P->y, P->z);
         }
     #endif
+    #ifdef HAVE_ECC_SM2
+        if (!mp_is_bit_set(modulus, 224)) {
+           return sp_ecc_map_sm2_256(P->x, P->y, P->z);
+        }
+    #endif
     #ifndef WOLFSSL_NO_P256_NIST
         return sp_ecc_map_256(P->x, P->y, P->z);
-    }
     #endif
+    }
 #endif
 #ifdef WOLFSSL_SP_384
     if (mp_count_bits(modulus) == 384) {
+    #ifndef WOLFSSL_NO_P384_NIST
         return sp_ecc_map_384(P->x, P->y, P->z);
+    #endif
     }
 #endif
     return ECC_BAD_ARG_E;
@@ -3092,6 +3148,11 @@ exit:
            return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
        }
    #endif
+   #ifdef HAVE_ECC_SM2
+       if (!mp_is_bit_set(modulus, 224)) {
+           return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);
+       }
+   #endif
    #ifndef WOLFSSL_NO_P256_NIST
        return sp_ecc_mulmod_256(k, G, R, map, heap);
    #endif
@@ -3099,7 +3160,9 @@ exit:
 #endif
 #ifdef WOLFSSL_SP_384
    if (mp_count_bits(modulus) == 384) {
+   #ifndef WOLFSSL_NO_P384_NIST
        return sp_ecc_mulmod_384(k, G, R, map, heap);
+   #endif
    }
 #endif
 #else
@@ -3257,6 +3320,11 @@ exit:
          return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
       }
    #endif
+   #ifdef HAVE_ECC_SM2
+      if (!mp_is_bit_set(modulus, 224)) {
+         return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);
+      }
+   #endif
    #ifndef WOLFSSL_NO_P256_NIST
       return sp_ecc_mulmod_256(k, G, R, map, heap);
    #endif
@@ -3264,7 +3332,9 @@ exit:
 #endif
 #ifdef WOLFSSL_SP_384
    if (mp_count_bits(modulus) == 384) {
-       return sp_ecc_mulmod_384(k, G, R, map, heap);
+   #ifndef WOLFSSL_NO_P384_NIST
+      return sp_ecc_mulmod_384(k, G, R, map, heap);
+   #endif
    }
 #endif
 #else
@@ -3931,6 +4001,14 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
     }
     else
 #endif
+#ifdef HAVE_ECC_SM2
+    if (private_key->idx != ECC_CUSTOM_IDX &&
+                               ecc_sets[private_key->idx].id == ECC_SM2P256V1) {
+        err = sp_ecc_secret_gen_sm2_256(k, point, out, outlen,
+                                                             private_key->heap);
+    }
+    else
+#endif
 #endif
 #ifdef WOLFSSL_SP_384
 #ifndef WOLFSSL_NO_P384_NIST
@@ -4389,7 +4467,15 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
     }
     else
 #endif
+#ifdef HAVE_ECC_SM2
+    if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SM2P256V1) {
+        err = sp_ecc_mulmod_base_sm2_256(&key->k, pub, 1, key->heap);
+    }
+    else
+#endif
+#endif
 #ifdef WOLFSSL_SP_384
+#ifndef WOLFSSL_NO_P384_NIST
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SECP384R1) {
         err = sp_ecc_mulmod_base_384(&key->k, pub, 1, key->heap);
     }
@@ -4654,6 +4740,15 @@ int wc_ecc_make_key_ex2(WC_RNG* rng, int keysize, ecc_key* key, int curve_id,
 #ifdef HAVE_ECC_BRAINPOOL
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
         err = sp_ecc_make_key_brainpool_256(rng, &key->k, &key->pubkey, key->heap);
+        if (err == MP_OKAY) {
+            key->type = ECC_PRIVATEKEY;
+        }
+    }
+    else
+#endif
+#ifdef HAVE_ECC_SM2
+    if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SM2P256V1) {
+        err = sp_ecc_make_key_sm2_256(rng, &key->k, &key->pubkey, key->heap);
         if (err == MP_OKAY) {
             key->type = ECC_PRIVATEKEY;
         }
@@ -5326,6 +5421,9 @@ int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
     #ifdef HAVE_ECC_BRAINPOOL
              ecc_sets[key->idx].id != ECC_BRAINPOOLP256R1 &&
     #endif
+    #ifdef HAVE_ECC_SM2
+             ecc_sets[key->idx].id != ECC_SM2P256V1 &&
+    #endif
              ecc_sets[key->idx].id != ECC_SECP384R1)) {
         return WC_KEY_SIZE_E;
     }
@@ -5373,6 +5471,12 @@ int wc_ecc_sign_hash_ex(const byte* in, word32 inlen, WC_RNG* rng,
         #ifdef HAVE_ECC_BRAINPOOL
         if (ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
             return sp_ecc_sign_brainpool_256(in, inlen, rng, &key->k, r, s, sign_k,
+                key->heap);
+        }
+        #endif
+        #ifdef HAVE_ECC_SM2
+        if (ecc_sets[key->idx].id == ECC_SM2P256V1) {
+            return sp_ecc_sign_sm2_256(in, inlen, rng, &key->k, r, s, sign_k,
                 key->heap);
         }
         #endif
@@ -6615,13 +6719,15 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
     #ifdef HAVE_ECC_BRAINPOOL
              ecc_sets[key->idx].id != ECC_BRAINPOOLP256R1 &&
     #endif
+    #ifdef HAVE_ECC_SM2
+             ecc_sets[key->idx].id != ECC_SM2P256V1 &&
+    #endif
              ecc_sets[key->idx].id != ECC_SECP384R1)) {
         return WC_KEY_SIZE_E;
     }
 #endif
 
-#if (defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)) && \
-                                                    defined(WOLFSSL_HAVE_SP_ECC)
+#if defined(WOLFSSL_HAVE_SP_ECC)
     if (key->idx != ECC_CUSTOM_IDX
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_ECC)
         && key->asyncDev.marker != WOLFSSL_ASYNC_MARKER_ECC
@@ -6676,6 +6782,21 @@ int wc_ecc_verify_hash_ex(mp_int *r, mp_int *s, const byte* hash,
             #endif
             #if !defined(FP_ECC_CONTROL)
             return sp_ecc_verify_brainpool_256(hash, hashlen, key->pubkey.x,
+                key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
+            #endif
+        }
+        #endif
+        #ifdef HAVE_ECC_SM2
+        if (ecc_sets[key->idx].id == ECC_SM2P256V1) {
+            #if defined(FP_ECC_CONTROL) && !defined(WOLFSSL_DSP_BUILD)
+            return sp_ecc_cache_verify_sm2_256(hash, hashlen, key->pubkey.x,
+                key->pubkey.y, key->pubkey.z, r, s, res,
+                sp_ecc_get_cache_entry_256(&(key->pubkey), ECC_SM2P256V1,
+                                          key->fpIdx, key->fpBuild, key->heap),
+                key->heap);
+            #endif
+            #if !defined(FP_ECC_CONTROL)
+            return sp_ecc_verify_sm2_256(hash, hashlen, key->pubkey.x,
                 key->pubkey.y, key->pubkey.z, r, s, res, key->heap);
             #endif
         }
@@ -7130,6 +7251,13 @@ int wc_ecc_import_point_der_ex(byte* in, word32 inLen, const int curve_idx,
         }
         else
         #endif
+        #ifdef HAVE_ECC_SM2
+        if (curve_idx != ECC_CUSTOM_IDX &&
+                                 ecc_sets[curve_idx->idx].id == ECC_SM2P256V1) {
+            sp_ecc_uncompress_sm2_256(point->x, pointType, point->y);
+        }
+        else
+        #endif
     #endif
     #ifdef WOLFSSL_SP_384
         #ifndef WOLFSSL_NO_P384_NIST
@@ -7537,6 +7665,11 @@ int wc_ecc_is_point(ecc_point* ecp, mp_int* a, mp_int* b, mp_int* prime)
            return sp_ecc_is_point_brainpool_256(ecp->x, ecp->y);
        }
    #endif
+   #ifdef HAVE_ECC_SM2
+       if (!mp_is_bit_set(prime, 224)) {
+           return sp_ecc_is_point_sm2_256(ecp->x, ecp->y);
+       }
+   #endif
    #ifndef WOLFSSL_NO_P256_NIST
        return sp_ecc_is_point_256(ecp->x, ecp->y);
    #endif
@@ -7589,6 +7722,14 @@ static int ecc_check_privkey_gen(ecc_key* key, mp_int* a, mp_int* prime)
     if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
         if (err == MP_OKAY) {
             err = sp_ecc_mulmod_base_brainpool_256(&key->k, res, 1, key->heap);
+        }
+    }
+    else
+    #endif
+    #ifdef HAVE_ECC_SM2
+    if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SM2P256V1) {
+        if (err == MP_OKAY) {
+            err = sp_ecc_mulmod_base_sm2_256(&key->k, res, 1, key->heap);
         }
     }
     else
@@ -7724,6 +7865,13 @@ static int ecc_check_pubkey_order(ecc_key* key, ecc_point* pubkey, mp_int* a,
         }
         else
     #endif
+    #ifdef HAVE_ECC_SM2
+        if (key->idx != ECC_CUSTOM_IDX &&
+                                       ecc_sets[key->idx].id == ECC_SM2P256V1) {
+            err = sp_ecc_mulmod_sm2_256(order, pubkey, inf, 1, key->heap);
+        }
+        else
+    #endif
 #endif
 #ifdef WOLFSSL_SP_384
     #ifndef WOLFSSL_NO_P384_NIST
@@ -7816,6 +7964,12 @@ int wc_ecc_check_key(ecc_key* key)
     if (key->idx != ECC_CUSTOM_IDX &&
                                  ecc_sets[key->idx].id == ECC_BRAINPOOLP256R1) {
         return sp_ecc_check_key_brainpool_256(key->pubkey.x, key->pubkey.y, &key->k,
+                                                                     key->heap);
+    }
+#endif
+#ifdef HAVE_ECC_SM2
+    if (key->idx != ECC_CUSTOM_IDX && ecc_sets[key->idx].id == ECC_SM2P256V1) {
+        return sp_ecc_check_key_sm2_256(key->pubkey.x, key->pubkey.y, &key->k,
                                                                      key->heap);
     }
 #endif
@@ -8102,6 +8256,12 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
         if (key->dp->id == ECC_BRAINPOOLP256R1) {
             sp_ecc_uncompress_brainpool_256(key->pubkey.x, pointType,
                                                                  key->pubkey.y);
+        }
+        else
+        #endif
+        #ifdef HAVE_ECC_SM2
+        if (key->dp->id == ECC_SM2P256V1) {
+            sp_ecc_uncompress_sm2_256(key->pubkey.x, pointType, key->pubkey.y);
         }
         else
         #endif
@@ -10289,6 +10449,11 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
            return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
        }
     #endif
+    #ifdef HAVE_ECC_SM2
+       if (!mp_is_bit_set(modulus, 224)) {
+           return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);
+       }
+    #endif
     #ifndef WOLFSSL_NO_P256_NIST
         return sp_ecc_mulmod_256(k, G, R, map, heap);
     #endif
@@ -10415,6 +10580,11 @@ int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
     #ifdef HAVE_ECC_BRAINPOOL
        if (!mp_is_bit_set(modulus, 3)) {
            return sp_ecc_mulmod_brainpool_256(k, G, R, map, heap);
+       }
+    #endif
+    #ifdef HAVE_ECC_SM2
+       if (!mp_is_bit_set(modulus, 224)) {
+           return sp_ecc_mulmod_sm2_256(k, G, R, map, heap);
        }
     #endif
     #ifndef WOLFSSL_NO_P256_NIST
