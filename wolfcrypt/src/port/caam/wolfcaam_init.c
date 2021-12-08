@@ -25,7 +25,8 @@
 #include <wolfssl/wolfcrypt/settings.h>
 
 #if defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
-    defined(WOLFSSL_IMX6UL_CAAM) || defined(WOLFSSL_IMX6_CAAM_BLOB)
+    defined(WOLFSSL_IMX6UL_CAAM) || defined(WOLFSSL_IMX6_CAAM_BLOB) || \
+    defined(WOLFSSL_SECO_CAAM)
 
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
@@ -73,6 +74,7 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
     switch (info->algo_type) {
         case WC_ALGO_TYPE_PK:
             switch (info->pk.type) {
+            #ifdef HAVE_ECC
                 case WC_PK_TYPE_ECDSA_SIGN:
                     ret = wc_CAAM_EccSign(info->pk.eccsign.in,
                             info->pk.eccsign.inlen, info->pk.eccsign.out,
@@ -104,7 +106,7 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
                             info->pk.ecc_check.pubKey,
                             info->pk.ecc_check.pubKeySz);
                    break;
-
+            #endif /* HAVE_ECC */
                 default:
                     WOLFSSL_MSG("unsupported public key operation");
             }
@@ -207,7 +209,7 @@ int wc_caamFree(void)
 }
 
 
-#ifndef WOLFSSL_QNX_CAAM
+#if defined(__INTEGRITY) || defined(INTEGRITY)
 word32 wc_caamReadRegister(word32 reg)
 {
     word32 out = 0;
@@ -251,7 +253,7 @@ int wc_caamAddAndWait(CAAM_BUFFER* buf, int sz, word32 arg[4], word32 type)
     static int wait = 0;
 #endif
 
-#ifndef WOLFSSL_QNX_CAAM
+#if defined(__INTEGRITY) || defined(INTEGRITY)
     if (caam == NULLIODevice) {
         WOLFSSL_MSG("Error CAAM IODevice not found! Bad password?");
         return WC_HW_E;

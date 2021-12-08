@@ -28,10 +28,12 @@
 /* include for porting layer */
 #ifdef WOLFSSL_QNX_CAAM
     #include <wolfssl/wolfcrypt/port/caam/wolfcaam_qnx.h>
+#elif defined(WOLFSSL_SECO_CAAM)
+    #include <wolfssl/wolfcrypt/port/caam/wolfcaam_seco.h>
 #endif
 
 #if defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
-    defined(WOLFSSL_QNX_CAAM)
+    defined(WOLFSSL_QNX_CAAM) || defined(WOLFSSL_SECO_CAAM)
 
 
 #if defined(__INTEGRITY) || defined(INTEGRITY)
@@ -76,7 +78,7 @@ WOLFSSL_API int wc_caamCoverKey(byte* in, word32 inSz, byte* out, word32* outSz,
 #define WC_CAAM_BLACK_KEYMOD_SZ 16
 #define WC_CAAM_MAX_ENTROPY 44
 
-#ifndef WOLFSSL_QNX_CAAM
+#if !defined(WOLFSSL_QNX_CAAM) && !defined(WOLFSSL_SECO_CAAM)
     WOLFSSL_API int wc_caamSetResource(IODevice ioDev);
     #ifndef WC_CAAM_READ
         #define WC_CAAM_READ(reg)      wc_caamReadRegister((reg))
