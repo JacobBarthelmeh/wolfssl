@@ -118,12 +118,159 @@ void wc_SECOFreeInterface()
 }
 
 
+/* returns error enum found from hsm calls, HSM_NO_ERROR on success */
+static hsm_err_t wc_SECO_RNG(unsigned int args[4], CAAM_BUFFER *buf, int sz)
+{
+    hsm_hdl_t rng;
+    hsm_err_t err;
+    open_svc_rng_args_t svcArgs  = {0};
+    op_get_random_args_t rngArgs = {0};
+
+//typedef struct {
+//    hsm_svc_rng_flags_t flags;                      //!< bitmap indicating the service flow properties
+//    uint8_t reserved[3];
+//} open_svc_rng_args_t;
+    err = hsm_open_rng_service(hsm_session, &svcArgs, &rng);
+
+    if (err == HSM_NO_ERROR) {
+        rngArgs.output      = (uint8_t*)buf[0].TheAddress;
+        rngArgs.random_size = (uint32_t)buf[0].Length;
+        err = hsm_get_random(rng, &rngArgs);
+    #ifdef SECO_DEBUG
+        {
+            uint32_t z;
+            printf("Pulled rng data from HSM :");
+            for (z = 0; z < rngArgs.random_size; z++)
+                printf("%02X", rngArgs.output[z]);
+            printf("\n");
+        }
+    #endif
+    }
+
+    if (err == HSM_NO_ERROR) {
+        err = hsm_close_rng_service(rng);
+    }
+
+    (void)args;
+    (void)sz;
+    return err;
+}
+
+
+/* trasnlates the HSM error to wolfSSL error and does debug print out */
+static int wc_TranslateHSMError(int current, hsm_err_t err)
+{
+    int ret = -1;
+
+    switch (err) {
+        case HSM_NO_ERROR:
+            ret = Success;
+            break;
+
+        case HSM_INVALID_MESSAGE:
+            WOLFSSL_MSG("SECO HSM: Invalid/unknown msg");
+            break;
+
+        case HSM_INVALID_ADDRESS:
+            WOLFSSL_MSG("SECO HSM: Invalid address");
+            break;
+
+        case HSM_UNKNOWN_ID:
+            WOLFSSL_MSG("SECO HSM: unknown ID");
+            break;
+
+        case HSM_INVALID_PARAM:
+            WOLFSSL_MSG("SECO HSM: invalid param");
+            break;
+
+        case HSM_NVM_ERROR:
+            WOLFSSL_MSG("SECO HSM: generic nvm error");
+            break;
+
+        case HSM_OUT_OF_MEMORY:
+            WOLFSSL_MSG("SECO HSM: out of memory");
+            break;
+
+        case HSM_UNKNOWN_HANDLE:
+            WOLFSSL_MSG("SECO HSM: unknown handle");
+            break;
+
+        case HSM_UNKNOWN_KEY_STORE:
+            WOLFSSL_MSG("SECO HSM: unknown key store");
+            break;
+
+        case HSM_KEY_STORE_AUTH:
+            WOLFSSL_MSG("SECO HSM: key store auth error");
+            break;
+
+        case HSM_KEY_STORE_ERROR:
+            WOLFSSL_MSG("SECO HSM: key store error");
+            break;
+
+        case HSM_ID_CONFLICT:
+            WOLFSSL_MSG("SECO HSM: id conflict");
+            break;
+
+        case HSM_RNG_NOT_STARTED:
+            WOLFSSL_MSG("SECO HSM: RNG not started");
+            break;
+
+        case HSM_CMD_NOT_SUPPORTED:
+            WOLFSSL_MSG("SECO HSM: CMD not support");
+            break;
+
+        case HSM_INVALID_LIFECYCLE:
+            WOLFSSL_MSG("SECO HSM: invalid lifecycle");
+            break;
+
+        case HSM_KEY_STORE_CONFLICT:
+            WOLFSSL_MSG("SECO HSM: store conflict");
+            break;
+
+        case HSM_KEY_STORE_COUNTER:
+            WOLFSSL_MSG("SECO HSM: key store counter error");
+            break;
+
+        case HSM_FEATURE_NOT_SUPPORTED:
+            WOLFSSL_MSG("SECO HSM: feature not supported");
+            break;
+
+        case HSM_SELF_TEST_FAILURE:
+            WOLFSSL_MSG("SECO HSM: self test failure");
+            break;
+
+        case HSM_NOT_READY_RATING:
+            WOLFSSL_MSG("SECO HSM: not ready");
+            break;
+
+        case HSM_FEATURE_DISABLED:
+            WOLFSSL_MSG("SECO HSM: feature is disabled error");
+            break;
+
+        case HSM_GENERAL_ERROR:
+            WOLFSSL_MSG("SECO HSM: general error found");
+            break;
+
+        default:
+            WOLFSSL_MSG("SECO HSM: unkown error value found");
+    }
+
+    if (current != 0) {
+        WOLFSSL_MSG("In an error state before SECO HSM error");
+        ret = current;
+    }
+
+    return ret;
+}
+
+
 /* Do a synchronous operations and block till done
  * returns 0 on success */
 int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
         int sz)
 {
     int ret;
+    hsm_err_t err = HSM_NO_ERROR;
     CAAM_ADDRESS pubkey, privkey;
 
     if (args != NULL) {
@@ -138,7 +285,7 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
     if (ret == 0) {
     switch (type) {
     case CAAM_ENTROPY:
-//        cmd = WC_TRNG_CMD;
+        ret = wc_SECO_RNG(args, buf, sz);
         break;
 
     case CAAM_GET_PART:
@@ -305,11 +452,10 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
         wc_UnLockMutex(&caamMutex);
     }
 
-
     (void)pubkey;
     (void)privkey;
     (void)sz;
-    return Success;
+    return wc_TranslateHSMError(ret, err);
 }
 #endif /* WOLFSSL_SECO_CAAM */
 
