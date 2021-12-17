@@ -219,6 +219,10 @@ static int InitSha256(wc_Sha256* sha256)
     sha256->used = 0;
 #endif
 
+#ifdef WOLF_CRYPTO_CB
+    sha256->devId = wc_CryptoCb_DefaultDevID();
+#endif
+
     return ret;
 }
 #endif
@@ -783,6 +787,10 @@ static int InitSha256(wc_Sha256* sha256)
         if (sha256 == NULL)
             return BAD_FUNC_ARG;
 
+        ret = InitSha256(sha256);
+        if (ret != 0)
+            return ret;
+
         sha256->heap = heap;
     #ifdef WOLF_CRYPTO_CB
         sha256->devId = devId;
@@ -791,10 +799,6 @@ static int InitSha256(wc_Sha256* sha256)
     #ifdef WOLFSSL_SMALL_STACK_CACHE
         sha256->W = NULL;
     #endif
-
-        ret = InitSha256(sha256);
-        if (ret != 0)
-            return ret;
 
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA256)
         ret = wolfAsync_DevCtxInit(&sha256->asyncDev,
@@ -1591,7 +1595,12 @@ static int InitSha256(wc_Sha256* sha256)
 
     int wc_InitSha224(wc_Sha224* sha224)
     {
-        return wc_InitSha224_ex(sha224, NULL, INVALID_DEVID);
+        int devId = INVALID_DEVID;
+
+    #ifdef WOLF_CRYPTO_CB
+        devId = wc_CryptoCb_DefaultDevID();
+    #endif
+        return wc_InitSha224_ex(sha224, NULL, devId);
     }
 
 #if !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH)
@@ -1626,7 +1635,12 @@ static int InitSha256(wc_Sha256* sha256)
 
 int wc_InitSha256(wc_Sha256* sha256)
 {
-    return wc_InitSha256_ex(sha256, NULL, INVALID_DEVID);
+    int devId = INVALID_DEVID;
+
+#ifdef WOLF_CRYPTO_CB
+    devId = wc_CryptoCb_DefaultDevID();
+#endif
+    return wc_InitSha256_ex(sha256, NULL, devId);
 }
 
 #if !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH)
@@ -1686,7 +1700,7 @@ void wc_Sha256Free(wc_Sha256* sha256)
 
 #endif /* !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH) */
 #ifdef WOLFSSL_HASH_KEEP
-static int _wc_Sha_Grow(byte** msg, word32* used, word32* len, const byte* in,
+int _wc_Sha_Grow(byte** msg, word32* used, word32* len, const byte* in,
                         int inSz, void* heap)
 {
     if (*len < *used + inSz) {
@@ -1784,6 +1798,15 @@ int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
     #endif
     #ifdef WOLFSSL_HASH_FLAGS
         dst->flags |= WC_HASH_FLAG_ISCOPY;
+    #endif
+    #if defined(WOLFSSL_HASH_KEEP)
+        if (src->msg != NULL) {
+            dst->msg = (byte*)XMALLOC(src->len, dst->heap,
+                                      DYNAMIC_TYPE_TMP_BUFFER);
+            if (dst->msg == NULL)
+                return MEMORY_E;
+            XMEMCPY(dst->msg, src->msg, src->len);
+        }
     #endif
 
         return ret;
@@ -1899,6 +1922,14 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
 #endif
 #ifdef WOLFSSL_HASH_FLAGS
      dst->flags |= WC_HASH_FLAG_ISCOPY;
+#endif
+#if defined(WOLFSSL_HASH_KEEP)
+    if (src->msg != NULL) {
+        dst->msg = (byte*)XMALLOC(src->len, dst->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        if (dst->msg == NULL)
+            return MEMORY_E;
+        XMEMCPY(dst->msg, src->msg, src->len);
+    }
 #endif
 
     return ret;

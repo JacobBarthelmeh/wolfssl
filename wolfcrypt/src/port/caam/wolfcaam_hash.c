@@ -334,9 +334,13 @@ int wc_CAAM_Sha224Hash(wc_Sha224* sha224, const byte* in, word32 inSz,
 
     if (digest != NULL) {
     #ifdef WOLFSSL_HASH_KEEP
+        int devId  = sha224->devId;
+        void* heap = sha224->heap;
+
         ret = _ShaFinal((byte*)sha224->digest, SHA224_DIGEST_SIZE, sha224->msg,
             sha224->used, digest, CAAM_SHA224);
-
+        wc_Sha224Free(sha224);
+        wc_InitSha224_ex(sha224, heap, devId);
     #else
         ret = _ShaFinal((byte*)sha224->digest, SHA224_DIGEST_SIZE,
             sha224->buffer, sha224->bufferLen, digest, CAAM_SHA224);
@@ -372,9 +376,14 @@ int wc_CAAM_Sha256Hash(wc_Sha256* sha256, const byte* in, word32 inSz,
 
     if (digest != NULL) {
     #ifdef WOLFSSL_HASH_KEEP
+        int devId  = sha256->devId;
+        void* heap = sha256->heap;
+
         ret = _ShaFinal((byte*)sha256->digest, SHA256_DIGEST_SIZE, sha256->msg,
             sha256->used, digest, CAAM_SHA256);
 
+        wc_Sha256Free(sha256);
+        wc_InitSha256_ex(sha256, heap, devId);
     #else
         ret = _ShaFinal((byte*)sha256->digest, SHA256_DIGEST_SIZE,
             sha256->buffer, sha256->bufferLen, digest, CAAM_SHA256);
@@ -388,60 +397,86 @@ int wc_CAAM_Sha256Hash(wc_Sha256* sha256, const byte* in, word32 inSz,
 /******************************************************************************
   SHA 384
   ****************************************************************************/
-//#ifdef WOLFSSL_SHA384
+#ifdef WOLFSSL_SHA384
 //int wc_InitSha384_ex(wc_Sha384* sha, void* heap, int devId)
 //{
 //    return _InitSha(sha, heap, devId, SHA512_DIGEST_SIZE, CAAM_SHA384);
 //}
 //
-//
-//int wc_Sha384Update(wc_Sha384* sha, const byte* data, word32 len)
-//{
-//    return _ShaUpdate(sha, data, len, SHA512_DIGEST_SIZE, CAAM_SHA384);
-//}
-//
-//
-//int wc_Sha384Final(wc_Sha384* sha, byte* out)
-//{
-//    int ret;
-//    if ((ret = _ShaFinal(sha, out, SHA512_DIGEST_SIZE, CAAM_SHA384)) != 0) {
-//        return ret;
-//    }
-//
-//    XMEMCPY(out, (byte*)sha->ctx, SHA384_DIGEST_SIZE);
-//    return _InitSha(sha, NULL, 0, SHA512_DIGEST_SIZE, CAAM_SHA384);
-//}
-//#endif /* WOLFSSL_SHA384 */
+int wc_CAAM_Sha384Hash(wc_Sha384* sha384, const byte* in, word32 inSz,
+    byte* digest)
+{
+    int ret = 0;
+
+    /* in the case of update's just store up all data */
+    if (in != NULL) {
+    #ifdef WOLFSSL_HASH_KEEP
+        ret = wc_Sha384_Grow(sha384, in, inSz);
+    #else
+        ret = _ShaUpdate(sha384, data, len, SHA384_DIGEST_SIZE, CAAM_SHA384);
+    #endif
+    }
+
+    if (digest != NULL) {
+    #ifdef WOLFSSL_HASH_KEEP
+        int devId  = sha384->devId;
+        void* heap = sha384->heap;
+
+        ret = _ShaFinal((byte*)sha384->digest, SHA384_DIGEST_SIZE, sha384->msg,
+            sha384->used, digest, CAAM_SHA384);
+        wc_Sha384Free(sha384);
+        wc_InitSha384_ex(sha384, heap, devId);
+    #else
+        ret = _ShaFinal((byte*)sha384->digest, SHA384_DIGEST_SIZE,
+            sha384->buffer, sha384->bufferLen, digest, CAAM_SHA384);
+    #endif
+    }
+    return ret;
+}
+#endif /* WOLFSSL_SHA384 */
 
 
 
 /******************************************************************************
   SHA 512
   ****************************************************************************/
-//#ifdef WOLFSSL_SHA512
+#ifdef WOLFSSL_SHA512
 //int wc_InitSha512_ex(wc_Sha512* sha, void* heap, int devId)
 //{
 //    return _InitSha(sha, heap, devId, SHA512_DIGEST_SIZE, CAAM_SHA512);
 //}
-//
-//
-//int wc_Sha512Update(wc_Sha512* sha, const byte* data, word32 len)
-//{
-//    return _ShaUpdate(sha, data, len, SHA512_DIGEST_SIZE, CAAM_SHA512);
-//}
-//
-//
-//int wc_Sha512Final(wc_Sha512* sha, byte* out)
-//{
-//    int ret;
-//    if ((ret = _ShaFinal(sha, out, SHA512_DIGEST_SIZE, CAAM_SHA512)) != 0) {
-//        return ret;
-//    }
-//
-//    XMEMCPY(out, (byte*)sha->ctx, SHA512_DIGEST_SIZE);
-//    return _InitSha(sha, NULL, 0, SHA512_DIGEST_SIZE, CAAM_SHA512);
-//}
-//#endif /* WOLFSSL_SHA512 */
+
+int wc_CAAM_Sha512Hash(wc_Sha512* sha512, const byte* in, word32 inSz,
+    byte* digest)
+{
+    int ret = 0;
+
+    /* in the case of update's just store up all data */
+    if (in != NULL) {
+    #ifdef WOLFSSL_HASH_KEEP
+        ret = wc_Sha512_Grow(sha512, in, inSz);
+    #else
+        ret = _ShaUpdate(sha512, data, len, SHA512_DIGEST_SIZE, CAAM_SHA512);
+    #endif
+    }
+
+    if (digest != NULL) {
+    #ifdef WOLFSSL_HASH_KEEP
+        int devId  = sha512->devId;
+        void* heap = sha512->heap;
+
+        ret = _ShaFinal((byte*)sha512->digest, SHA512_DIGEST_SIZE, sha512->msg,
+            sha512->used, digest, CAAM_SHA512);
+        wc_Sha512Free(sha512);
+        wc_InitSha512_ex(sha512, heap, devId);
+    #else
+        ret = _ShaFinal((byte*)sha512->digest, SHA512_DIGEST_SIZE,
+            sha512->buffer, sha512->bufferLen, digest, CAAM_SHA512);
+    #endif
+    }
+    return ret;
+}
+#endif /* WOLFSSL_SHA512 */
 
 #endif /* WOLFSSL_CAAM */
 

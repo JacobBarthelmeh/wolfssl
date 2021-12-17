@@ -191,7 +191,7 @@ static hsm_err_t wc_SECO_Hash(unsigned args[4], CAAM_BUFFER *buf, int sz,
         }
 
         hashArgs.output = (uint8_t*)buf[0].TheAddress;
-        hashArgs.output_size = 32;//buf[0].Length;
+        hashArgs.output_size = buf[0].Length;
         hashArgs.input = (uint8_t*)buf[1].TheAddress;
         hashArgs.input_size = buf[1].Length;
 
@@ -356,8 +356,6 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
         err = wc_SECO_RNG(args, buf, sz);
         break;
 
-//#define CAAM_MD5    0x00400000
-//#define CAAM_SHA    0x00410000
     case CAAM_SHA224:
     case CAAM_SHA256:
     case CAAM_SHA384:

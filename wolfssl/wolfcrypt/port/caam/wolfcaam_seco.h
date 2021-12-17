@@ -54,9 +54,6 @@
 #define LastBuffer 0
 #define Success 1
 
-/* unique devId for CAAM use on crypto callbacks */
-#define WOLFSSL_CAAM_DEVID 7
-
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_ecdsa.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_cmac.h>
 #include <wolfssl/wolfcrypt/cryptocb.h>

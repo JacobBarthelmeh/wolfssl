@@ -1051,4 +1051,18 @@ int wc_CryptoCb_Cmac(Cmac* cmac, const byte* key, word32 keySz,
 }
 #endif
 
+/* returns the default dev id for the current build */
+int wc_CryptoCb_DefaultDevID()
+{
+    int ret;
+
+    /* conditional macro selection based on build */
+#ifdef WOLFSSL_CAAM_DEVID
+    ret = WOLFSSL_CAAM_DEVID;
+#else
+    ret = INVALID_DEVID;
+#endif
+
+    return ret;
+}
 #endif /* WOLF_CRYPTO_CB */

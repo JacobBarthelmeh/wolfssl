@@ -36,6 +36,11 @@
     defined(WOLFSSL_QNX_CAAM) || defined(WOLFSSL_SECO_CAAM)
 
 
+/* unique devId for CAAM use on crypto callbacks */
+#ifndef WOLFSSL_CAAM_DEVID
+    #define WOLFSSL_CAAM_DEVID 7
+#endif
+
 #if defined(__INTEGRITY) || defined(INTEGRITY)
     #include <INTEGRITY.h>
     typedef Buffer CAAM_BUFFER;
