@@ -285,6 +285,9 @@ typedef struct wc_CryptoInfo {
         #ifndef NO_SHA
             wc_Sha* sha1;
         #endif
+        #ifdef WOLFSSL_SHA224
+            wc_Sha224* sha224;
+        #endif
         #ifndef NO_SHA256
             wc_Sha256* sha256;
         #endif

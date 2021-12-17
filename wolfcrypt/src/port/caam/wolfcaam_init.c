@@ -32,6 +32,10 @@
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
 
+#ifdef WOLFSSL_SECO_CAAM
+    #include <wolfssl/wolfcrypt/port/caam/wolfcaam_hash.h>
+#endif
+
 /* determine which porting header to include */
 #if defined(__INTEGRITY) || defined(INTEGRITY)
     #ifndef WC_CAAM_PASSWORD
@@ -125,8 +129,28 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
         #endif
             break;
 
-        case WC_ALGO_TYPE_NONE:
         case WC_ALGO_TYPE_HASH:
+        #ifdef WOLFSSL_SECO_CAAM
+            switch (info->hash.type) {
+                case WC_HASH_TYPE_SHA224:
+                    ret = wc_CAAM_Sha224Hash(info->hash.sha224, info->hash.in,
+                            info->hash.inSz, info->hash.digest);
+                    break;
+
+                case WC_HASH_TYPE_SHA256:
+                    ret = wc_CAAM_Sha256Hash(info->hash.sha256, info->hash.in,
+                            info->hash.inSz, info->hash.digest);
+                    break;
+
+                default:
+                    WOLFSSL_MSG("Unknown or unsupported hash type");
+                    ret = CRYPTOCB_UNAVAILABLE;
+            }
+
+        #endif
+            break;
+
+        case WC_ALGO_TYPE_NONE:
         case WC_ALGO_TYPE_CIPHER:
         case WC_ALGO_TYPE_RNG:
         case WC_ALGO_TYPE_SEED:

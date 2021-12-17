@@ -1887,7 +1887,7 @@ fi
 if test "$ENABLED_CAAM" = "seco"
 then
     SECO_LIB="/usr/lib"
-    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_CAAM -DWOLFSSL_SECO_CAAM"
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_CAAM -DWOLFSSL_SECO_CAAM -DWOLFSSL_HASH_KEEP"
 
     AC_CHECK_LIB([hsm_lib],[hsm_open_session])
     AC_CHECK_LIB([seco_nvm_manager],[seco_nvm_manager])
@@ -8063,7 +8063,7 @@ echo "   * Linux AF_ALG:               $ENABLED_AFALG"
 echo "   * Linux KCAPI:                $ENABLED_KCAPI"
 echo "   * Linux devcrypto:            $ENABLED_DEVCRYPTO"
 echo "   * Crypto callbacks:           $ENABLED_CRYPTOCB"
-echo "   * i.MX6 CAAM:                 $ENABLED_CAAM"
+echo "   * i.MX CAAM:                  $ENABLED_CAAM"
 echo "   * IoT-Safe:                   $ENABLED_IOTSAFE"
 echo "   * IoT-Safe HWRNG:             $ENABLED_IOTSAFE_HWRNG"
 echo "   * NXP SE050:                  $ENABLED_SE050"

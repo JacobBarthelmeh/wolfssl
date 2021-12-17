@@ -40,7 +40,7 @@
 int caamFd = -1;
 wolfSSL_Mutex caamMutex;
 static pthread_t tid;
-static uint32_t nvm_status;
+static uint32_t nvm_status = 0;
 static hsm_hdl_t hsm_session;
 
 static void* hsm_storage_init(void* args)
@@ -126,10 +126,6 @@ static hsm_err_t wc_SECO_RNG(unsigned int args[4], CAAM_BUFFER *buf, int sz)
     open_svc_rng_args_t svcArgs  = {0};
     op_get_random_args_t rngArgs = {0};
 
-//typedef struct {
-//    hsm_svc_rng_flags_t flags;                      //!< bitmap indicating the service flow properties
-//    uint8_t reserved[3];
-//} open_svc_rng_args_t;
     err = hsm_open_rng_service(hsm_session, &svcArgs, &rng);
 
     if (err == HSM_NO_ERROR) {
@@ -152,6 +148,78 @@ static hsm_err_t wc_SECO_RNG(unsigned int args[4], CAAM_BUFFER *buf, int sz)
     }
 
     (void)args;
+    (void)sz;
+    return err;
+}
+
+
+static hsm_err_t wc_SECO_Hash(unsigned args[4], CAAM_BUFFER *buf, int sz,
+    int type)
+{
+    hsm_hdl_t hash;
+    hsm_err_t err = HSM_NO_ERROR;
+    op_hash_one_go_args_t hashArgs   = {0};
+    open_svc_hash_args_t sessionArgs = {0};
+
+    if (args[0] != CAAM_ALG_FINAL) {
+        WOLFSSL_MSG("Only expecting to call the HSM on final");
+        err = HSM_GENERAL_ERROR;
+    }
+
+    if (err == HSM_NO_ERROR) {
+        err = hsm_open_hash_service(hsm_session, &sessionArgs, &hash);
+    }
+
+    if (err == HSM_NO_ERROR) {
+        switch (type) {
+            case CAAM_SHA224:
+                hashArgs.algo = HSM_HASH_ALGO_SHA_224;
+                break;
+
+            case CAAM_SHA256:
+                hashArgs.algo = HSM_HASH_ALGO_SHA_256;
+                break;
+
+            case CAAM_SHA384:
+                hashArgs.algo = HSM_HASH_ALGO_SHA_384;
+                break;
+
+            case CAAM_SHA512:
+                hashArgs.algo = HSM_HASH_ALGO_SHA_512;
+                break;
+            //#define HSM_HASH_ALGO_SM3_256      ((hsm_hash_algo_t)(0x11u))
+        }
+
+        hashArgs.output = (uint8_t*)buf[0].TheAddress;
+        hashArgs.output_size = 32;//buf[0].Length;
+        hashArgs.input = (uint8_t*)buf[1].TheAddress;
+        hashArgs.input_size = buf[1].Length;
+
+        err = hsm_hash_one_go(hash, &hashArgs);
+        if (err != HSM_NO_ERROR) {
+            WOLFSSL_MSG("Error with HSM hash call");
+        }
+
+    #ifdef SECO_DEBUG
+        {
+            word32 z;
+            printf("hash algo type = %d\n", hashArgs.algo);
+            printf("\tlength of input data = %d\n", hashArgs.input_size);
+            printf("\toutput : ");
+            for (z = 0; z < hashArgs.output_size; z++)
+                printf("%02X", hashArgs.output[z]);
+            printf("\n");
+        }
+    #endif
+
+        /* always try to close the hash handle */
+        if (hsm_close_hash_service(hash) != HSM_NO_ERROR) {
+            WOLFSSL_MSG("Error with HSM hash close");
+            if (err == HSM_NO_ERROR) {
+                err = HSM_GENERAL_ERROR;
+            }
+        }
+    }
     (void)sz;
     return err;
 }
@@ -285,7 +353,16 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
     if (ret == 0) {
     switch (type) {
     case CAAM_ENTROPY:
-        ret = wc_SECO_RNG(args, buf, sz);
+        err = wc_SECO_RNG(args, buf, sz);
+        break;
+
+//#define CAAM_MD5    0x00400000
+//#define CAAM_SHA    0x00410000
+    case CAAM_SHA224:
+    case CAAM_SHA256:
+    case CAAM_SHA384:
+    case CAAM_SHA512:
+        err = wc_SECO_Hash(args, buf, sz, type);
         break;
 
     case CAAM_GET_PART:

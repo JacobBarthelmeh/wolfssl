@@ -213,6 +213,11 @@ static int InitSha256(wc_Sha256* sha256)
 #ifdef WOLFSSL_HASH_FLAGS
     sha256->flags = 0;
 #endif
+#ifdef WOLFSSL_HASH_KEEP
+    sha256->msg  = NULL;
+    sha256->len  = 0;
+    sha256->used = 0;
+#endif
 
     return ret;
 }
@@ -1663,7 +1668,8 @@ void wc_Sha256Free(wc_Sha256* sha256)
     (defined(WOLFSSL_RENESAS_TSIP_CRYPT) && \
     !defined(NO_WOLFSSL_RENESAS_TSIP_CRYPT_HASH)) || \
     (defined(WOLFSSL_RENESAS_SCEPROTECT) && \
-    !defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH))
+    !defined(NO_WOLFSSL_RENESAS_SCEPROTECT_HASH)) || \
+    defined(WOLFSSL_HASH_KEEP)
 
     if (sha256->msg != NULL) {
         XFREE(sha256->msg, sha256->heap, DYNAMIC_TYPE_TMP_BUFFER);
@@ -1679,6 +1685,54 @@ void wc_Sha256Free(wc_Sha256* sha256)
 }
 
 #endif /* !defined(WOLFSSL_HAVE_PSA) || defined(WOLFSSL_PSA_NO_HASH) */
+#ifdef WOLFSSL_HASH_KEEP
+static int _wc_Sha_Grow(byte** msg, word32* used, word32* len, const byte* in,
+                        int inSz, void* heap)
+{
+    if (*len < *used + inSz) {
+        if (*msg == NULL) {
+            *msg = (byte*)XMALLOC(*used + inSz, heap, DYNAMIC_TYPE_TMP_BUFFER);
+        }
+        else {
+            byte* pt = (byte*)XMALLOC(*used + inSz, heap,
+                DYNAMIC_TYPE_TMP_BUFFER);
+            if (pt == NULL) {
+                return MEMORY_E;
+            }
+            XMEMCPY(pt, *msg, *used);
+            XFREE(*msg, heap, DYNAMIC_TYPE_TMP_BUFFER);
+            *msg = pt;
+        }
+        if (*msg == NULL) {
+            return MEMORY_E;
+        }
+        *len = *used + inSz;
+    }
+    XMEMCPY(*msg + *used, in, inSz);
+    *used += inSz;
+    return 0;
+}
+
+
+/* Some hardware have issues with update, this function stores the data to be
+ * hashed into an array. Once ready, the Final operation is called on all of the
+ * data to be hashed at once.
+ * returns 0 on success
+ */
+int wc_Sha256_Grow(wc_Sha256* sha256, const byte* in, int inSz)
+{
+    return _wc_Sha_Grow(&(sha256->msg), &(sha256->used), &(sha256->len), in,
+                        inSz, sha256->heap);
+}
+#ifdef WOLFSSL_SHA224
+int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
+{
+    return _wc_Sha_Grow(&(sha224->msg), &(sha224->used), &(sha224->len), in,
+                        inSz, sha224->heap);
+}
+#endif /* WOLFSSL_SHA224 */
+#endif /* WOLFSSL_HASH_KEEP */
+
 #endif /* !WOLFSSL_TI_HASH */
 #endif /* HAVE_FIPS */
 
