@@ -244,16 +244,16 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
 
                 case WC_CIPHER_AES_ECB:
                     if (info->cipher.enc == 1) {
-                        ret = wc_CAAM_AesEcbEncrypt(info->cipher.aescbc.aes,
-                                                    info->cipher.aescbc.out,
-                                                    info->cipher.aescbc.in,
-                                                    info->cipher.aescbc.sz);
+                        ret = wc_CAAM_AesEcbEncrypt(info->cipher.aesecb.aes,
+                                                    info->cipher.aesecb.out,
+                                                    info->cipher.aesecb.in,
+                                                    info->cipher.aesecb.sz);
                     }
                     else {
-                        ret = wc_CAAM_AesEcbDecrypt(info->cipher.aescbc.aes,
-                                                    info->cipher.aescbc.out,
-                                                    info->cipher.aescbc.in,
-                                                    info->cipher.aescbc.sz);
+                        ret = wc_CAAM_AesEcbDecrypt(info->cipher.aesecb.aes,
+                                                    info->cipher.aesecb.out,
+                                                    info->cipher.aesecb.in,
+                                                    info->cipher.aesecb.sz);
                     }
                     break;
             }

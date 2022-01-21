@@ -46,7 +46,7 @@ static int wc_CAAM_AesAeadCommon(Aes* aes, const byte* in, byte* out, word32 sz,
         return BAD_FUNC_ARG;
     }
 
-    if (wc_AesGetKeySize(aes, &keySz) != 0) {
+    if (wc_AesGetKeySize(aes, &keySz) != 0 && aes->blackKey == 0) {
         return BAD_FUNC_ARG;
     }
 
@@ -153,7 +153,7 @@ static int wc_CAAM_AesCbcCommon(Aes* aes, byte* out, const byte* in, word32 sz,
         word32 keySz;
         int ret;
 
-        if (wc_AesGetKeySize(aes, &keySz) != 0) {
+        if (wc_AesGetKeySize(aes, &keySz) != 0 && aes->blackKey == 0) {
             return BAD_FUNC_ARG;
         }
 
@@ -204,7 +204,7 @@ static int wc_CAAM_AesEcbCommon(Aes* aes, byte* out, const byte* in, word32 sz,
     int dir)
 {
     word32 blocks;
-    CAAM_BUFFER buf[3];
+    CAAM_BUFFER buf[4];
     word32 arg[4];
     word32 keySz = 0;
     int    ret;

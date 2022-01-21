@@ -752,7 +752,8 @@ static hsm_err_t wc_SECO_CMAC(unsigned int args[4], CAAM_BUFFER* buf, int sz)
 
 /* common code between CBC,ECB, and CCM modes */
 static hsm_err_t wc_SEC_AES_Common(unsigned int args[4], CAAM_BUFFER* buf,
-    int sz, hsm_op_cipher_one_go_algo_t algo)
+    int sz, hsm_op_cipher_one_go_algo_t algo,
+    uint8_t* in, int inSz, uint8_t* out, int outSz)
 {
     hsm_hdl_t cipher_hdl;
     open_svc_cipher_args_t  open_args;
@@ -775,10 +776,10 @@ static hsm_err_t wc_SEC_AES_Common(unsigned int args[4], CAAM_BUFFER* buf,
             cipher_args.flags = HSM_CIPHER_ONE_GO_FLAGS_ENCRYPT;
         }
 
-        cipher_args.input      = (uint8_t*)buf[2].TheAddress;
-        cipher_args.input_size = buf[2].Length;
-        cipher_args.output      = (uint8_t*)buf[3].TheAddress;
-        cipher_args.output_size = buf[3].Length;
+        cipher_args.input      = in;
+        cipher_args.input_size = inSz;
+        cipher_args.output      = out;
+        cipher_args.output_size = outSz;
 
     #ifdef SECO_DEBUG
         printf("AES Operation :\n");
@@ -805,18 +806,31 @@ static hsm_err_t wc_SEC_AES_Common(unsigned int args[4], CAAM_BUFFER* buf,
 
 static hsm_err_t wc_SECO_AESECB(unsigned int args[4], CAAM_BUFFER* buf, int sz)
 {
-    return wc_SEC_AES_Common(args, buf, sz, HSM_CIPHER_ONE_GO_ALGO_AES_ECB);
+    return wc_SEC_AES_Common(args, buf, sz, HSM_CIPHER_ONE_GO_ALGO_AES_ECB,
+        (uint8_t*)buf[2].TheAddress, buf[2].Length,
+        (uint8_t*)buf[3].TheAddress, buf[3].Length);
 }
 
 
 static hsm_err_t wc_SECO_AESCBC(unsigned int args[4], CAAM_BUFFER* buf, int sz)
 {
-    return wc_SEC_AES_Common(args, buf, sz, HSM_CIPHER_ONE_GO_ALGO_AES_CBC);
+    return wc_SEC_AES_Common(args, buf, sz, HSM_CIPHER_ONE_GO_ALGO_AES_CBC,
+        (uint8_t*)buf[2].TheAddress, buf[2].Length,
+        (uint8_t*)buf[3].TheAddress, buf[3].Length);
 }
 
 
 static hsm_err_t wc_SECO_AESCCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
 {
+    hsm_err_t err;
+    uint8_t* in;
+    uint8_t* out;
+    int      inSz;
+    int      outSz;
+
+    byte* cipherAndTag   = NULL;
+    int   cipherAndTagSz = 0;
+
     if (buf[1].Length != 12) {
         WOLFSSL_MSG("SECO expecting nonce size of 12");
         return HSM_GENERAL_ERROR;
@@ -831,7 +845,37 @@ static hsm_err_t wc_SECO_AESCCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
         WOLFSSL_MSG("SECO expecting adata size of 0");
         return HSM_GENERAL_ERROR;
     }
-    return wc_SEC_AES_Common(args, buf, sz, HSM_CIPHER_ONE_GO_ALGO_AES_CCM);
+
+    cipherAndTagSz = buf[4].Length + buf[2].Length;
+    cipherAndTag   = (byte*)XMALLOC(cipherAndTagSz, NULL,
+        DYNAMIC_TYPE_TMP_BUFFER);
+    if (args[0] == CAAM_ENC) {
+        in = (uint8_t*)buf[2].TheAddress;
+        inSz  = buf[2].Length;
+        out   = cipherAndTag;
+        outSz = cipherAndTagSz;
+    }
+    else {
+        XMEMCPY(cipherAndTag, (uint8_t*)buf[2].TheAddress, buf[2].Length);
+        XMEMCPY(cipherAndTag + buf[2].Length, (uint8_t*)buf[4].TheAddress,
+            buf[4].Length);
+        in = cipherAndTag;
+        inSz  = cipherAndTagSz;
+        out   = (uint8_t*)buf[3].TheAddress;
+        outSz = buf[3].Length;
+    }
+
+    err = wc_SEC_AES_Common(args, buf, sz, HSM_CIPHER_ONE_GO_ALGO_AES_CCM,
+            in, inSz, out, outSz);
+    if (err == HSM_NO_ERROR) {
+        if (args[0] == CAAM_ENC) {
+            XMEMCPY((uint8_t*)buf[4].TheAddress, cipherAndTag + inSz,
+                buf[4].Length);
+            XMEMCPY((uint8_t*)buf[3].TheAddress, cipherAndTag, buf[3].Length);
+        }
+    }
+    XFREE(cipherAndTag, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    return err;
 }
 
 
@@ -841,21 +885,42 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
     hsm_hdl_t cipher_hdl;
     op_auth_enc_args_t auth_args;
     open_svc_cipher_args_t  open_args;
+    uint8_t* in;
+    uint8_t* out;
+    int      inSz;
+    int      outSz;
+    byte* cipherAndTag   = NULL;
+    int   cipherAndTagSz = 0;
 
 	XMEMSET(&open_args, 0, sizeof(open_args));
     err = hsm_open_cipher_service(key_store_hdl, &open_args, &cipher_hdl);
     if (err == HSM_NO_ERROR) {
-        auth_args.key_identifier = args[3]; /* black key / HSM */
+        cipherAndTagSz = buf[4].Length + buf[2].Length;
+        cipherAndTag   = (byte*)XMALLOC(cipherAndTagSz, NULL,
+            DYNAMIC_TYPE_TMP_BUFFER);
+        if (args[0] == CAAM_ENC) {
+            in = (uint8_t*)buf[2].TheAddress;
+            inSz  = buf[2].Length;
+            out   = cipherAndTag;
+            outSz = cipherAndTagSz;
+        }
+        else {
+            XMEMCPY(cipherAndTag, (uint8_t*)buf[2].TheAddress, buf[2].Length);
+            XMEMCPY(cipherAndTag + buf[2].Length, (uint8_t*)buf[4].TheAddress,
+                buf[4].Length);
+            in = cipherAndTag;
+            inSz  = cipherAndTagSz;
+            out   = (uint8_t*)buf[3].TheAddress;
+            outSz = buf[3].Length;
+        }
 
+        auth_args.key_identifier = args[3]; /* black key / HSM */
         auth_args.iv      = (uint8_t*)buf[1].TheAddress;
         auth_args.iv_size = buf[1].Length;
-
-        auth_args.input      = (uint8_t*)buf[2].TheAddress;
-        auth_args.input_size = buf[2].Length;
-
-        auth_args.output      = (uint8_t*)buf[3].TheAddress;
-        auth_args.output_size = buf[3].Length;
-
+        auth_args.input      = in;
+        auth_args.input_size = inSz;
+        auth_args.output      = out;
+        auth_args.output_size = outSz;
         auth_args.aad      = (uint8_t*)buf[5].TheAddress;
         auth_args.aad_size = buf[5].Length;
 
@@ -867,6 +932,18 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
         }
         auth_args.ae_algo = HSM_AUTH_ENC_ALGO_AES_GCM;
 
+    #ifdef SECO_DEBUG
+        printf("AES GCM Operation :\n");
+        printf("\tkeyID    : %u\n", auth_args.key_identifier);
+        printf("\tinput    : %p\n", auth_args.input);
+        printf("\tinput sz : %d\n", auth_args.input_size);
+        printf("\toutput    : %p\n", auth_args.output);
+        printf("\toutput sz : %d\n", auth_args.output_size);
+        printf("\tiv       : %p\n", auth_args.iv);
+        printf("\tiv sz    : %d\n", auth_args.iv_size);
+        printf("\taad      : %p\n", auth_args.aad);
+        printf("\taad sz   : %d\n", auth_args.aad_size);
+    #endif
         err = hsm_auth_enc(cipher_hdl, &auth_args);
 
         /* always try to close cipher service if open */
@@ -875,6 +952,14 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
         }
     }
 
+    if (err == HSM_NO_ERROR) {
+        if (args[0] == CAAM_ENC) {
+            XMEMCPY((uint8_t*)buf[4].TheAddress, cipherAndTag + inSz,
+                buf[4].Length);
+            XMEMCPY((uint8_t*)buf[3].TheAddress, cipherAndTag, buf[3].Length);
+        }
+    }
+    XFREE(cipherAndTag, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     (void)sz;
     return HSM_NO_ERROR;
 }
