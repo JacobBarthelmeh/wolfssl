@@ -24,7 +24,7 @@
 #ifndef WOLFCAAM_ECDSA_H
 #define WOLFCAAM_ECDSA_H
 
-#if defined(HAVE_ECC) && defined(WOLFSSL_QNX_CAAM)
+#if defined(HAVE_ECC) && defined(WOLFSSL_CAAM)
 
 #include <wolfssl/wolfcrypt/ecc.h>
 

@@ -56,15 +56,61 @@
 
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_ecdsa.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_cmac.h>
+#include <wolfssl/wolfcrypt/port/caam/wolfcaam_aes.h>
 #include <wolfssl/wolfcrypt/cryptocb.h>
 
 #define ResourceNotAvailable -3
 #define CAAM_WAITING -2
 
+/* key stays after key store is closed */
+#define CAAM_KEY_PERSISTENT 0
+
+/* key is deleted when key store is closed */
+#define CAAM_KEY_TRANSIENT  1
+
+/* key is used as a key encryption key */
+#define CAAM_KEY_KEK        2
+
+/* list of key types available */
+#define CAAM_KEYTYPE_ECDSA_P256 0
+#define CAAM_KEYTYPE_ECDSA_P384 1
+#define CAAM_KEYTYPE_ECDSA_P521 2
+#define CAAM_KEYTYPE_AES128     3
+#define CAAM_KEYTYPE_AES192     4
+#define CAAM_KEYTYPE_AES256     5
+#define CAAM_KEYTYPE_HMAC224    6
+#define CAAM_KEYTYPE_HMAC256    7
+#define CAAM_KEYTYPE_HMAC384    8
+#define CAAM_KEYTYPE_HMAC512    9
+
+/* flags for key management */
+#define CAAM_UPDATE_KEY   0
+#define CAAM_GENERATE_KEY 2
+#define CAAM_DELETE_KEY   4
+
 WOLFSSL_LOCAL int SynchronousSendRequest(int type, unsigned int args[4],
         CAAM_BUFFER *buf, int sz);
 WOLFSSL_LOCAL int wc_SECOInitInterface(void);
 WOLFSSL_LOCAL void wc_SECOFreeInterface(void);
+
+typedef int (*wc_SECO_KEK_cb)(byte* encKEK, word32* encKEKSz, byte* KEKID);
+WOLFSSL_API void wc_SECO_SetKEKCb(wc_SECO_KEK_cb cb);
+
+WOLFSSL_API int wc_SECO_OpenHSM(word32 keyId, word32 nonce, word16 maxUpdates,
+                                byte flag);
+WOLFSSL_API int wc_SECO_CloseHSM(void);
+
+WOLFSSL_API int wc_SECO_GenerateKey(int flags, int group, byte* out, int outSz,
+    int keyType, int keyInfo, unsigned int* keyIdOut);
+WOLFSSL_API int wc_SECO_DeleteKey(unsigned int keyId, int group, int keyTypeIn);
+
+#if defined(WOLFSSL_CMAC)
+WOLFSSL_API void wc_SECO_CMACSetKeyID(Cmac* cmac, int keyId);
+WOLFSSL_API int wc_SECO_CMACGetKeyID(Cmac* cmac);
+#endif
+
+WOLFSSL_API void wc_SECO_AesSetKeyID(Aes* aes, int keyId);
+WOLFSSL_API int wc_SECO_AesGetKeyID(Aes* aes);
 
 #define CAAM_SEND_REQUEST(type, sz, arg, buf) \
         SynchronousSendRequest((type), (arg), (buf), (sz))

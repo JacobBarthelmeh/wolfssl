@@ -101,6 +101,7 @@ WOLFSSL_API int wc_caamCoverKey(byte* in, word32 inSz, byte* out, word32* outSz,
 #define CAAM_AESOFB 0x00100400
 #define CAAM_CMAC   0x00100600
 #define CAAM_AESCCM 0x00100800
+#define CAAM_AESGCM 0x00100900
 
 #define CAAM_MD5    0x00400000
 #define CAAM_SHA    0x00410000

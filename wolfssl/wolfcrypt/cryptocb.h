@@ -251,7 +251,7 @@ typedef struct wc_CryptoInfo {
                 word32      authInSz;
             } aesccm_dec;
         #endif /* HAVE_AESCCM */
-        #ifdef HAVE_AES_CBC
+        #if defined(HAVE_AES_CBC)
             struct {
                 Aes*        aes;
                 byte*       out;
@@ -259,6 +259,14 @@ typedef struct wc_CryptoInfo {
                 word32      sz;
             } aescbc;
         #endif /* HAVE_AES_CBC */
+        #if defined(HAVE_AES_ECB)
+            struct {
+                Aes*        aes;
+                byte*       out;
+                const byte* in;
+                word32      sz;
+            } aesecb;
+        #endif /* HAVE_AES_ECB */
         #ifndef NO_DES3
             struct {
                 Des3*       des;
@@ -434,6 +442,12 @@ WOLFSSL_LOCAL int wc_CryptoCb_AesCbcEncrypt(Aes* aes, byte* out,
 WOLFSSL_LOCAL int wc_CryptoCb_AesCbcDecrypt(Aes* aes, byte* out,
                                const byte* in, word32 sz);
 #endif /* HAVE_AES_CBC */
+#ifdef HAVE_AES_ECB
+WOLFSSL_LOCAL int wc_CryptoCb_AesEcbEncrypt(Aes* aes, byte* out,
+                               const byte* in, word32 sz);
+WOLFSSL_LOCAL int wc_CryptoCb_AesEcbDecrypt(Aes* aes, byte* out,
+                               const byte* in, word32 sz);
+#endif /* HAVE_AES_ECB */
 #endif /* !NO_AES */
 
 #ifndef NO_DES3

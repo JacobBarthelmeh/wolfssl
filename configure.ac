@@ -1869,6 +1869,18 @@ fi
 
 
 # CAAM build
+trylibsecodir="/usr/lib"
+AC_ARG_WITH([seco],
+    [AS_HELP_STRING([--with-seco=PATH],[PATH to SECO install (default /usr/lib/)])],
+    [
+AC_MSG_CHECKING([for SECO])
+
+if test "x$withval" != "xno" ; then
+    trylibsecodir=$withval
+fi
+]
+)
+
 AC_ARG_ENABLE([caam],
     [AS_HELP_STRING([--enable-caam],[Enable wolfSSL support for CAAM (default: disabled)])],
     [ ENABLED_CAAM=$enableval ],
@@ -1886,7 +1898,8 @@ fi
 
 if test "$ENABLED_CAAM" = "seco"
 then
-    SECO_LIB="/usr/lib"
+    SECO_LIB=$trylibsecodir
+    AM_CPPFLAGS="$AM_CPPFLAGS -I$SECO_LIB/include"
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_CAAM -DWOLFSSL_SECO_CAAM -DWOLFSSL_HASH_KEEP"
 
     AC_CHECK_LIB([hsm_lib],[hsm_open_session])

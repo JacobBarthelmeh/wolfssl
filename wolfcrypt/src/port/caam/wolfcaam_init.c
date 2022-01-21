@@ -160,11 +160,108 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
         #endif
             break;
 
-        case WC_ALGO_TYPE_NONE:
+        case WC_ALGO_TYPE_HMAC:
+        #if 0
+            ret = wc_CAAM_HMAC(info->hmac.macType, info->hmac.in,
+                    info->hmac.inSz, info->hmac.digest);
+        #endif
+            break;
+
         case WC_ALGO_TYPE_CIPHER:
+            switch (info->cipher.type) {
+                case WC_CIPHER_AES_CCM:
+                    if (info->cipher.enc == 1) {
+                        ret = wc_CAAM_AesCcmEncrypt(
+                                             info->cipher.aesccm_enc.aes,
+                                             info->cipher.aesccm_enc.in,
+                                             info->cipher.aesccm_enc.out,
+                                             info->cipher.aesccm_enc.sz,
+                                             info->cipher.aesccm_enc.nonce,
+                                             info->cipher.aesccm_enc.nonceSz,
+                                             info->cipher.aesccm_enc.authTag,
+                                             info->cipher.aesccm_enc.authTagSz,
+                                             info->cipher.aesccm_enc.authIn,
+                                             info->cipher.aesccm_enc.authInSz);
+                    }
+                    else {
+                        ret = wc_CAAM_AesCcmDecrypt(
+                                             info->cipher.aesccm_dec.aes,
+                                             info->cipher.aesccm_dec.in,
+                                             info->cipher.aesccm_dec.out,
+                                             info->cipher.aesccm_dec.sz,
+                                             info->cipher.aesccm_dec.nonce,
+                                             info->cipher.aesccm_dec.nonceSz,
+                                             info->cipher.aesccm_dec.authTag,
+                                             info->cipher.aesccm_dec.authTagSz,
+                                             info->cipher.aesccm_dec.authIn,
+                                             info->cipher.aesccm_dec.authInSz);
+                    }
+                    break;
+
+                case WC_CIPHER_AES_GCM:
+                    if (info->cipher.enc == 1) {
+                        ret = wc_CAAM_AesGcmEncrypt(
+                                             info->cipher.aesgcm_enc.aes,
+                                             info->cipher.aesgcm_enc.in,
+                                             info->cipher.aesgcm_enc.out,
+                                             info->cipher.aesgcm_enc.sz,
+                                             info->cipher.aesgcm_enc.iv,
+                                             info->cipher.aesgcm_enc.ivSz,
+                                             info->cipher.aesgcm_enc.authTag,
+                                             info->cipher.aesgcm_enc.authTagSz,
+                                             info->cipher.aesgcm_enc.authIn,
+                                             info->cipher.aesgcm_enc.authInSz);
+                    }
+                    else {
+                        ret = wc_CAAM_AesGcmDecrypt(
+                                             info->cipher.aesgcm_dec.aes,
+                                             info->cipher.aesgcm_dec.in,
+                                             info->cipher.aesgcm_dec.out,
+                                             info->cipher.aesgcm_dec.sz,
+                                             info->cipher.aesgcm_dec.iv,
+                                             info->cipher.aesgcm_dec.ivSz,
+                                             info->cipher.aesgcm_dec.authTag,
+                                             info->cipher.aesgcm_dec.authTagSz,
+                                             info->cipher.aesgcm_dec.authIn,
+                                             info->cipher.aesgcm_dec.authInSz);
+                    }
+                    break;
+
+                case WC_CIPHER_AES_CBC:
+                    if (info->cipher.enc == 1) {
+                        ret = wc_CAAM_AesCbcEncrypt(info->cipher.aescbc.aes,
+                                                    info->cipher.aescbc.out,
+                                                    info->cipher.aescbc.in,
+                                                    info->cipher.aescbc.sz);
+                    }
+                    else {
+                        ret = wc_CAAM_AesCbcDecrypt(info->cipher.aescbc.aes,
+                                                    info->cipher.aescbc.out,
+                                                    info->cipher.aescbc.in,
+                                                    info->cipher.aescbc.sz);
+                    }
+                    break;
+
+                case WC_CIPHER_AES_ECB:
+                    if (info->cipher.enc == 1) {
+                        ret = wc_CAAM_AesEcbEncrypt(info->cipher.aescbc.aes,
+                                                    info->cipher.aescbc.out,
+                                                    info->cipher.aescbc.in,
+                                                    info->cipher.aescbc.sz);
+                    }
+                    else {
+                        ret = wc_CAAM_AesEcbDecrypt(info->cipher.aescbc.aes,
+                                                    info->cipher.aescbc.out,
+                                                    info->cipher.aescbc.in,
+                                                    info->cipher.aescbc.sz);
+                    }
+                    break;
+            }
+            break;
+
         case WC_ALGO_TYPE_RNG:
         case WC_ALGO_TYPE_SEED:
-        case WC_ALGO_TYPE_HMAC:
+        case WC_ALGO_TYPE_NONE:
         default:
             /* Not implemented yet with CAAM */
             ret = CRYPTOCB_UNAVAILABLE;
