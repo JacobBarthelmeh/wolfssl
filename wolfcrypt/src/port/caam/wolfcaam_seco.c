@@ -290,13 +290,13 @@ static hsm_key_type_t ECDSELtoHSM(int ecdsel)
             break;
 
         case CAAM_ECDSA_P256:
-            return HSM_KEY_TYPE_ECDSA_NIST_P256;
+            return CAAM_KEYTYPE_ECDSA_P256;
 
         case CAAM_ECDSA_P384:
-            return HSM_KEY_TYPE_ECDSA_NIST_P384;
+            return CAAM_KEYTYPE_ECDSA_P384;
 
         case CAAM_ECDSA_P521:
-            return HSM_KEY_TYPE_ECDSA_NIST_P521;
+            return CAAM_KEYTYPE_ECDSA_P521;
     }
     return 0;
 }
@@ -404,17 +404,6 @@ int wc_SECO_GenerateKey(int flags, int group, byte* out, int outSz,
         key_args.key_group = group;
         key_args.key_info  = keyInfo;
         key_args.key_type  = keyType;
-//    hsm_key_group_t key_gr = (hsm_key_group_t) 0x01;
-//    uint8_t pub_key[256/8] = {0};
-//
-//    // *** using the key managment service generate a key ***
-//    key_args.key_identifier = keyIdOut;
-//    key_args.out_size = 0;
-//    key_args.flags = HSM_OP_KEY_GENERATION_FLAGS_CREATE | HSM_OP_KEY_GENERATION_FLAGS_STRICT_OPERATION;
-//    key_args.key_type = HSM_KEY_TYPE_AES_256;
-//    key_args.key_group = key_gr;
-//    key_args.key_info = HSM_KEY_INFO_PERSISTENT;
-//    key_args.out_key = pub_key;
     #ifdef SECO_DEBUG
         printf("Generating key using:\n");
         printf("\tflags = %d\n", key_args.flags);
@@ -428,6 +417,11 @@ int wc_SECO_GenerateKey(int flags, int group, byte* out, int outSz,
         if (err != HSM_NO_ERROR) {
             WOLFSSL_MSG("Key generation error");
         }
+    #ifdef SECO_DEBUG
+        if (err == HSM_NO_ERROR) {
+            printf("KeyID generated = %u\n", *key_args.key_identifier);
+        }
+    #endif
 
         /* always try to close key management if open */
         if (hsm_close_key_management_service(key_mgmt_hdl) != HSM_NO_ERROR) {
@@ -456,26 +450,26 @@ int wc_SECO_DeleteKey(unsigned int keyId, int group, int keyTypeIn)
 {
     hsm_hdl_t key_mgmt_hdl;
     open_svc_key_management_args_t key_mgmt_args;
-	op_manage_key_args_t del_args;
-	hsm_err_t err;
+    op_manage_key_args_t del_args;
+    hsm_err_t err;
 
     XMEMSET(&key_mgmt_args, 0, sizeof(key_mgmt_args));
-	err = hsm_open_key_management_service(
-		key_store_hdl, &key_mgmt_args, &key_mgmt_hdl);
+    err = hsm_open_key_management_service(
+        key_store_hdl, &key_mgmt_args, &key_mgmt_hdl);
 
     if (err == HSM_NO_ERROR) {
         XMEMSET(&del_args, 0, sizeof(del_args));
-    	del_args.key_identifier = &keyId;
-    	del_args.flags = HSM_OP_MANAGE_KEY_FLAGS_DELETE;
-    	del_args.key_type = KeyTypeToHSM(keyTypeIn);
-    	del_args.key_group = group;
+        del_args.key_identifier = &keyId;
+        del_args.flags = HSM_OP_MANAGE_KEY_FLAGS_DELETE;
+        del_args.key_type = KeyTypeToHSM(keyTypeIn);
+        del_args.key_group = group;
     #ifdef SECO_DEBUG
         printf("Trying to delete key:\n");
         printf("\tkeyID    : %d\n", keyId);
         printf("\tkey type : %d\n", del_args.key_type);
         printf("\tkey grp  : %d\n", del_args.key_group);
     #endif
-    	err = hsm_manage_key(key_mgmt_hdl, &del_args);
+        err = hsm_manage_key(key_mgmt_hdl, &del_args);
 
         /* always try to close key management if open */
         if (hsm_close_key_management_service(key_mgmt_hdl) != HSM_NO_ERROR) {
@@ -517,6 +511,36 @@ int wc_SECO_AesGetKeyID(Aes* aes)
 }
 
 
+/* return 0 on success and fill in out buffer (must be 32 bytes) */
+int wc_SECO_ExportKEK(byte* out, byte outSz, byte isCommon)
+{
+    hsm_err_t err;
+    op_export_root_kek_args_t export_args;
+
+    XMEMSET(&export_args, 0, sizeof(export_args));
+
+    export_args.signed_message  = NULL;
+    export_args.signed_msg_size = 0;
+
+    if (isCommon == 1) {
+        export_args.flags = HSM_OP_EXPORT_ROOT_KEK_FLAGS_COMMON_KEK;
+    }
+    else {
+        export_args.flags = HSM_OP_EXPORT_ROOT_KEK_FLAGS_UNIQUE_KEK;
+    }
+    export_args.out_root_kek  = out;
+    export_args.root_kek_size = outSz;
+
+    err = hsm_export_root_key_encryption_key (hsm_session,  &export_args);
+    if (wc_TranslateHSMError(0, err) != Success) {
+        return -1;
+    }
+    else {
+        return 0;
+    }
+}
+
+
 /* make a black key using HSM */
 static hsm_err_t wc_SECO_ECDSA_Make(unsigned int args[4], CAAM_BUFFER *buf,
     int sz)
@@ -525,54 +549,64 @@ static hsm_err_t wc_SECO_ECDSA_Make(unsigned int args[4], CAAM_BUFFER *buf,
 
     (void)sz;
     keyType = ECDSELtoHSM(args[1] ^ CAAM_ECDSA_KEYGEN_PD);
-    return wc_SECO_GenerateKey(HSM_OP_KEY_GENERATION_FLAGS_CREATE,
+    if (wc_SECO_GenerateKey(HSM_OP_KEY_GENERATION_FLAGS_CREATE,
                                1,
                                (byte*)buf[1].TheAddress,
                                buf[1].Length,
                                keyType,
-                               HSM_KEY_INFO_TRANSIENT,
-                               &args[2]);
+                               CAAM_KEY_TRANSIENT,
+                               (word32*)&buf[0].TheAddress) == 0) {
+        return HSM_NO_ERROR;
+    }
+    else {
+        return HSM_GENERAL_ERROR;
+    }
 }
 
 
-/* sign a message using a black key */
-static hsm_err_t wc_SECO_ECDSA_Sign(unsigned int args[4], CAAM_BUFFER *buf,
-    int sz)
+/* sign a message (hash(msg)) using a hsm key */
+int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
+    byte* msg, word32 msgSz)
 {
+    int keyId;
     hsm_err_t err;
-	hsm_hdl_t sig_gen_hdl;
-	open_svc_sign_gen_args_t open_args;
-	op_generate_sign_args_t  sig_args;
+    hsm_hdl_t sig_gen_hdl;
+    open_svc_sign_gen_args_t open_args;
+    op_generate_sign_args_t  sig_args;
 
-    byte* sig;
-
-    sig = (byte*)XMALLOC(buf[2].Length + buf[3].Length, NULL,
-                    DYNAMIC_TYPE_TMP_BUFFER);
-    if (sig == NULL) {
+    if (sigOut == NULL) {
         WOLFSSL_MSG("Error malloc'ing buffer");
-        return HSM_GENERAL_ERROR;
+        return -1;
     }
 
     wc_LockMutex(&caamMutex);
+    keyId = key->blackKey;
 
-	XMEMSET(&open_args, 0, sizeof(open_args));
-	err = hsm_open_signature_generation_service(key_store_hdl, &open_args,
+    XMEMSET(&open_args, 0, sizeof(open_args));
+    err = hsm_open_signature_generation_service(key_store_hdl, &open_args,
             &sig_gen_hdl);
     if (err == HSM_NO_ERROR) {
-    	XMEMSET(&sig_args, 0, sizeof(sig_args));
-    	sig_args.key_identifier = buf[0].TheAddress;
-    	sig_args.message        = (byte*)buf[1].TheAddress;
-    	sig_args.message_size   = buf[1].Length;
-    	sig_args.signature      = sig;
-    	sig_args.signature_size = buf[2].Length + buf[3].Length;
+        XMEMSET(&sig_args, 0, sizeof(sig_args));
+        sig_args.key_identifier = keyId;
+        sig_args.message        = msg;
+        sig_args.message_size   = msgSz;
+        sig_args.signature      = sigOut;
+        sig_args.signature_size = sigOutSz;
 
-    	sig_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
-    	sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_DIGEST;
+        sig_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
+        //sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_DIGEST;
+        sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_MESSAGE;
 
-    	err = hsm_generate_signature(sig_gen_hdl, &sig_args);
+    #ifdef SECO_DEBUG
+        printf("Trying to create an ECC signature:\n");
+        printf("\tkeyID    : %u\n", sig_args.key_identifier);
+        printf("\tmsg size : %d\n", sig_args.message_size);
+        printf("\tsig size : %d\n", sig_args.signature_size);
+    #endif
+        err = hsm_generate_signature(sig_gen_hdl, &sig_args);
 
         /* always try to close sign service when open */
-    	if (hsm_close_signature_generation_service(sig_gen_hdl)
+        if (hsm_close_signature_generation_service(sig_gen_hdl)
                 != HSM_NO_ERROR) {
             err = HSM_GENERAL_ERROR;
         }
@@ -580,79 +614,247 @@ static hsm_err_t wc_SECO_ECDSA_Sign(unsigned int args[4], CAAM_BUFFER *buf,
 
     wc_UnLockMutex(&caamMutex);
 
-    if (err == HSM_NO_ERROR) {
-        XMEMCPY((byte*)buf[2].TheAddress, sig, buf[2].Length);
-        XMEMCPY((byte*)buf[3].TheAddress, sig + buf[2].Length, buf[3].Length);
+    if (wc_TranslateHSMError(0, err) != Success) {
+        return -1;
     }
-    XFREE(sig, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-
-    (void)sz;
-    (void)args;
-    return err;
+    else {
+        return 0;
+    }
 }
 
 
-/* verify a message using HSM */
-static hsm_err_t wc_SECO_ECDSA_Verify(unsigned int args[4], CAAM_BUFFER *buf,
-    int sz)
+/* verify a signature (hash(msg)) using HSM */
+int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
+    byte* msg, word32 msgSz)
 {
     hsm_err_t err;
-	hsm_hdl_t sig_ver_hdl;
-	open_svc_sign_ver_args_t  open_sig_ver_args;
-	op_verify_sign_args_t     sig_ver_args;
-	hsm_verification_status_t verify;
+    hsm_hdl_t sig_ver_hdl;
+    open_svc_sign_ver_args_t  open_sig_ver_args;
+    op_verify_sign_args_t     sig_ver_args;
+    hsm_verification_status_t verify;
+
+    byte pubKey[64];
+    byte rsR[65];
+    word32 rSz = 32;
+    word32 sSz = 32;
+    word32 rsRSz = 65;
+    word32 pubKeySz = 64;
+
+    word32 qxSz = 32;
+    word32 qySz = 32;
 
     wc_LockMutex(&caamMutex);
 
-	XMEMSET(&open_sig_ver_args, 0, sizeof(open_sig_ver_args));
-	err = hsm_open_signature_verification_service(hsm_session,
-					&open_sig_ver_args, &sig_ver_hdl);
-    if (err == HSM_NO_ERROR) {
-	    XMEMSET(&sig_ver_args, 0, sizeof(sig_ver_args));
-//	sig_ver_args.key = pub_key;
-//	sig_ver_args.message = hash_data;
-//	sig_ver_args.signature = signature_data;
-//	sig_ver_args.key_size = sizeof(pub_key);
-//	sig_ver_args.signature_size = sizeof(signature_data);
-//	sig_ver_args.message_size = sizeof(hash_data);
-	sig_ver_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
-	sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_DIGEST;
-	err = hsm_verify_signature (sig_ver_hdl, &sig_ver_args,
-                &verify);
-	if (verify == HSM_VERIFICATION_STATUS_SUCCESS)
-		printf("Verification PASS\n");
-	else
-		printf("Verification FAIL, status:0x%x\n", verify);
+    XMEMSET(rsR, 0, rsRSz);
+    wc_ecc_sig_to_rs(sig, sigSz, rsR, &rSz, rsR + 32, &sSz);
 
-	    if (hsm_close_signature_verification_service(sig_ver_hdl) !=
-            HSM_NO_ERROR) {
+    XMEMSET(pubKey, 0, pubKeySz);
+    wc_ecc_export_public_raw(key, pubKey, &qxSz, pubKey + 32, &qySz);
+    XMEMSET(&open_sig_ver_args, 0, sizeof(open_sig_ver_args));
+    err = hsm_open_signature_verification_service(hsm_session,
+                    &open_sig_ver_args, &sig_ver_hdl);
+    if (err == HSM_NO_ERROR) {
+        XMEMSET(&sig_ver_args, 0, sizeof(sig_ver_args));
+        sig_ver_args.key = pubKey;
+        sig_ver_args.key_size = pubKeySz;
+        sig_ver_args.message = msg;
+        sig_ver_args.message_size = msgSz;
+        sig_ver_args.signature = rsR;
+        sig_ver_args.signature_size = rsRSz;
+        sig_ver_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
+
+        //sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_DIGEST;
+        sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_MESSAGE;
+
+    #ifdef SECO_DEBUG
+        {
+            word32 i;
+
+            printf("Trying to verify an ECC signature:\n");
+            printf("\tpublic key : ");
+            for (i = 0; i < sig_ver_args.key_size; i++)
+                printf("%02X", sig_ver_args.key[i]);
+            printf("\n");
+            printf("\tsignature : ");
+            for (i = 0; i < sig_ver_args.signature_size; i++)
+                printf("%02X", sig_ver_args.signature[i]);
+            printf("\n");
+            printf("\tmsg size : %d\n", sig_ver_args.message_size);
+        }
+    #endif
+        err = hsm_verify_signature (sig_ver_hdl, &sig_ver_args,
+                &verify);
+        if (verify != HSM_VERIFICATION_STATUS_SUCCESS) {
+            WOLFSSL_MSG("Verification found bad signature");
+            err = HSM_GENERAL_ERROR;
+        }
+
+        if (hsm_close_signature_verification_service(sig_ver_hdl) !=
+                HSM_NO_ERROR) {
             err = HSM_GENERAL_ERROR;
         }
     }
 
     wc_UnLockMutex(&caamMutex);
 
-    (void)buf;
-    (void)sz;
-    (void)args;
     return err;
+}
+
+#ifdef SECO_DEBUG
+static void DebugPrintExchangeArgsIN(op_key_exchange_args_t* exchange_args)
+{
+    word32 z;
+    printf("KEK ECDH Input:\n");
+    printf("\tkey ID: %u\n", exchange_args->key_identifier);
+    printf("\tkey group : %d\n", exchange_args->shared_key_group);
+    printf("\tpublic key type : %u\n",
+            exchange_args->initiator_public_data_type);
+    printf("\texchange scheme : %u\n",
+            exchange_args->key_exchange_scheme);
+    printf("\tshared key info : 0x%X\n", exchange_args->shared_key_info);
+    printf("\tshared key type : 0x%X\n", exchange_args->shared_key_type);
+    printf("\tshared key ID [%d] : ",
+            exchange_args->shared_key_identifier_array_size);
+    for (z = 0; z < exchange_args->shared_key_identifier_array_size; z++)
+        printf("%02X", exchange_args->shared_key_identifier_array[z]);
+    printf("\n");
+    printf("\tke input[%d] : ", exchange_args->ke_input_size);
+    for (z = 0; z < exchange_args->ke_input_size; z++)
+        printf("%02X", exchange_args->ke_input[z]);
+    printf("\n");
+    printf("\tkdf input[%d] : ", exchange_args->kdf_input_size);
+    for (z = 0; z < exchange_args->kdf_input_size; z++)
+        printf("%02X", exchange_args->kdf_input[z]);
+    printf("\n");
+    printf("\tKDF algo = %u\n", exchange_args->kdf_algorithm);
+}
+
+static void DebugPrintExchangeArgsOUT(op_key_exchange_args_t* exchange_args)
+{
+    word32 z;
+    printf("KEK ECDH Output:\n");
+    printf("\tkey ID: %u\n", exchange_args->key_identifier);
+    printf("\tkey group : %d\n", exchange_args->shared_key_group);
+    printf("\tshared key ID [%d] : ",
+            exchange_args->shared_key_identifier_array_size);
+    for (z = 0; z < exchange_args->shared_key_identifier_array_size; z++)
+        printf("%02X", exchange_args->shared_key_identifier_array[z]);
+    printf("\n");
+    printf("\tke output [%d] : ", exchange_args->ke_output_size);
+    for (z = 0; z < exchange_args->ke_output_size; z++)
+        printf("%02X", exchange_args->ke_output[z]);
+    printf("\n");
+    printf("\tkdf output[%d] : ", exchange_args->kdf_output_size);
+    for (z = 0; z < exchange_args->kdf_output_size; z++)
+        printf("%02X", exchange_args->kdf_output[z]);
+    printf("\n");
+}
+#endif
+
+/* Get the shared secret (case 1 KEK) */
+int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz)
+{
+    open_svc_key_management_args_t key_mgmt_args;
+    hsm_hdl_t key_mgmt_hdl;
+    op_key_exchange_args_t exchange_args;
+    hsm_err_t err = HSM_NO_ERROR;
+
+    byte keOut[32];
+    int  keOutSz = 32;
+
+    byte shared[32];
+    int  sharedSz = 32;
+
+    wc_LockMutex(&caamMutex);
+
+    XMEMSET(&key_mgmt_args, 0, sizeof(key_mgmt_args));
+    err = hsm_open_key_management_service(
+        key_store_hdl, &key_mgmt_args, &key_mgmt_hdl);
+    if (err == HSM_NO_ERROR) {
+        XMEMSET(&exchange_args, 0, sizeof(exchange_args));
+        XMEMSET(shared, 0, sharedSz);
+
+        /* It must be zero, if HSM_OP_KEY_EXCHANGE_FLAGS_GENERATE_EPHEMERAL */
+        exchange_args.key_identifier = 0;
+        exchange_args.shared_key_identifier_array = shared;
+        exchange_args.shared_key_identifier_array_size = sharedSz;
+
+        exchange_args.ke_input = keIn;
+        exchange_args.ke_input_size = keInSz;
+        exchange_args.ke_output = keOut;
+        exchange_args.ke_output_size = keOutSz;
+
+        exchange_args.kdf_input  = 0;
+        exchange_args.kdf_output = 0;
+        exchange_args.kdf_input_size  = 0;
+        exchange_args.kdf_output_size = 0;
+
+        if (group > 1023) {
+            printf("group number is too large!\n");
+        }
+        exchange_args.shared_key_group = group;
+        exchange_args.shared_key_info = HSM_KEY_INFO_KEK | HSM_KEY_INFO_TRANSIENT;
+        exchange_args.shared_key_type = HSM_KEY_TYPE_AES_256;
+
+        exchange_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_NIST_P256;
+        //exchange_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_BRAINPOOL_R1_256;
+
+        exchange_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_NIST_P256;
+        //exchange_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_BRAINPOOL_R1_256;
+
+        /* SP800-56C rev2 SHA_256(counter || Z || FixedInput) */
+         //counter is the value 1 expressed in 32 bit and in big endian format
+         //Z is the shared secret generated by the DH key-establishment scheme
+         //FixedInput is the literal 'NXP HSM USER KEY DERIVATION'
+         //(27 bytes, no null termination).
+        exchange_args.kdf_algorithm = HSM_KDF_ONE_STEP_SHA_256;
+        exchange_args.flags = HSM_OP_KEY_EXCHANGE_FLAGS_GENERATE_EPHEMERAL;
+
+        /* signed_message: mandatory in OEM CLOSED life cycle */
+        exchange_args.signed_message = NULL;
+        exchange_args.signed_msg_size = 0;
+
+    #ifdef SECO_DEBUG
+        DebugPrintExchangeArgsIN(&exchange_args);
+    #endif
+        err = hsm_key_exchange(key_mgmt_hdl, &exchange_args);
+    #ifdef SECO_DEBUG
+        if (err == HSM_NO_ERROR) {
+            DebugPrintExchangeArgsOUT(&exchange_args);
+        }
+    #endif
+
+        /* always try to close key management handle if open */
+        if (hsm_close_key_management_service(key_mgmt_hdl) != HSM_NO_ERROR) {
+            err = HSM_GENERAL_ERROR;
+        }
+    }
+
+    wc_UnLockMutex(&caamMutex);
+    if (wc_TranslateHSMError(0, err) != Success) {
+        return -1;
+    }
+    else {
+        return 0;
+    }
 }
 
 
 #if 0
-/* Get the shared secret */
-static hsm_err_t wc_SECO_ECDSA_ECDH(unsigned args[4], CAAM_BUFFER *buf, int sz)
+/* Get the shared secret (case 2 TLS PRF) */
+static hsm_err_t wc_SECO_ECDSA_ECDH_PRF(unsigned args[4], CAAM_BUFFER *buf, int sz)
 {
     hsm_err_t err = HSM_NO_ERROR;
     wc_LockMutex(&caamMutex);
 
 
+#if 0
 #define HSM_KE_SCHEME_ECDH_NIST_P256                    ((hsm_key_exchange_scheme_id_t)0x02u)
 #define HSM_KE_SCHEME_ECDH_NIST_P384                    ((hsm_key_exchange_scheme_id_t)0x03u)
 #define HSM_KE_SCHEME_ECDH_BRAINPOOL_R1_256             ((hsm_key_exchange_scheme_id_t)0x13u)
 #define HSM_KE_SCHEME_ECDH_BRAINPOOL_R1_384             ((hsm_key_exchange_scheme_id_t)0x15u)
-hsm_err_t hsm_key_exchange(hsm_hdl_t key_management_hdl, op_key_exchange_args_t *args);
-
+    err = hsm_key_exchange(hsm_hdl_t key_management_hdl, op_key_exchange_args_t *args);
+#endif
     wc_UnLockMutex(&caamMutex);
     (void)args;
     (void)buf;
@@ -760,7 +962,7 @@ static hsm_err_t wc_SEC_AES_Common(unsigned int args[4], CAAM_BUFFER* buf,
     op_cipher_one_go_args_t cipher_args;
     hsm_err_t err;
 
-	XMEMSET(&open_args, 0, sizeof(open_args));
+    XMEMSET(&open_args, 0, sizeof(open_args));
     err = hsm_open_cipher_service(key_store_hdl, &open_args, &cipher_hdl);
     if (err == HSM_NO_ERROR) {
         XMEMSET(&cipher_args, 0, sizeof(cipher_args));
@@ -794,7 +996,7 @@ static hsm_err_t wc_SEC_AES_Common(unsigned int args[4], CAAM_BUFFER* buf,
         err = hsm_cipher_one_go(cipher_hdl, &cipher_args);
 
         /* always try to close cipher service if open */
-	    if (hsm_close_cipher_service(cipher_hdl) != HSM_NO_ERROR) {
+        if (hsm_close_cipher_service(cipher_hdl) != HSM_NO_ERROR) {
             err = HSM_GENERAL_ERROR;
         }
     }
@@ -892,7 +1094,7 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
     byte* cipherAndTag   = NULL;
     int   cipherAndTagSz = 0;
 
-	XMEMSET(&open_args, 0, sizeof(open_args));
+    XMEMSET(&open_args, 0, sizeof(open_args));
     err = hsm_open_cipher_service(key_store_hdl, &open_args, &cipher_hdl);
     if (err == HSM_NO_ERROR) {
         cipherAndTagSz = buf[4].Length + buf[2].Length;
@@ -947,7 +1149,7 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
         err = hsm_auth_enc(cipher_hdl, &auth_args);
 
         /* always try to close cipher service if open */
-	    if (hsm_close_cipher_service(cipher_hdl) != HSM_NO_ERROR) {
+        if (hsm_close_cipher_service(cipher_hdl) != HSM_NO_ERROR) {
             err = HSM_GENERAL_ERROR;
         }
     }
@@ -1077,12 +1279,10 @@ int wc_TranslateHSMError(int current, hsm_err_t err)
 int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
         int sz)
 {
-    int ret;
+    int ret = 0;
     hsm_err_t err = HSM_NO_ERROR;
     CAAM_ADDRESS pubkey, privkey;
 
-    ret = wc_LockMutex(&caamMutex);
-    if (ret == 0) {
     switch (type) {
     case CAAM_ENTROPY:
         err = wc_SECO_RNG(args, buf, sz);
@@ -1107,29 +1307,11 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
         break;
 
     case CAAM_ECDSA_VERIFY:
-        err = wc_SECO_ECDSA_Verify(args, buf, sz);
-
-        /* public key */
-        if (args[0] == 1) {
-            pubkey = buf[0].TheAddress;
-        }
-        else {
-        }
-
-        /* msg */
-        //SETIOV(&in[inIdx], buf[1].TheAddress, buf[1].Length);
-
-        /* r */
-        //SETIOV(&in[inIdx], buf[2].TheAddress, buf[2].Length);
-
-        /* s */
-        //SETIOV(&in[inIdx], buf[3].TheAddress, buf[3].Length);
-
-//        cmd = WC_CAAM_ECDSA_VERIFY;
+        //err = wc_SECO_ECDSA_Verify(args, buf, sz);
         break;
 
     case CAAM_ECDSA_SIGN:
-        err = wc_SECO_ECDSA_Sign(args, buf, sz);
+        //err = wc_SECO_ECDSA_Sign(args, buf, sz);
 
         /* private key */
         if (args[0] == 1) {
@@ -1193,8 +1375,6 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
     default:
         WOLFSSL_MSG("Unknown/unsupported type");
         ret = -1;
-    }
-        wc_UnLockMutex(&caamMutex);
     }
 
     (void)pubkey;

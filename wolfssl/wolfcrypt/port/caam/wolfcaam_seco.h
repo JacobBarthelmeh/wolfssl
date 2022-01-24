@@ -112,6 +112,12 @@ WOLFSSL_API int wc_SECO_CMACGetKeyID(Cmac* cmac);
 WOLFSSL_API void wc_SECO_AesSetKeyID(Aes* aes, int keyId);
 WOLFSSL_API int wc_SECO_AesGetKeyID(Aes* aes);
 
+WOLFSSL_API int wc_SECO_ExportKEK(byte* out, byte outSz, byte isCommon);
+WOLFSSL_API int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz);
+WOLFSSL_API int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
+    byte* msg, word32 msgSz);
+WOLFSSL_API int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
+    byte* msg, word32 msgSz);
 #define CAAM_SEND_REQUEST(type, sz, arg, buf) \
         SynchronousSendRequest((type), (arg), (buf), (sz))
 #define CAAM_INIT_INTERFACE wc_SECOInitInterface

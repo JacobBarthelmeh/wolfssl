@@ -439,8 +439,15 @@ int wc_CAAM_MakeEccKey(WC_RNG* rng, int keySize, ecc_key* key, int curveId)
     ret = wc_caamAddAndWait(buf, 2, args, CAAM_ECDSA_KEYPAIR);
     if (args[0] == 1 && ret == 0) { 
         key->blackKey     = (word32)buf[0].TheAddress;
+    #if defined(WOLFSSL_SECO_CAAM)
+        if (wc_ecc_import_unsigned(key, xy, xy + keySize, NULL, curveId) != 0) {
+            WOLFSSL_MSG("issue importing public key");
+            return -1;
+        }
+    #else
         key->securePubKey = (word32)buf[1].TheAddress;
         key->partNum = args[2];
+    #endif
         return MP_OKAY;
     }
     if (args[0] == 0 && ret == 0) {
