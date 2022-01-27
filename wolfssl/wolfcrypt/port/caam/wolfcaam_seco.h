@@ -88,6 +88,8 @@
 #define CAAM_GENERATE_KEY 2
 #define CAAM_DELETE_KEY   4
 
+#define MAX_GROUP 1023
+
 WOLFSSL_LOCAL int SynchronousSendRequest(int type, unsigned int args[4],
         CAAM_BUFFER *buf, int sz);
 WOLFSSL_LOCAL int wc_SECOInitInterface(void);
@@ -112,7 +114,10 @@ WOLFSSL_API int wc_SECO_CMACGetKeyID(Cmac* cmac);
 WOLFSSL_API void wc_SECO_AesSetKeyID(Aes* aes, int keyId);
 WOLFSSL_API int wc_SECO_AesGetKeyID(Aes* aes);
 
-WOLFSSL_API int wc_SECO_ExportKEK(byte* out, byte outSz, byte isCommon);
+WOLFSSL_LOCAL int wc_SECO_ExportKEK(byte* out, byte outSz, byte isCommon);
+WOLFSSL_API word32 wc_SECO_WrapKey(word32 keyID, byte* in, word32 inSz,
+    byte* iv, word32 ivSz, int keyType, int keyInfo, int group);
+
 WOLFSSL_API int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz);
 WOLFSSL_API int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
     byte* msg, word32 msgSz);

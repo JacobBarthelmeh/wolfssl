@@ -789,7 +789,7 @@ int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz)
         exchange_args.kdf_input_size  = 0;
         exchange_args.kdf_output_size = 0;
 
-        if (group > 1023) {
+        if (group > MAX_GROUP) {
             printf("group number is too large!\n");
         }
         exchange_args.shared_key_group = group;
@@ -1167,6 +1167,150 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
 }
 
 
+/* use KEK to encrypt and import a key
+ * return 0 on failure and new key ID on success */
+word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
+    word32 ivSz, int keyType, int keyInfo, int group)
+{
+    op_manage_key_args_t key_args;
+    hsm_hdl_t key_mgmt_hdl;
+    Aes aes;
+    int ret;
+    word32 outId = 0;
+    byte *wrappedKey = NULL;
+    word32 wrappedKeySz;
+    open_svc_key_management_args_t key_mgmt_args;
+    hsm_err_t err;
+
+    if (group > MAX_GROUP) {
+        WOLFSSL_MSG("group number is too large");
+        return 0;
+    }
+
+    if (ivSz != (word32)GCM_NONCE_MID_SZ) {
+        WOLFSSL_MSG("expected an IV size of 12");
+        return 0;
+    }
+
+    /* iv + key + tag */
+    wrappedKeySz = GCM_NONCE_MID_SZ + inSz + AES_BLOCK_SIZE;
+    wrappedKey = (byte*)XMALLOC(wrappedKeySz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    if (wrappedKey == NULL) {
+        WOLFSSL_MSG("Error malloc'ing buffer for wrapped key");
+        return 0;
+    }
+
+    XMEMSET(&key_mgmt_args, 0, sizeof(key_mgmt_args));
+    err = hsm_open_key_management_service(
+        key_store_hdl, &key_mgmt_args, &key_mgmt_hdl);
+
+    XMEMSET(&key_args, 0, sizeof(key_args));
+    XMEMSET(wrappedKey, 0, wrappedKeySz);
+    XMEMCPY(wrappedKey, iv, ivSz);
+
+    key_args.flags = HSM_OP_MANAGE_KEY_FLAGS_IMPORT_CREATE;
+    if (keyId == 0) { /* use the root unique key if no ID is provided */
+        byte KEK[AES_256_KEY_SIZE];
+        byte KEKSz = AES_256_KEY_SIZE;
+
+        ret = wc_SECO_ExportKEK(KEK, KEKSz, 0);
+        if (ret != 0) {
+            WOLFSSL_MSG("error with getting KEK from device");
+        }
+
+        if (ret == 0) {
+            ret = wc_AesGcmSetKey(&aes, KEK, KEKSz);
+            if (ret != 0) {
+                WOLFSSL_MSG("error with AES-GCM set key");
+            }
+        }
+
+        key_args.flags |= HSM_OP_MANAGE_KEY_FLAGS_PART_UNIQUE_ROOT_KEK;
+        #if 0
+            /* for now only using the unique kek, this would be for common */
+            key_args.flags |= HSM_OP_MANAGE_KEY_FLAGS_COMMON_ROOT_KEK;
+        #endif
+    }
+    else {
+        wc_AesInit(&aes, NULL, WOLFSSL_CAAM_DEVID);
+        wc_SECO_AesSetKeyID(&aes, keyId);
+    }
+
+    if (ret == 0) {
+        ret = wc_AesGcmEncrypt(&aes, wrappedKey + ivSz, in, inSz,
+                wrappedKey, ivSz, wrappedKey + ivSz + inSz, AES_BLOCK_SIZE,
+                NULL, 0);
+        if (ret != 0) {
+            WOLFSSL_MSG("error with AES-GCM encrypt when wrapping key");
+        }
+    }
+
+    if (err == HSM_NO_ERROR) {
+        key_args.key_identifier = &outId;
+        key_args.kek_identifier = keyId;
+        key_args.key_group  = group;
+        key_args.key_type   = KeyTypeToHSM(keyType);
+        key_args.key_info   = KeyInfoToHSM(keyInfo);
+        key_args.input_data = wrappedKey;
+        key_args.input_size = wrappedKeySz;
+
+    #ifdef SECO_DEBUG
+        {
+            word32 i;
+            printf("Import Key Operation :\n");
+            printf("\tkey ID    : %u\n", *key_args.key_identifier);
+            printf("\tkEK ID    : %u\n", key_args.kek_identifier);
+            printf("\tflags     : %u\n", key_args.flags);
+            printf("\tgroup     : %u\n", key_args.key_group);
+            printf("\tkey type  : %d\n", key_args.key_type);
+            printf("\tkey info  : %d\n", key_args.key_info);
+            printf("\tkey input Size : %d\n", key_args.input_size);
+            printf("\t[iv]  = ");
+            for (i = 0; i < 12; i++)
+                printf("%02X", key_args.input_data[i]);
+            printf("\n");
+            printf("\t[enc] = ");
+            for (i = 12; i < 12 + inSz; i++)
+                printf("%02X", key_args.input_data[i]);
+            printf("\n");
+            printf("\t[tag] = ");
+            for (i = 12 + inSz; i < 12 + inSz + 16; i++)
+                printf("%02X", key_args.input_data[i]);
+            printf("\n");
+        }
+    #endif
+
+        /* only try to import if the AES-GCM encrypt was successful */
+        if (ret == 0) {
+            err = hsm_manage_key(key_mgmt_hdl, &key_args);
+        }
+
+    #ifdef SECO_DEBUG
+        if (err == HSM_NO_ERROR) {
+            printf("Result of Import Key Operation :\n");
+            printf("\tkey ID    : %u\n", *key_args.key_identifier);
+        }
+    #endif
+
+        /* always try to close key management if open */
+        if (hsm_close_key_management_service(key_mgmt_hdl) != HSM_NO_ERROR) {
+            err = HSM_GENERAL_ERROR;
+        }
+    }
+
+    if (wrappedKey != NULL) {
+        XFREE(wrappedKey, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    }
+
+    if (wc_TranslateHSMError(0, err) != Success) {
+        return 0;
+    }
+    else {
+        return *key_args.key_identifier;
+    }
+}
+
+
 /* trasnlates the HSM error to wolfSSL error and does debug print out */
 int wc_TranslateHSMError(int current, hsm_err_t err)
 {
@@ -1364,14 +1508,6 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
         break;
 
     case CAAM_FIFO_S:
-//        SETIOV(&in[inIdx], buf[0].TheAddress, buf[0].Length);
-//        inIdx = inIdx + 1;
-//
-//        SETIOV(&out[outIdx], buf[1].TheAddress, buf[1].Length + WC_CAAM_MAC_SZ);
-//        outIdx = outIdx + 1;
-//        cmd = WC_CAAM_FIFO_S;
-        break;
-
     default:
         WOLFSSL_MSG("Unknown/unsupported type");
         ret = -1;
