@@ -161,10 +161,8 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
             break;
 
         case WC_ALGO_TYPE_HMAC:
-        #if 0
-            ret = wc_CAAM_HMAC(info->hmac.macType, info->hmac.in,
-                    info->hmac.inSz, info->hmac.digest);
-        #endif
+            ret = wc_CAAM_Hmac(info->hmac.hmac, info->hmac.macType,
+                info->hmac.in, info->hmac.inSz, info->hmac.digest);
             break;
 
         case WC_ALGO_TYPE_CIPHER:

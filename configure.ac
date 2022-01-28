@@ -1908,7 +1908,6 @@ then
     LIB_ADD="$LIB_ADD -lz"
 fi
 
-
 # INTEL AES-NI
 AC_ARG_ENABLE([aesni],
     [AS_HELP_STRING([--enable-aesni],[Enable wolfSSL AES-NI support (default: disabled)])],
@@ -2182,6 +2181,20 @@ then
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO"
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_HASH"
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_NO_HASH_RAW"
+    ENABLED_DEVCRYPTO=yes
+fi
+if test "$ENABLED_DEVCRYPTO" = "hmac"
+then
+    #enable only hmac algorithm support
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO"
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_HMAC"
+    ENABLED_DEVCRYPTO=yes
+fi
+if test "$ENABLED_DEVCRYPTO" = "seco"
+then
+    #enable support of devcrypto for algos not supported with seco
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO"
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_HMAC"
     ENABLED_DEVCRYPTO=yes
 fi
 
@@ -7331,7 +7344,9 @@ AS_IF([(test "x$ENABLED_AFALG" = "xyes") && (test "x$ENABLED_SHA224" = "xyes")],
       [AC_MSG_ERROR([--enable-sha224 with --enable-afalg not yet supported])])
 
 # WOLFSSL_DEVCRYPTO does not support SHA224 yet
-AS_IF([(test "x$ENABLED_DEVCRYPTO" = "xyes") && (test "x$ENABLED_SHA224" = "xyes")],
+AS_IF([(test "x$ENABLED_DEVCRYPTO" = "xyes") && \
+       (test "x$ENABLED_CAAM" = "xno") && \
+       (test "x$ENABLED_SHA224" = "xyes")],
       [AC_MSG_ERROR([--enable-sha224 with --enable-devcrypto not yet supported])])
 
 # SCTP and Multicast require DTLS

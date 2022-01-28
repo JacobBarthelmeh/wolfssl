@@ -306,6 +306,12 @@ int wolfCrypt_Init(void)
         }
 #endif
 
+#if defined(WOLFSSL_DEVCRYPTO)
+        if ((ret = wc_DevCryptoInit()) != 0) {
+            return ret;
+        }
+#endif
+
 #if defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG) || \
     defined(WOLFSSL_IMX6UL_CAAM) || defined(WOLFSSL_IMX6_CAAM_BLOB) || \
     defined(WOLFSSL_SECO_CAAM)
@@ -404,6 +410,9 @@ int wolfCrypt_Cleanup(void)
     #endif
     #if defined(WOLFSSL_RENESAS_TSIP_CRYPT)
         tsip_Close();
+    #endif
+    #if defined(WOLFSSL_DEVCRYPTO)
+        wc_DevCryptoCleanup();
     #endif
     #if defined(WOLFSSL_DSP) && !defined(WOLFSSL_DSP_BUILD)
         rpcmem_deinit();

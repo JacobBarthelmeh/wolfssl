@@ -37,5 +37,15 @@ WOLFSSL_LOCAL int wc_CAAM_Sha384Hash(wc_Sha384* sha384, const byte* in,
 WOLFSSL_LOCAL int wc_CAAM_Sha512Hash(wc_Sha512* sha512, const byte* in,
     word32 inSz, byte* digest);
 
+
+#if !defined(NO_HMAC)
+#ifndef WC_HMAC_TYPE_DEFINED
+    typedef struct Hmac Hmac;
+    #define WC_HMAC_TYPE_DEFINED
+#endif
+WOLFSSL_LOCAL int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg,
+    int msgSz, byte* digest);
+#endif
+
 #endif
 

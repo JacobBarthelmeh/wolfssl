@@ -40,12 +40,30 @@ typedef struct WC_CRYPTODEV {
 WOLFSSL_LOCAL int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz);
 WOLFSSL_LOCAL void wc_DevCryptoFree(WC_CRYPTODEV* ctx);
 WOLFSSL_LOCAL void wc_SetupCrypt(struct crypt_op* crt, WC_CRYPTODEV* dev,
-        byte* src, int srcSz, byte* dst, byte* dig, int flag);
+        byte* src, int srcSz, byte* dst, byte* dig, int flag, int op);
 WOLFSSL_LOCAL void wc_SetupCryptSym(struct crypt_op* crt, WC_CRYPTODEV* dev,
         byte* src, word32 srcSz, byte* dst, byte* iv, int flag);
 WOLFSSL_LOCAL void wc_SetupCryptAead(struct crypt_auth_op* crt, WC_CRYPTODEV* dev,
          byte* src, word32 srcSz, byte* dst, byte* iv, word32 ivSz, int flag,
          byte* authIn, word32 authInSz, byte* authTag, word32 authTagSz);
+
+WOLFSSL_LOCAL int wc_DevCryptoInit(void);
+WOLFSSL_LOCAL void wc_DevCryptoCleanup(void);
+
+/* currently local API */
+#if defined(WOLFSSL_DEVCRYPTO_HMAC)
+#ifndef WC_HMAC_TYPE_DEFINED
+    typedef struct Hmac Hmac;
+    #define WC_HMAC_TYPE_DEFINED
+#endif
+WOLFSSL_LOCAL int wc_DevCrypto_HmacSetKey(Hmac* hmac, int t, const byte* key,
+        word32 keySz);
+WOLFSSL_LOCAL int wc_DevCrypto_HmacUpdate(Hmac* hmac, const byte* input,
+        word32 inputSz);
+WOLFSSL_LOCAL int wc_DevCrypto_HmacFinal(Hmac* hmac, byte* out);
+WOLFSSL_LOCAL int wc_DevCrypto_HmacInit(Hmac* hmac, void* heap, int devId);
+WOLFSSL_LOCAL void wc_DevCrypto_HmacFree(Hmac* hmac);
+#endif /* WOLFSSL_DEVCRYPTO_HMAC */
 
 #endif /* WOLFSSL_DEVCRYPTO */
 #endif /* WOLFSSL_DEVCRYPTO_H */
