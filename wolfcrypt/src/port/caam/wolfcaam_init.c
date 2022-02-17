@@ -32,9 +32,6 @@
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
 
-#ifdef WOLFSSL_SECO_CAAM
-    #include <wolfssl/wolfcrypt/port/caam/wolfcaam_hash.h>
-#endif
 
 /* determine which porting header to include */
 #if defined(__INTEGRITY) || defined(INTEGRITY)
@@ -101,16 +98,37 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
 
                 case WC_PK_TYPE_ECDH:
                     ret = wc_CAAM_Ecdh(info->pk.ecdh.private_key,
-                            info->pk.ecdh.public_key, info->pk.ecdh.out,
-                            info->pk.ecdh.outlen);
+                              info->pk.ecdh.public_key,
+                              info->pk.ecdh.out,
+                              info->pk.ecdh.outlen);
                    break;
 
                 case WC_PK_TYPE_EC_CHECK_PRIV_KEY:
                     ret = wc_CAAM_EccCheckPrivKey(info->pk.ecc_check.key,
-                            info->pk.ecc_check.pubKey,
-                            info->pk.ecc_check.pubKeySz);
-                   break;
+                                   info->pk.ecc_check.pubKey,
+                                   info->pk.ecc_check.pubKeySz);
+                    break;
             #endif /* HAVE_ECC */
+            #ifndef NO_RSA
+                case WC_PK_TYPE_RSA:
+                    fprintf(stderr,"calling caam rsa\n");
+                    ret = wc_CAAM_Rsa(info->pk.rsa.in,
+                                   info->pk.rsa.inLen,
+                                   info->pk.rsa.out,
+                                   info->pk.rsa.outLen,
+                                   info->pk.rsa.type,
+                                   info->pk.rsa.key,
+                                   info->pk.rsa.rng);
+                    break;
+
+                case WC_PK_TYPE_RSA_KEYGEN:
+                    fprintf(stderr,"calling caam rsa keygen\n");
+                    ret = wc_CAAM_MakeRsaKey(info->pk.rsakg.key,
+                                info->pk.rsakg.size,
+                                info->pk.rsakg.e,
+                                info->pk.rsakg.rng);
+                    break;
+            #endif /* !NO_RSA */
                 default:
                     WOLFSSL_MSG("unsupported public key operation");
             }
@@ -119,10 +137,15 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
         case WC_ALGO_TYPE_CMAC:
         #if defined(WOLFSSL_CMAC) && !defined(NO_AES) && \
             defined(WOLFSSL_AES_DIRECT)
-            ret = wc_CAAM_Cmac(info->cmac.cmac, info->cmac.key,
-                    info->cmac.keySz, info->cmac.in, info->cmac.inSz,
-                    info->cmac.out, info->cmac.outSz, info->cmac.type,
-                    info->cmac.ctx);
+            ret = wc_CAAM_Cmac(info->cmac.cmac,
+                        info->cmac.key,
+                        info->cmac.keySz,
+                        info->cmac.in,
+                        info->cmac.inSz,
+                        info->cmac.out,
+                        info->cmac.outSz,
+                        info->cmac.type,
+                        info->cmac.ctx);
         #else
             WOLFSSL_MSG("CMAC not compiled in");
             ret = NOT_COMPILED_IN;
@@ -131,129 +154,144 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
 
         case WC_ALGO_TYPE_HASH:
         #ifdef WOLFSSL_SECO_CAAM
-            switch (info->hash.type) {
+            switch(info->hash.type) {
+                #ifdef WOLFSSL_SHA224
                 case WC_HASH_TYPE_SHA224:
-                    ret = wc_CAAM_Sha224Hash(info->hash.sha224, info->hash.in,
-                            info->hash.inSz, info->hash.digest);
+                    ret = wc_CAAM_Sha224Hash(info->hash.sha224,
+                                info->hash.in,
+                                info->hash.inSz,
+                                info->hash.digest);
                     break;
+                #endif
 
                 case WC_HASH_TYPE_SHA256:
-                    ret = wc_CAAM_Sha256Hash(info->hash.sha256, info->hash.in,
-                            info->hash.inSz, info->hash.digest);
+                    ret = wc_CAAM_Sha256Hash(info->hash.sha256,
+                              info->hash.in,
+                              info->hash.inSz,
+                              info->hash.digest);
                     break;
 
                 case WC_HASH_TYPE_SHA384:
-                    ret = wc_CAAM_Sha384Hash(info->hash.sha384, info->hash.in,
-                            info->hash.inSz, info->hash.digest);
+                    ret = wc_CAAM_Sha384Hash(info->hash.sha384,
+                              info->hash.in,
+                              info->hash.inSz,
+                              info->hash.digest);
                     break;
 
                 case WC_HASH_TYPE_SHA512:
-                    ret = wc_CAAM_Sha512Hash(info->hash.sha512, info->hash.in,
-                            info->hash.inSz, info->hash.digest);
+                    ret = wc_CAAM_Sha512Hash(info->hash.sha512,
+                              info->hash.in,
+                              info->hash.inSz,
+                              info->hash.digest);
                     break;
 
                 default:
                     WOLFSSL_MSG("Unknown or unsupported hash type");
                     ret = CRYPTOCB_UNAVAILABLE;
             }
-
         #endif
-            break;
+        break;
 
         case WC_ALGO_TYPE_HMAC:
-            ret = wc_CAAM_Hmac(info->hmac.hmac, info->hmac.macType,
-                info->hmac.in, info->hmac.inSz, info->hmac.digest);
+            ret = wc_CAAM_Hmac(info->hmac.hmac,
+                        info->hmac.macType,
+                        info->hmac.in, info->hmac.inSz,
+                        info->hmac.digest);
             break;
 
         case WC_ALGO_TYPE_CIPHER:
             switch (info->cipher.type) {
+            #if defined(HAVE_AESCCM)
                 case WC_CIPHER_AES_CCM:
                     if (info->cipher.enc == 1) {
                         ret = wc_CAAM_AesCcmEncrypt(
-                                             info->cipher.aesccm_enc.aes,
-                                             info->cipher.aesccm_enc.in,
-                                             info->cipher.aesccm_enc.out,
-                                             info->cipher.aesccm_enc.sz,
-                                             info->cipher.aesccm_enc.nonce,
-                                             info->cipher.aesccm_enc.nonceSz,
-                                             info->cipher.aesccm_enc.authTag,
-                                             info->cipher.aesccm_enc.authTagSz,
-                                             info->cipher.aesccm_enc.authIn,
-                                             info->cipher.aesccm_enc.authInSz);
+                                          info->cipher.aesccm_enc.aes,
+                                          info->cipher.aesccm_enc.in,
+                                          info->cipher.aesccm_enc.out,
+                                          info->cipher.aesccm_enc.sz,
+                                          info->cipher.aesccm_enc.nonce,
+                                          info->cipher.aesccm_enc.nonceSz,
+                                          info->cipher.aesccm_enc.authTag,
+                                          info->cipher.aesccm_enc.authTagSz,
+                                          info->cipher.aesccm_enc.authIn,
+                                          info->cipher.aesccm_enc.authInSz);
                     }
                     else {
                         ret = wc_CAAM_AesCcmDecrypt(
-                                             info->cipher.aesccm_dec.aes,
-                                             info->cipher.aesccm_dec.in,
-                                             info->cipher.aesccm_dec.out,
-                                             info->cipher.aesccm_dec.sz,
-                                             info->cipher.aesccm_dec.nonce,
-                                             info->cipher.aesccm_dec.nonceSz,
-                                             info->cipher.aesccm_dec.authTag,
-                                             info->cipher.aesccm_dec.authTagSz,
-                                             info->cipher.aesccm_dec.authIn,
-                                             info->cipher.aesccm_dec.authInSz);
+                                      info->cipher.aesccm_dec.aes,
+                                      info->cipher.aesccm_dec.in,
+                                      info->cipher.aesccm_dec.out,
+                                      info->cipher.aesccm_dec.sz,
+                                      info->cipher.aesccm_dec.nonce,
+                                      info->cipher.aesccm_dec.nonceSz,
+                                      info->cipher.aesccm_dec.authTag,
+                                      info->cipher.aesccm_dec.authTagSz,
+                                      info->cipher.aesccm_dec.authIn,
+                                      info->cipher.aesccm_dec.authInSz);
                     }
                     break;
-
+                #endif /* HAVE_AESCCM */
+                #if defined(HAVE_AESGCM)
                 case WC_CIPHER_AES_GCM:
                     if (info->cipher.enc == 1) {
                         ret = wc_CAAM_AesGcmEncrypt(
-                                             info->cipher.aesgcm_enc.aes,
-                                             info->cipher.aesgcm_enc.in,
-                                             info->cipher.aesgcm_enc.out,
-                                             info->cipher.aesgcm_enc.sz,
-                                             info->cipher.aesgcm_enc.iv,
-                                             info->cipher.aesgcm_enc.ivSz,
-                                             info->cipher.aesgcm_enc.authTag,
-                                             info->cipher.aesgcm_enc.authTagSz,
-                                             info->cipher.aesgcm_enc.authIn,
-                                             info->cipher.aesgcm_enc.authInSz);
+                                      info->cipher.aesgcm_enc.aes,
+                                      info->cipher.aesgcm_enc.in,
+                                      info->cipher.aesgcm_enc.out,
+                                      info->cipher.aesgcm_enc.sz,
+                                      info->cipher.aesgcm_enc.iv,
+                                      info->cipher.aesgcm_enc.ivSz,
+                                      info->cipher.aesgcm_enc.authTag,
+                                      info->cipher.aesgcm_enc.authTagSz,
+                                      info->cipher.aesgcm_enc.authIn,
+                                      info->cipher.aesgcm_enc.authInSz);
                     }
                     else {
                         ret = wc_CAAM_AesGcmDecrypt(
-                                             info->cipher.aesgcm_dec.aes,
-                                             info->cipher.aesgcm_dec.in,
-                                             info->cipher.aesgcm_dec.out,
-                                             info->cipher.aesgcm_dec.sz,
-                                             info->cipher.aesgcm_dec.iv,
-                                             info->cipher.aesgcm_dec.ivSz,
-                                             info->cipher.aesgcm_dec.authTag,
-                                             info->cipher.aesgcm_dec.authTagSz,
-                                             info->cipher.aesgcm_dec.authIn,
-                                             info->cipher.aesgcm_dec.authInSz);
+                                  info->cipher.aesgcm_dec.aes,
+                                  info->cipher.aesgcm_dec.in,
+                                  info->cipher.aesgcm_dec.out,
+                                  info->cipher.aesgcm_dec.sz,
+                                  info->cipher.aesgcm_dec.iv,
+                                  info->cipher.aesgcm_dec.ivSz,
+                                  info->cipher.aesgcm_dec.authTag,
+                                  info->cipher.aesgcm_dec.authTagSz,
+                                  info->cipher.aesgcm_dec.authIn,
+                                  info->cipher.aesgcm_dec.authInSz);
                     }
                     break;
+                #endif /* HAVE_AESGCM */
 
                 case WC_CIPHER_AES_CBC:
                     if (info->cipher.enc == 1) {
                         ret = wc_CAAM_AesCbcEncrypt(info->cipher.aescbc.aes,
-                                                    info->cipher.aescbc.out,
-                                                    info->cipher.aescbc.in,
-                                                    info->cipher.aescbc.sz);
+                                info->cipher.aescbc.out,
+                                info->cipher.aescbc.in,
+                                info->cipher.aescbc.sz);
                     }
                     else {
                         ret = wc_CAAM_AesCbcDecrypt(info->cipher.aescbc.aes,
-                                                    info->cipher.aescbc.out,
-                                                    info->cipher.aescbc.in,
-                                                    info->cipher.aescbc.sz);
+                                info->cipher.aescbc.out,
+                                info->cipher.aescbc.in,
+                                info->cipher.aescbc.sz);
                     }
                     break;
 
-                case WC_CIPHER_AES_ECB:
-                    if (info->cipher.enc == 1) {
-                        ret = wc_CAAM_AesEcbEncrypt(info->cipher.aesecb.aes,
-                                                    info->cipher.aesecb.out,
-                                                    info->cipher.aesecb.in,
-                                                    info->cipher.aesecb.sz);
+        #if defined(HAVE_AES_ECB)
+            case WC_CIPHER_AES_ECB:
+                if (info->cipher.enc == 1) {
+                    ret = wc_CAAM_AesEcbEncrypt(info->cipher.aesecb.aes,
+                                info->cipher.aesecb.out,
+                                info->cipher.aesecb.in,
+                                info->cipher.aesecb.sz);
+                }
+                else {
+                    ret = wc_CAAM_AesEcbDecrypt(info->cipher.aesecb.aes,
+                                info->cipher.aesecb.out,
+                                info->cipher.aesecb.in,
+                                info->cipher.aesecb.sz);
                     }
-                    else {
-                        ret = wc_CAAM_AesEcbDecrypt(info->cipher.aesecb.aes,
-                                                    info->cipher.aesecb.out,
-                                                    info->cipher.aesecb.in,
-                                                    info->cipher.aesecb.sz);
-                    }
-                    break;
+        #endif /* HAVE_AES_ECB */
             }
             break;
 

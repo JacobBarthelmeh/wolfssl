@@ -28,8 +28,10 @@
 
 WOLFSSL_LOCAL int wc_CAAM_ShaHash(wc_Sha* sha, const byte* in, word32 inSz,
     byte* digest);
+#ifdef WOLFSSL_SHA224
 WOLFSSL_LOCAL int wc_CAAM_Sha224Hash(wc_Sha224* sha224, const byte* in,
     word32 inSz, byte* digest);
+#endif
 WOLFSSL_LOCAL int wc_CAAM_Sha256Hash(wc_Sha256* sha256, const byte* in,
     word32 inSz, byte* digest);
 WOLFSSL_LOCAL int wc_CAAM_Sha384Hash(wc_Sha384* sha384, const byte* in,

@@ -163,6 +163,7 @@ endif
 if BUILD_CAAM
 nobase_include_HEADERS+= wolfssl/wolfcrypt/port/caam/wolfcaam.h \
                          wolfssl/wolfcrypt/port/caam/wolfcaam_sha.h \
+                         wolfssl/wolfcrypt/port/caam/wolfcaam_rsa.h \
                          wolfssl/wolfcrypt/port/caam/wolfcaam_ecdsa.h \
                          wolfssl/wolfcrypt/port/caam/wolfcaam_cmac.h \
                          wolfssl/wolfcrypt/port/caam/wolfcaam_aes.h \

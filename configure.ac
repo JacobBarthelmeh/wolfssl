@@ -2190,11 +2190,19 @@ then
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_HMAC"
     ENABLED_DEVCRYPTO=yes
 fi
+if test "$ENABLED_DEVCRYPTO" = "rsa"
+then
+    #enable only rsa algorithm support
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO"
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_RSA"
+    ENABLED_DEVCRYPTO=yes
+fi
 if test "$ENABLED_DEVCRYPTO" = "seco"
 then
     #enable support of devcrypto for algos not supported with seco
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO"
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_HMAC"
+    AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_DEVCRYPTO_RSA"
     ENABLED_DEVCRYPTO=yes
 fi
 

@@ -57,6 +57,8 @@
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_ecdsa.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_cmac.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_aes.h>
+#include <wolfssl/wolfcrypt/port/caam/wolfcaam_rsa.h>
+#include <wolfssl/wolfcrypt/port/caam/wolfcaam_hash.h>
 #include <wolfssl/wolfcrypt/cryptocb.h>
 
 #define ResourceNotAvailable -3

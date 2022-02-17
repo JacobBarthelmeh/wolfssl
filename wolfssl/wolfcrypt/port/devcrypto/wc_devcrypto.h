@@ -65,6 +65,26 @@ WOLFSSL_LOCAL int wc_DevCrypto_HmacInit(Hmac* hmac, void* heap, int devId);
 WOLFSSL_LOCAL void wc_DevCrypto_HmacFree(Hmac* hmac);
 #endif /* WOLFSSL_DEVCRYPTO_HMAC */
 
+#if defined(WOLFSSL_DEVCRYPTO_RSA)
+#ifndef WC_RSAKEY_TYPE_DEFINED
+    typedef struct RsaKey RsaKey;
+    #define WC_RSAKEY_TYPE_DEFINED
+#endif
+#ifndef WC_RNG_TYPE_DEFINED /* guard on redeclaration */
+    typedef struct OS_Seed OS_Seed;
+    typedef struct WC_RNG WC_RNG;
+    #ifdef WC_RNG_SEED_CB
+        typedef int (*wc_RngSeed_Cb)(OS_Seed* os, byte* seed, word32 sz);
+    #endif
+    #define WC_RNG_TYPE_DEFINED
+#endif
+WOLFSSL_LOCAL int wc_DevCrypto_RsaEncrypt(const byte* in, word32 inlen, byte* out,
+        word32* outlen, RsaKey *key, int type);
+WOLFSSL_LOCAL int wc_DevCrypto_RsaDecrypt(const byte* in, word32 inlen,
+        byte* out, word32 outlen, RsaKey* key, int type);
+WOLFSSL_LOCAL int wc_DevCrypto_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng);
+WOLFSSL_LOCAL void wc_DevCrypto_RsaFree(RsaKey* key);
+#endif /* WOLFSSL_DEVCRYPTO_RSA */
 #endif /* WOLFSSL_DEVCRYPTO */
 #endif /* WOLFSSL_DEVCRYPTO_H */
 

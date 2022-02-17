@@ -41,6 +41,26 @@ int wc_DevCryptoInit(void)
         WOLFSSL_MSG("Error opening /dev/crypto is cryptodev module loaded?");
         return WC_DEVCRYPTO_E;
     }
+
+#if defined(CIOCASYMFEAT) && defined(WOLFSSL_DEVCRYPTO_RSA)
+    {
+        word32 asymAva = 0;
+
+        if (ioctl(fd, CIOCASYMFEAT, &asymAva) == -1) {
+            WOLFSSL_MSG("Error checking which asym. operations are available");
+            close(fd);
+            return WC_DEVCRYPTO_E;
+        }
+
+printf("asymAva = 0x%x\n", asymAva);
+//        if ((asymAva & CRF_RSA_PUBLIC) == 0) {
+//            WOLFSSL_MSG("CRK_MOD_EXP is not available");
+//            close(fd);
+//            return WC_DEVCRYPTO_E;
+//        }
+    }
+#endif
+
     return 0;
 }
 
@@ -56,7 +76,7 @@ void wc_DevCryptoCleanup(void)
 int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
 {
 #if defined(CIOCGSESSINFO) && defined(DEBUG_DEVCRYPTO)
-    struct session_info_op sesInfo;
+//    struct session_info_op sesInfo;
 #endif
 
     if (ctx == NULL) {
@@ -72,11 +92,11 @@ int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
         return WC_DEVCRYPTO_E;
     }
 
-    if (fcntl(ctx->cfd, F_SETFD, 1) == -1) {
-        WOLFSSL_MSG("Error setting F_SETFD with fcntl");
-        (void)close(ctx->cfd);
-        return WC_DEVCRYPTO_E;
-    }
+//    if (fcntl(ctx->cfd, F_SETFD, 1) == -1) {
+//        WOLFSSL_MSG("Error setting F_SETFD with fcntl");
+//        (void)close(ctx->cfd);
+//        return WC_DEVCRYPTO_E;
+//    }
 
     /* set up session */
     switch (type) {
@@ -107,6 +127,23 @@ int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
             ctx->sess.mackeylen = keySz;
             break;
 
+    #if defined(WOLFSSL_DEVCRYPTO_ECDSA)
+    #endif /* WOLFSSL_DEVCRYPTO_ECDSA */
+
+    #if defined(WOLFSSL_DEVCRYPTO_RSA)
+        case CRYPTO_ASYM_RSA_KEYGEN:
+        case CRYPTO_ASYM_RSA_PRIVATE:
+        case CRYPTO_ASYM_RSA_PUBLIC:
+            ctx->sess.acipher = type;
+            break;
+    #endif
+
+    #if defined(WOLFSSL_DEVCRYPTO_CURVE25519)
+        case CRYPTO_PKHA_MOD_MUL:
+            ctx->sess.acipher = type;
+            break;
+    #endif /* WOLFSSL_DEVCRYPTO_CURVE25519 */
+
         default:
             WOLFSSL_MSG("Unknown / Unimplemented algorithm type");
             (void)close(ctx->cfd);
@@ -115,20 +152,24 @@ int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
 
 
     if (ioctl(ctx->cfd, CIOCGSESSION, &ctx->sess)) {
-        (void)close(fd);
+    #if defined(DEBUG_DEVCRYPTO)
+        perror("CIOGSESSION error ");
+    #endif
+        (void)close(ctx->cfd);
         WOLFSSL_MSG("Error starting cryptodev session");
         return WC_DEVCRYPTO_E;
     }
+printf("session id = %08X\n", ctx->sess.ses);
 
 #if defined(CIOCGSESSINFO) && defined(DEBUG_DEVCRYPTO)
-    sesInfo.ses = ctx->sess.ses;
-    if (ioctl(ctx->cfd, CIOCGSESSINFO, &sesInfo)) {
-        (void)close(fd);
-        WOLFSSL_MSG("Error getting session info");
-        return WC_DEVCRYPTO_E;
-    }
-    printf("Using %s with driver %s\n", sesInfo.hash_info.cra_name,
-        sesInfo.hash_info.cra_driver_name);
+//    sesInfo.ses = ctx->sess.ses;
+//    if (ioctl(ctx->cfd, CIOCGSESSINFO, &sesInfo)) {
+//        (void)close(ctx->cfd);
+//        WOLFSSL_MSG("Error getting session info");
+//        return WC_DEVCRYPTO_E;
+//    }
+//    printf("Using %s with driver %s\n", sesInfo.hash_info.cra_name,
+//        sesInfo.hash_info.cra_driver_name);
 #endif
     (void)key;
     (void)keySz;
@@ -200,5 +241,45 @@ void wc_SetupCryptAead(struct crypt_auth_op* crt, WC_CRYPTODEV* dev,
     crt->tag = authTag;
     crt->tag_len = authTagSz;
 }
+
+#if defined(WOLFSSL_DEVCRYPTO_CURVE25519)
+/* 'type' is for which version of mod mul to use i.e. KCOP_FLAG_MONTGOMERY_FORMAT
+ * flag con is for constant time (1) or not (0) */
+int wc_DevCryptoMulMod(byte* out, word32* outSz, byte* a, word32 aSz,
+        byte* b, word32 bSz, int type, byte con)
+{
+    int ret = 0;
+    int inIdx = 0, outIdx = 0;
+    struct crypt_kop kop;
+    WC_CRYPTODEV dev;
+
+    if (out == NULL || a == NULL || b == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    ret = wc_DevCryptoCreate(&dev, CRYPTO_PKHA_MOD_MUL, NULL, 0);
+
+    XMEMSET(&kop, 0, sizeof(struct crypt_kop));
+    kop.crk_op = CRK_MOD_MUL;
+    kop.crk_flags = type;
+    if (con) {
+        kop.crk_flags |= KCOP_FLAG_TIMING_EQUALIZATION;
+    }
+
+    if (ret == 0) {
+        if (ioctl(dev->cfd, CIOCKEY, &kop)) {
+        #if defined(DEBUG_DEVCRYPTO)
+            perror("Error value with MOD MUL ");
+        #endif
+            WOLFSSL_MSG("Error with MUL_MOD call to ioctl");
+            ret = WC_DEVCRYPTO_E;
+        }
+    }
+
+    wc_DevCryptoFree(&dev);
+    return ret;
+}
+#endif /* WOLFSSL_DEVCRYPTO_CURVE25519 */
+
 #endif /* WOLFSSL_DEVCRYPTO */
 

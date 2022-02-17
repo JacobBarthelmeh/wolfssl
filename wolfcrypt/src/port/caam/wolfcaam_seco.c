@@ -186,7 +186,7 @@ static hsm_err_t wc_SECO_RNG(unsigned int args[4], CAAM_BUFFER *buf, int sz)
         rngArgs.output      = (uint8_t*)buf[0].TheAddress;
         rngArgs.random_size = (uint32_t)buf[0].Length;
         err = hsm_get_random(rng, &rngArgs);
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         {
             uint32_t z;
             printf("Pulled rng data from HSM :");
@@ -253,7 +253,7 @@ static hsm_err_t wc_SECO_Hash(unsigned args[4], CAAM_BUFFER *buf, int sz,
             WOLFSSL_MSG("Error with HSM hash call");
         }
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         {
             word32 z;
             printf("hash algo type = %d\n", hashArgs.algo);
@@ -330,21 +330,29 @@ static hsm_key_type_t KeyTypeToHSM(int keyTypeIn)
             ret = HSM_KEY_TYPE_AES_256;
             break;
 
+    #ifdef HSM_KEY_TYPE_HMAC_224
         case CAAM_KEYTYPE_HMAC224:
             ret = HSM_KEY_TYPE_HMAC_224;
             break;
+    #endif
 
+    #ifdef HSM_KEY_TYPE_HMAC_256
         case CAAM_KEYTYPE_HMAC256:
             ret = HSM_KEY_TYPE_HMAC_256;
             break;
+    #endif
 
+    #ifdef HSM_KEY_TYPE_HMAC_384
         case CAAM_KEYTYPE_HMAC384:
             ret = HSM_KEY_TYPE_HMAC_384;
             break;
+    #endif
 
+    #ifdef HSM_KEY_TYPE_HMAC_512
         case CAAM_KEYTYPE_HMAC512:
             ret = HSM_KEY_TYPE_HMAC_512;
             break;
+    #endif
     }
     return ret;
 }
@@ -404,7 +412,7 @@ int wc_SECO_GenerateKey(int flags, int group, byte* out, int outSz,
         key_args.key_group = group;
         key_args.key_info  = keyInfo;
         key_args.key_type  = keyType;
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         printf("Generating key using:\n");
         printf("\tflags = %d\n", key_args.flags);
         printf("\tgroup = %d\n", key_args.key_group);
@@ -417,7 +425,7 @@ int wc_SECO_GenerateKey(int flags, int group, byte* out, int outSz,
         if (err != HSM_NO_ERROR) {
             WOLFSSL_MSG("Key generation error");
         }
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         if (err == HSM_NO_ERROR) {
             printf("KeyID generated = %u\n", *key_args.key_identifier);
         }
@@ -463,9 +471,9 @@ int wc_SECO_DeleteKey(unsigned int keyId, int group, int keyTypeIn)
         del_args.flags = HSM_OP_MANAGE_KEY_FLAGS_DELETE;
         del_args.key_type = KeyTypeToHSM(keyTypeIn);
         del_args.key_group = group;
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         printf("Trying to delete key:\n");
-        printf("\tkeyID    : %d\n", keyId);
+        printf("\tkeyID    : %u\n", keyId);
         printf("\tkey type : %d\n", del_args.key_type);
         printf("\tkey grp  : %d\n", del_args.key_group);
     #endif
@@ -597,7 +605,7 @@ int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
         //sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_DIGEST;
         sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_MESSAGE;
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         printf("Trying to create an ECC signature:\n");
         printf("\tkeyID    : %u\n", sig_args.key_identifier);
         printf("\tmsg size : %d\n", sig_args.message_size);
@@ -666,7 +674,7 @@ int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
         //sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_DIGEST;
         sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_MESSAGE;
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         {
             word32 i;
 
@@ -700,7 +708,7 @@ int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
     return err;
 }
 
-#ifdef SECO_DEBUG
+#ifdef DEBUG_SECO
 static void DebugPrintExchangeArgsIN(op_key_exchange_args_t* exchange_args)
 {
     word32 z;
@@ -751,6 +759,7 @@ static void DebugPrintExchangeArgsOUT(op_key_exchange_args_t* exchange_args)
 }
 #endif
 
+#if 0
 /* Get the shared secret (case 1 KEK) */
 int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz)
 {
@@ -776,8 +785,11 @@ int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz)
 
         /* It must be zero, if HSM_OP_KEY_EXCHANGE_FLAGS_GENERATE_EPHEMERAL */
         exchange_args.key_identifier = 0;
+#ifdef HSM_KDF_HMAC_SHA_256_TLS_0_16_4
+/* changed to an array with TLS feature addition */
         exchange_args.shared_key_identifier_array = shared;
         exchange_args.shared_key_identifier_array_size = sharedSz;
+#endif
 
         exchange_args.ke_input = keIn;
         exchange_args.ke_input_size = keInSz;
@@ -814,11 +826,11 @@ int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz)
         exchange_args.signed_message = NULL;
         exchange_args.signed_msg_size = 0;
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         DebugPrintExchangeArgsIN(&exchange_args);
     #endif
         err = hsm_key_exchange(key_mgmt_hdl, &exchange_args);
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         if (err == HSM_NO_ERROR) {
             DebugPrintExchangeArgsOUT(&exchange_args);
         }
@@ -838,6 +850,7 @@ int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz)
         return 0;
     }
 }
+#endif
 
 
 #if 0
@@ -930,7 +943,7 @@ static hsm_err_t wc_SECO_CMAC(unsigned int args[4], CAAM_BUFFER* buf, int sz)
         mac_args.mac      = (uint8_t*)buf[1].TheAddress;
         mac_args.mac_size = (buf[1].Length < AES_BLOCK_SIZE)? buf[1].Length:
                                                               AES_BLOCK_SIZE;
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         printf("CMAC arguments used:\n");
         printf("\tkey id       = %d\n", mac_args.key_identifier);
         printf("\tpayload      = %p\n", mac_args.payload);
@@ -983,7 +996,7 @@ static hsm_err_t wc_SEC_AES_Common(unsigned int args[4], CAAM_BUFFER* buf,
         cipher_args.output      = out;
         cipher_args.output_size = outSz;
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         printf("AES Operation :\n");
         printf("\tkeyID    : %u\n", cipher_args.key_identifier);
         printf("\tinput    : %p\n", cipher_args.input);
@@ -1134,7 +1147,7 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
         }
         auth_args.ae_algo = HSM_AUTH_ENC_ALGO_AES_GCM;
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         printf("AES GCM Operation :\n");
         printf("\tkeyID    : %u\n", auth_args.key_identifier);
         printf("\tinput    : %p\n", auth_args.input);
@@ -1167,6 +1180,79 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
 }
 
 
+#if 0
+wc_SECO_TLS_PRF(WOLFSSL* ssl, void* ctx)
+{
+    ecc_key* key;
+
+    /* get private key id for temperal ECC key from WOLFSSL struct */
+    if (ssl->hsType != DYNAMIC_TYPE_ECC) {
+        WOLFSSL_MSG("Expecting an ECC key type");
+        return -1;
+    }
+    key = (ecc_key*)ssl->hsKey;
+
+}
+
+wc_SECO_TLS_PRF(word32 keyId, int group, hsm_kdf_algo_id_t kdfType)
+{
+    op_key_exchange_args_t x_args;
+    byte sharedInfo[16]; /* client_write_MAC_key id (4 bytes, if any), server_write_MAC_key id (4 bytes, if any), client_write_key id (4 bytes) and the server_write_key id (4 bytes) */
+    byte sharedInfoSz = 16;
+
+    byte kdfInput[128]; /* clientHello_random (32 bytes), serverHello_random (32 bytes), server_random (32 bytes) and client_random (32 bytes) */
+
+    byte kdfOutput[8]; /* client_write_iv (4 bytes) and server_write_iv (4 bytes) */
+
+    if (group > MAX_GROUP) {
+        WOLFSSL_MSG("group number is too large");
+        return 0;
+    }
+
+    x_args.key_identifier = keyId;
+    //if not using a key passed in
+    //x_args.flags = HSM_OP_KEY_EXCHANGE_FLAGS_GENERATE_EPHEMERAL;
+
+    x_args.shared_key_identifier_array      = sharedInfo;
+    x_args.shared_key_identifier_array_size = sharedInfoSz;
+
+    x_args.kdf_input      = kdfInput;
+    x_args.kdf_input_size = (byte)sizeof(kdfInput);
+
+    x_args.kdf_output      = kdfOutput;
+    x_args.kdf_output_size = (byte)sizeof(kdfOutput);
+
+    x_args.shared_key_info = HSM_KEY_INFO_TRANSIENT;
+    x_args.shared_key_type = 0; /* not applicable */
+
+    x_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_NIST_P256;
+    //x_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_NIST_P384;
+
+    x_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_NIST_P256;
+    //x_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_NIST_P384;
+
+    x_args.kdf_algorithm = kdfType;                    //!< indicates the KDF algorithm
+    x_args.shared_key_group = group;
+#if 0
+#define HSM_KDF_HMAC_SHA_256_TLS_0_16_4                 ((hsm_kdf_algo_id_t)0x20u)  //!< TLS PRF based on HMAC with SHA-256, the resulting mac_key_length is 0 bytes, enc_key_length is 16 bytes and fixed_iv_length is 4 bytes.
+#define HSM_KDF_HMAC_SHA_384_TLS_0_32_4                 ((hsm_kdf_algo_id_t)0x21u)  //!< TLS PRF based on HMAC with SHA-384, the resulting mac_key_length is 0 bytes, enc_key_length is 32 bytes and fixed_iv_length is 4 bytes.
+#define HSM_KDF_HMAC_SHA_256_TLS_0_32_4                 ((hsm_kdf_algo_id_t)0x22u)  //!< TLS PRF based on HMAC with SHA-256, the resulting mac_key_length is 0 bytes, enc_key_length is 32 bytes and fixed_iv_length is 4 bytes.
+#define HSM_KDF_HMAC_SHA_256_TLS_32_16_4                ((hsm_kdf_algo_id_t)0x23u)  //!< TLS PRF based on HMAC with SHA-256, the resulting mac_key_length is 32 bytes, enc_key_length is 16 bytes and fixed_iv_length is 4 bytes.
+#define HSM_KDF_HMAC_SHA_384_TLS_48_32_4                ((hsm_kdf_algo_id_t)0x24u)  //!< TLS PRF based on HMAC with SHA-384, the resulting mac_key_length is 48 bytes, enc_key_length is 32 bytes and fixed_iv_length is 4 bytes.
+#endif
+
+    /* not sure what to do with the ke in/out */
+    #if 0
+    uint8_t *ke_input;                                  //!< pointer to the initiator input data related to the key exchange function.
+    uint8_t *ke_output;                                 //!< pointer to the output area where the data related to the key exchange function must be written. It corresponds to the receiver public data.
+    uint16_t ke_input_size;                             //!< length in bytes of the input data of the key exchange function.
+    uint16_t ke_output_size;                            //!< length in bytes of the output data of the key exchange function
+    #endif
+
+
+}
+#endif
+
 /* use KEK to encrypt and import a key
  * return 0 on failure and new key ID on success */
 word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
@@ -1175,7 +1261,7 @@ word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
     op_manage_key_args_t key_args;
     hsm_hdl_t key_mgmt_hdl;
     Aes aes;
-    int ret;
+    int ret = 0;
     word32 outId = 0;
     byte *wrappedKey = NULL;
     word32 wrappedKeySz;
@@ -1254,7 +1340,7 @@ word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
         key_args.input_data = wrappedKey;
         key_args.input_size = wrappedKeySz;
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         {
             word32 i;
             printf("Import Key Operation :\n");
@@ -1285,7 +1371,7 @@ word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
             err = hsm_manage_key(key_mgmt_hdl, &key_args);
         }
 
-    #ifdef SECO_DEBUG
+    #ifdef DEBUG_SECO
         if (err == HSM_NO_ERROR) {
             printf("Result of Import Key Operation :\n");
             printf("\tkey ID    : %u\n", *key_args.key_identifier);

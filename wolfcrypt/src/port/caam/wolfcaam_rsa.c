@@ -1,4 +1,4 @@
-/* wolfcaam_hmac.c
+/* wolfcaam_rsa.c
  *
  * Copyright (C) 2006-2021 wolfSSL Inc.
  *
@@ -25,7 +25,7 @@
 
 #include <wolfssl/wolfcrypt/settings.h>
 
-#if defined(WOLFSSL_CAAM) && !defined(NO_HMAC)
+#if defined(WOLFSSL_CAAM) && !defined(NO_RSA)
 
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
@@ -38,64 +38,67 @@
 #endif
 
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
-#include <wolfssl/wolfcrypt/coding.h>
-#include <wolfssl/wolfcrypt/asn.h>
+#include <wolfssl/wolfcrypt/port/caam/wolfcaam_rsa.h>
 
 #if defined(WOLFSSL_CAAM_DEBUG) || defined(WOLFSSL_CAAM_PRINT)
 #include <stdio.h>
 #endif
 
-#if defined(WOLFSSL_DEVCRYPTO_HMAC)
+#if defined(WOLFSSL_DEVCRYPTO_RSA)
 #include <wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h>
 
-/* HSM lib does not support HMAC with QXP board, use devcrypto instead */
-int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg, int msgSz,
-    byte* digest)
+/* HSM lib does not support RSA with QXP board, use devcrypto instead */
+int wc_CAAM_Rsa(const byte* in, word32 inLen, byte* out, word32* outLen,
+    int type, RsaKey* key, WC_RNG* rng)
 {
-    int ret = 0;
+    int ret = -1;
 
-    if (hmac->keyLen > 0) {
-        ret = wc_DevCrypto_HmacSetKey(hmac, macType, hmac->keyRaw,
-                    hmac->keyLen);
-        if (ret != 0) {
-            WOLFSSL_MSG("Error with set key");
-        }
-        else {
-            ForceZero((byte*)hmac->keyRaw, hmac->keyLen);
-            hmac->keyLen = 0;
-        }
-    }
+    switch (type) {
+        case RSA_PUBLIC_ENCRYPT:
+        case RSA_PRIVATE_ENCRYPT:
+            ret = wc_DevCrypto_RsaEncrypt(in, inLen, out, outLen, key, type);
+            break;
 
-    if (ret == 0 && msgSz > 0) {
-        ret = wc_DevCrypto_HmacUpdate(hmac, msg, msgSz);
-        if (ret != 0) {
-            WOLFSSL_MSG("Issue with hmac update");
-        }
+        case RSA_PUBLIC_DECRYPT:
+        case RSA_PRIVATE_DECRYPT:
+            ret = wc_DevCrypto_RsaDecrypt(in, inLen, out, *outLen, key, type);
     }
+    (void)rng;
 
-    if (ret == 0 && digest != NULL) {
-        ret = wc_DevCrypto_HmacFinal(hmac, digest);
-        if (ret != 0) {
-            WOLFSSL_MSG("Issue with hmac final");
-        }
-        else {
-            wc_DevCrypto_HmacFree(hmac);
-        }
-    }
-    return 0;
+    return ret;
 }
-#else
-int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg, int msgSz,
-    byte* digest)
+
+#ifdef WOLFSSL_KEY_GEN
+int wc_CAAM_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
 {
-    (void)hmac;
-    (void)macType;
-    (void)msg;
-    (void)msgSz;
-    (void)digest;
+    return wc_DevCrypto_MakeRsaKey(key, size, e, rng);
+}
+#endif
+
+#else
+int wc_CAAM_Rsa(const byte* in, word32 inLen, byte* out, word32* outLen,
+    int type, RsaKey* key, WC_RNG* rng)
+{
+    (void)in;
+    (void)inLen;
+    (void)out;
+    (void)outLen;
+    (void)type;
+    (void)key;
+    (void)rng;
     return CRYPTOCB_UNAVAILABLE;
 }
-#endif /* WOLFSSL_DEVCRYPTO_HMAC */
+
+int wc_CAAM_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
+{
+    (void)size;
+    (void)e;
+    (void)key;
+    (void)rng;
+    return CRYPTOCB_UNAVAILABLE;
+}
+#endif /* WOLFSSL_DEVCRYPTO_RSA */
 
 #endif
+
 

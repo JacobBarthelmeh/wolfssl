@@ -79,7 +79,9 @@
     defined(WOLFSSL_SECO_CAAM)
     #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
 #endif
-
+#if defined(WOLFSSL_DEVCRYPTO)
+    #include <wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h>
+#endif
 #ifdef WOLFSSL_IMXRT_DCP
     #include <wolfssl/wolfcrypt/port/nxp/dcp_port.h>
 #endif
