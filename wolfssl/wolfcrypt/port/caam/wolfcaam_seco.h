@@ -44,6 +44,7 @@
 #define NoActivityReady -1
 #define MemoryOperationNotPerformed -1
 
+#include <stdint.h>
 #define CAAM_ADDRESS intptr_t
 #ifndef WOLFSSL_CAAM_BUFFER
 #define WOLFSSL_CAAM_BUFFER
@@ -130,12 +131,6 @@ WOLFSSL_LOCAL int wc_SECO_ExportKEK(byte* out, byte outSz, byte isCommon);
 WOLFSSL_API word32 wc_SECO_WrapKey(word32 keyID, byte* in, word32 inSz,
     byte* iv, word32 ivSz, int keyType, int keyInfo, int group);
 
-WOLFSSL_API int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz);
-WOLFSSL_API int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
-    byte* msg, word32 msgSz);
-WOLFSSL_API int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
-    byte* msg, word32 msgSz);
-WOLFSSL_API int wc_SECO_GetCounter(void);
 #define CAAM_SEND_REQUEST(type, sz, arg, buf) \
         SynchronousSendRequest((type), (arg), (buf), (sz))
 #define CAAM_INIT_INTERFACE wc_SECOInitInterface

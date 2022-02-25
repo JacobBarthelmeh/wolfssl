@@ -588,37 +588,45 @@ static hsm_err_t wc_SECO_ECDSA_Make(unsigned int args[4], CAAM_BUFFER *buf,
 
 
 /* sign a message (hash(msg)) using a hsm key */
-int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
-    byte* msg, word32 msgSz)
+static hsm_err_t wc_SECO_ECDSA_Sign(unsigned int args[4], CAAM_BUFFER *buf,
+    int sz)
 {
-    int keyId;
     hsm_err_t err;
     hsm_hdl_t sig_gen_hdl;
     open_svc_sign_gen_args_t open_args;
     op_generate_sign_args_t  sig_args;
+    byte sigOut[2*MAX_ECC_BYTES];
 
-    if (sigOut == NULL) {
-        WOLFSSL_MSG("Error malloc'ing buffer");
-        return -1;
+    if (args[3] != 32 && args[3] != 48) {
+        WOLFSSL_MSG("Unexpected key size");
+        return BAD_FUNC_ARG;
+    }
+
+    if (buf[1].Length != (int)args[3]) {
+        WOLFSSL_MSG("Bad message input size");
+        return BAD_FUNC_ARG;
     }
 
     wc_LockMutex(&caamMutex);
-    keyId = key->blackKey;
 
     XMEMSET(&open_args, 0, sizeof(open_args));
     err = hsm_open_signature_generation_service(key_store_hdl, &open_args,
             &sig_gen_hdl);
     if (err == HSM_NO_ERROR) {
         XMEMSET(&sig_args, 0, sizeof(sig_args));
-        sig_args.key_identifier = keyId;
-        sig_args.message        = msg;
-        sig_args.message_size   = msgSz;
+        sig_args.key_identifier = buf[0].TheAddress;
+        sig_args.message        = (uint8_t*)buf[1].TheAddress;
+        sig_args.message_size   = buf[1].Length;
         sig_args.signature      = sigOut;
-        sig_args.signature_size = sigOutSz;
+        sig_args.signature_size = buf[2].Length + buf[3].Length + 1;
 
-        sig_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
-        sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_DIGEST;
-        //sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_MESSAGE;
+        if (args[3] == 32) {
+            sig_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
+        }
+        else {
+            sig_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P384_SHA_384;
+        }
+        sig_args.flags = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_DIGEST;
 
     #ifdef DEBUG_SECO
         printf("Trying to create an ECC signature:\n");
@@ -635,8 +643,19 @@ int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
         }
     }
 
+    /* copy out r and s on success */
+    if (err == HSM_NO_ERROR) {
+        XMEMCPY((byte*)buf[2].TheAddress, sigOut, buf[2].Length);
+        XMEMCPY((byte*)buf[3].TheAddress, sigOut + buf[2].Length,
+            buf[3].Length);
+    }
+    else {
+        printf("issue with hsm sig verify\n");
+    }
+
     wc_UnLockMutex(&caamMutex);
 
+    (void)sz;
     if (wc_TranslateHSMError(0, err) != Success) {
         return -1;
     }
@@ -647,8 +666,8 @@ int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
 
 
 /* verify a signature (hash(msg)) using HSM */
-int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
-    byte* msg, word32 msgSz)
+static hsm_err_t wc_SECO_ECDSA_Verify(unsigned int args[4], CAAM_BUFFER *buf,
+    int sz)
 {
     hsm_err_t err;
     hsm_hdl_t sig_ver_hdl;
@@ -656,38 +675,46 @@ int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
     op_verify_sign_args_t     sig_ver_args;
     hsm_verification_status_t verify;
 
-    byte pubKey[64];
-    byte rsR[65];
-    word32 rSz = 32;
-    word32 sSz = 32;
-    word32 rsRSz = 65;
-    word32 pubKeySz = 64;
+    byte rsR[2*MAX_ECC_BYTES];
+    word32 rsRSz = 2*MAX_ECC_BYTES;
 
-    word32 qxSz = 32;
-    word32 qySz = 32;
+    if (args[3] != 32 && args[3] != 48) {
+        WOLFSSL_MSG("Unexpected key size");
+        return BAD_FUNC_ARG;
+    }
+
+    if (buf[1].Length != (int)args[3]) {
+        WOLFSSL_MSG("Bad message input size");
+        return BAD_FUNC_ARG;
+    }
 
     wc_LockMutex(&caamMutex);
 
     XMEMSET(rsR, 0, rsRSz);
-    wc_ecc_sig_to_rs(sig, sigSz, rsR, &rSz, rsR + 32, &sSz);
+    XMEMCPY(rsR, (byte*)buf[2].TheAddress, buf[2].Length);
+    XMEMCPY(rsR + buf[2].Length, (byte*)buf[3].TheAddress, buf[3].Length);
+    rsRSz = buf[2].Length + buf[3].Length + 1; /* +1 for the HSM compression */
 
-    XMEMSET(pubKey, 0, pubKeySz);
-    wc_ecc_export_public_raw(key, pubKey, &qxSz, pubKey + 32, &qySz);
     XMEMSET(&open_sig_ver_args, 0, sizeof(open_sig_ver_args));
     err = hsm_open_signature_verification_service(hsm_session,
                     &open_sig_ver_args, &sig_ver_hdl);
     if (err == HSM_NO_ERROR) {
         XMEMSET(&sig_ver_args, 0, sizeof(sig_ver_args));
-        sig_ver_args.key = pubKey;
-        sig_ver_args.key_size = pubKeySz;
-        sig_ver_args.message = msg;
-        sig_ver_args.message_size = msgSz;
-        sig_ver_args.signature = rsR;
+        sig_ver_args.key      = (uint8_t*)buf[0].TheAddress;
+        sig_ver_args.key_size = buf[0].Length;
+        sig_ver_args.message  = (uint8_t*)buf[1].TheAddress;
+        sig_ver_args.message_size   = buf[1].Length;
+        sig_ver_args.signature      = rsR;
         sig_ver_args.signature_size = rsRSz;
-        sig_ver_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
-
+        if (args[3] == 32) {
+            sig_ver_args.scheme_id =
+                HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
+        }
+        else {
+            sig_ver_args.scheme_id =
+                HSM_SIGNATURE_SCHEME_ECDSA_NIST_P384_SHA_384;
+        }
         sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_DIGEST;
-        //sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_MESSAGE;
 
     #ifdef DEBUG_SECO
         {
@@ -720,217 +747,9 @@ int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
 
     wc_UnLockMutex(&caamMutex);
 
-    return err;
-}
-
-#ifdef DEBUG_SECO
-static void DebugPrintExchangeArgsIN(op_key_exchange_args_t* exchange_args)
-{
-    word32 z;
-    printf("KEK ECDH Input:\n");
-    printf("\tkey ID: %u\n", exchange_args->key_identifier);
-    printf("\tkey group : %d\n", exchange_args->shared_key_group);
-    printf("\tpublic key type : %u\n",
-            exchange_args->initiator_public_data_type);
-    printf("\texchange scheme : %u\n",
-            exchange_args->key_exchange_scheme);
-    printf("\tshared key info : 0x%X\n", exchange_args->shared_key_info);
-    printf("\tshared key type : 0x%X\n", exchange_args->shared_key_type);
-    printf("\tshared key ID [%d] : ",
-            exchange_args->shared_key_identifier_array_size);
-    for (z = 0; z < exchange_args->shared_key_identifier_array_size; z++)
-        printf("%02X", exchange_args->shared_key_identifier_array[z]);
-    printf("\n");
-    printf("\tke input[%d] : ", exchange_args->ke_input_size);
-    for (z = 0; z < exchange_args->ke_input_size; z++)
-        printf("%02X", exchange_args->ke_input[z]);
-    printf("\n");
-    printf("\tkdf input[%d] : ", exchange_args->kdf_input_size);
-    for (z = 0; z < exchange_args->kdf_input_size; z++)
-        printf("%02X", exchange_args->kdf_input[z]);
-    printf("\n");
-    printf("\tKDF algo = %u\n", exchange_args->kdf_algorithm);
-}
-
-static void DebugPrintExchangeArgsOUT(op_key_exchange_args_t* exchange_args)
-{
-    word32 z;
-    printf("KEK ECDH Output:\n");
-    printf("\tkey ID: %u\n", exchange_args->key_identifier);
-    printf("\tkey group : %d\n", exchange_args->shared_key_group);
-    printf("\tshared key ID [%d] : ",
-            exchange_args->shared_key_identifier_array_size);
-    for (z = 0; z < exchange_args->shared_key_identifier_array_size; z++)
-        printf("%02X", exchange_args->shared_key_identifier_array[z]);
-    printf("\n");
-    printf("\tke output [%d] : ", exchange_args->ke_output_size);
-    for (z = 0; z < exchange_args->ke_output_size; z++)
-        printf("%02X", exchange_args->ke_output[z]);
-    printf("\n");
-    printf("\tkdf output[%d] : ", exchange_args->kdf_output_size);
-    for (z = 0; z < exchange_args->kdf_output_size; z++)
-        printf("%02X", exchange_args->kdf_output[z]);
-    printf("\n");
-}
-#endif
-
-#if 0
-/* Get the shared secret (case 1 KEK) */
-int wc_SECO_ECDSA_ECDH_KEK(int group, byte* keIn, int keInSz)
-{
-    open_svc_key_management_args_t key_mgmt_args;
-    hsm_hdl_t key_mgmt_hdl;
-    op_key_exchange_args_t exchange_args;
-    hsm_err_t err = HSM_NO_ERROR;
-
-    byte keOut[32];
-    int  keOutSz = 32;
-
-    byte shared[32];
-    int  sharedSz = 32;
-
-    wc_LockMutex(&caamMutex);
-
-    XMEMSET(&key_mgmt_args, 0, sizeof(key_mgmt_args));
-    err = hsm_open_key_management_service(
-        key_store_hdl, &key_mgmt_args, &key_mgmt_hdl);
-    if (err == HSM_NO_ERROR) {
-        XMEMSET(&exchange_args, 0, sizeof(exchange_args));
-        XMEMSET(shared, 0, sharedSz);
-
-        /* It must be zero, if HSM_OP_KEY_EXCHANGE_FLAGS_GENERATE_EPHEMERAL */
-        exchange_args.key_identifier = 0;
-#ifdef HSM_KDF_HMAC_SHA_256_TLS_0_16_4
-/* changed to an array with TLS feature addition */
-        exchange_args.shared_key_identifier_array = shared;
-        exchange_args.shared_key_identifier_array_size = sharedSz;
-#endif
-
-        exchange_args.ke_input = keIn;
-        exchange_args.ke_input_size = keInSz;
-        exchange_args.ke_output = keOut;
-        exchange_args.ke_output_size = keOutSz;
-
-        exchange_args.kdf_input  = 0;
-        exchange_args.kdf_output = 0;
-        exchange_args.kdf_input_size  = 0;
-        exchange_args.kdf_output_size = 0;
-
-        if (group > MAX_GROUP) {
-            printf("group number is too large!\n");
-        }
-        exchange_args.shared_key_group = group;
-        exchange_args.shared_key_info = HSM_KEY_INFO_KEK | HSM_KEY_INFO_TRANSIENT;
-        exchange_args.shared_key_type = HSM_KEY_TYPE_AES_256;
-
-        exchange_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_NIST_P256;
-        //exchange_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_BRAINPOOL_R1_256;
-
-        exchange_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_NIST_P256;
-        //exchange_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_BRAINPOOL_R1_256;
-
-        /* SP800-56C rev2 SHA_256(counter || Z || FixedInput) */
-         //counter is the value 1 expressed in 32 bit and in big endian format
-         //Z is the shared secret generated by the DH key-establishment scheme
-         //FixedInput is the literal 'NXP HSM USER KEY DERIVATION'
-         //(27 bytes, no null termination).
-        exchange_args.kdf_algorithm = HSM_KDF_ONE_STEP_SHA_256;
-        exchange_args.flags = HSM_OP_KEY_EXCHANGE_FLAGS_GENERATE_EPHEMERAL;
-
-        /* signed_message: mandatory in OEM CLOSED life cycle */
-        exchange_args.signed_message = NULL;
-        exchange_args.signed_msg_size = 0;
-
-    #ifdef DEBUG_SECO
-        DebugPrintExchangeArgsIN(&exchange_args);
-    #endif
-        err = hsm_key_exchange(key_mgmt_hdl, &exchange_args);
-    #ifdef DEBUG_SECO
-        if (err == HSM_NO_ERROR) {
-            DebugPrintExchangeArgsOUT(&exchange_args);
-        }
-    #endif
-
-        /* always try to close key management handle if open */
-        if (hsm_close_key_management_service(key_mgmt_hdl) != HSM_NO_ERROR) {
-            err = HSM_GENERAL_ERROR;
-        }
-    }
-
-    wc_UnLockMutex(&caamMutex);
-    if (wc_TranslateHSMError(0, err) != Success) {
-        return -1;
-    }
-    else {
-        return 0;
-    }
-}
-#endif
-
-
-#if 0
-/* Get the shared secret (case 2 TLS PRF) */
-static hsm_err_t wc_SECO_ECDSA_ECDH_PRF(unsigned args[4], CAAM_BUFFER *buf, int sz)
-{
-    hsm_err_t err = HSM_NO_ERROR;
-    wc_LockMutex(&caamMutex);
-
-
-#if 0
-#define HSM_KE_SCHEME_ECDH_NIST_P256                    ((hsm_key_exchange_scheme_id_t)0x02u)
-#define HSM_KE_SCHEME_ECDH_NIST_P384                    ((hsm_key_exchange_scheme_id_t)0x03u)
-#define HSM_KE_SCHEME_ECDH_BRAINPOOL_R1_256             ((hsm_key_exchange_scheme_id_t)0x13u)
-#define HSM_KE_SCHEME_ECDH_BRAINPOOL_R1_384             ((hsm_key_exchange_scheme_id_t)0x15u)
-    err = hsm_key_exchange(hsm_hdl_t key_management_hdl, op_key_exchange_args_t *args);
-#endif
-    wc_UnLockMutex(&caamMutex);
-    (void)args;
-    (void)buf;
     (void)sz;
     return err;
 }
-
-/* export the public portion of the key */
-static hsm_err_t wc_SECO_ECDSA_Export(unsigned args[4], CAAM_BUFFER *buf, int sz)
-{
-
-}
-
-
-static hsm_err_t wc_SECO_HMAC_Make(unsigned int args[4], CAAM_BUFFER* buf,
-    int sz)
-{
-    hsm_key_type_t keyType;
-
-    switch (args[0]) {
-        case WC_HASH_TYPE_SHA224:
-            keyType = HSM_KEY_TYPE_HMAC_224;
-            break;
-
-        case WC_HASH_TYPE_SHA256:
-            keyType = HSM_KEY_TYPE_HMAC_256;
-            break;
-
-        case WC_HASH_TYPE_SHA384:
-            keyType = HSM_KEY_TYPE_HMAC_384;
-            break;
-
-        case WC_HASH_TYPE_SHA512:
-            keyType = HSM_KEY_TYPE_HMAC_512;
-            break;
-    }
-
-    (void)sz;
-    keyType = ECDSELtoHSM(args[1] ^ CAAM_ECDSA_KEYGEN_PD);
-    return wc_SECO_GenerateKey(HSM_OP_KEY_GENERATION_FLAGS_CREATE,
-                               1,
-                               (byte*)buf[1].TheAddress,
-                               buf[1].Length,
-                               keyType,
-                               HSM_KEY_INFO_TRANSIENT,
-                               &args[2]);
-}
-#endif
 
 
 static hsm_err_t wc_SECO_CMAC(unsigned int args[4], CAAM_BUFFER* buf, int sz)
@@ -1194,79 +1013,6 @@ static hsm_err_t wc_SECO_AESGCM(unsigned int args[4], CAAM_BUFFER* buf, int sz)
     return HSM_NO_ERROR;
 }
 
-
-#if 0
-wc_SECO_TLS_PRF(WOLFSSL* ssl, void* ctx)
-{
-    ecc_key* key;
-
-    /* get private key id for temperal ECC key from WOLFSSL struct */
-    if (ssl->hsType != DYNAMIC_TYPE_ECC) {
-        WOLFSSL_MSG("Expecting an ECC key type");
-        return -1;
-    }
-    key = (ecc_key*)ssl->hsKey;
-
-}
-
-wc_SECO_TLS_PRF(word32 keyId, int group, hsm_kdf_algo_id_t kdfType)
-{
-    op_key_exchange_args_t x_args;
-    byte sharedInfo[16]; /* client_write_MAC_key id (4 bytes, if any), server_write_MAC_key id (4 bytes, if any), client_write_key id (4 bytes) and the server_write_key id (4 bytes) */
-    byte sharedInfoSz = 16;
-
-    byte kdfInput[128]; /* clientHello_random (32 bytes), serverHello_random (32 bytes), server_random (32 bytes) and client_random (32 bytes) */
-
-    byte kdfOutput[8]; /* client_write_iv (4 bytes) and server_write_iv (4 bytes) */
-
-    if (group > MAX_GROUP) {
-        WOLFSSL_MSG("group number is too large");
-        return 0;
-    }
-
-    x_args.key_identifier = keyId;
-    //if not using a key passed in
-    //x_args.flags = HSM_OP_KEY_EXCHANGE_FLAGS_GENERATE_EPHEMERAL;
-
-    x_args.shared_key_identifier_array      = sharedInfo;
-    x_args.shared_key_identifier_array_size = sharedInfoSz;
-
-    x_args.kdf_input      = kdfInput;
-    x_args.kdf_input_size = (byte)sizeof(kdfInput);
-
-    x_args.kdf_output      = kdfOutput;
-    x_args.kdf_output_size = (byte)sizeof(kdfOutput);
-
-    x_args.shared_key_info = HSM_KEY_INFO_TRANSIENT;
-    x_args.shared_key_type = 0; /* not applicable */
-
-    x_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_NIST_P256;
-    //x_args.initiator_public_data_type = HSM_KEY_TYPE_ECDSA_NIST_P384;
-
-    x_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_NIST_P256;
-    //x_args.key_exchange_scheme = HSM_KE_SCHEME_ECDH_NIST_P384;
-
-    x_args.kdf_algorithm = kdfType;                    //!< indicates the KDF algorithm
-    x_args.shared_key_group = group;
-#if 0
-#define HSM_KDF_HMAC_SHA_256_TLS_0_16_4                 ((hsm_kdf_algo_id_t)0x20u)  //!< TLS PRF based on HMAC with SHA-256, the resulting mac_key_length is 0 bytes, enc_key_length is 16 bytes and fixed_iv_length is 4 bytes.
-#define HSM_KDF_HMAC_SHA_384_TLS_0_32_4                 ((hsm_kdf_algo_id_t)0x21u)  //!< TLS PRF based on HMAC with SHA-384, the resulting mac_key_length is 0 bytes, enc_key_length is 32 bytes and fixed_iv_length is 4 bytes.
-#define HSM_KDF_HMAC_SHA_256_TLS_0_32_4                 ((hsm_kdf_algo_id_t)0x22u)  //!< TLS PRF based on HMAC with SHA-256, the resulting mac_key_length is 0 bytes, enc_key_length is 32 bytes and fixed_iv_length is 4 bytes.
-#define HSM_KDF_HMAC_SHA_256_TLS_32_16_4                ((hsm_kdf_algo_id_t)0x23u)  //!< TLS PRF based on HMAC with SHA-256, the resulting mac_key_length is 32 bytes, enc_key_length is 16 bytes and fixed_iv_length is 4 bytes.
-#define HSM_KDF_HMAC_SHA_384_TLS_48_32_4                ((hsm_kdf_algo_id_t)0x24u)  //!< TLS PRF based on HMAC with SHA-384, the resulting mac_key_length is 48 bytes, enc_key_length is 32 bytes and fixed_iv_length is 4 bytes.
-#endif
-
-    /* not sure what to do with the ke in/out */
-    #if 0
-    uint8_t *ke_input;                                  //!< pointer to the initiator input data related to the key exchange function.
-    uint8_t *ke_output;                                 //!< pointer to the output area where the data related to the key exchange function must be written. It corresponds to the receiver public data.
-    uint16_t ke_input_size;                             //!< length in bytes of the input data of the key exchange function.
-    uint16_t ke_output_size;                            //!< length in bytes of the output data of the key exchange function
-    #endif
-
-
-}
-#endif
 
 /* use KEK to encrypt and import a key
  * return 0 on failure and new key ID on success */
@@ -1552,15 +1298,14 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
         break;
 
     case CAAM_ECDSA_VERIFY:
-        //err = wc_SECO_ECDSA_Verify(args, buf, sz);
+        err = wc_SECO_ECDSA_Verify(args, buf, sz);
         break;
 
     case CAAM_ECDSA_SIGN:
-        //err = wc_SECO_ECDSA_Sign(args, buf, sz);
+        err = wc_SECO_ECDSA_Sign(args, buf, sz);
         break;
 
     case CAAM_ECDSA_ECDH:
-        //err = wc_SECO_ECDSA_ECDH(args, buf, sz);
         break;
 
     case CAAM_BLOB_ENCAP:
