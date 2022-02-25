@@ -649,9 +649,6 @@ static hsm_err_t wc_SECO_ECDSA_Sign(unsigned int args[4], CAAM_BUFFER *buf,
         XMEMCPY((byte*)buf[3].TheAddress, sigOut + buf[2].Length,
             buf[3].Length);
     }
-    else {
-        printf("issue with hsm sig verify\n");
-    }
 
     wc_UnLockMutex(&caamMutex);
 

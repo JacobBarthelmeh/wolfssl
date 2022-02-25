@@ -32,6 +32,10 @@
 #include <sys/ioctl.h>
 #include <crypto/cryptodev.h>
 
+#ifdef DEBUG_DEVCRYPTO
+#include <stdio.h>
+#endif
+
 typedef struct WC_CRYPTODEV {
     int cfd;
     struct session_op sess;
