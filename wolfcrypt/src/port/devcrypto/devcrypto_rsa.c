@@ -475,7 +475,7 @@ int wc_DevCrypto_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
 
     if (ret == 0 &&
             GeneratePandQ(p, pSz, q, qSz, eBuf, eBufSz, size, rng) != MP_OKAY) {
-        printf("Issue generating primes\n");
+        WOLFSSL_MSG("Issue generating primes");
         ret = PRIME_GEN_E;
     }
 

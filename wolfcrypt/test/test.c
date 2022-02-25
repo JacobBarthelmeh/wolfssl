@@ -1546,21 +1546,6 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
             err_sys("Error with wolfCrypt_Init!\n", -1003);
         }
 
-#ifdef WOLFSSL_SECO_CAAM
-        {
-            word32 nonce = 0x1111;
-            int KEY_STORE_ID = 7;
-            int MAX_UPDATES  = 1000;
-            int create = 1;
-
-            if (wc_SECO_OpenHSM(KEY_STORE_ID, nonce, MAX_UPDATES, create) != 0) {
-                printf("unable to open HSM\n");
-                wolfCrypt_Cleanup();
-                err_sys("Error with SECO HSM open!\n", -1004);
-            }
-        }
-#endif
-
 #ifdef WC_RNG_SEED_CB
     wc_SetSeed_Cb(wc_GenerateSeed);
 #endif
@@ -1571,9 +1556,6 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
         wolfcrypt_test(&args);
     #endif
 
-    #ifdef WOLFSSL_SECO_CAAM
-        wc_SECO_CloseHSM();
-    #endif
         if ((ret = wolfCrypt_Cleanup()) != 0) {
             printf("wolfCrypt_Cleanup failed %d\n", ret);
             err_sys("Error with wolfCrypt_Cleanup!\n", -1004);
@@ -21260,7 +21242,8 @@ static int ecc_test_make_pub(WC_RNG* rng)
 
     /* create a new key since above test for loading key is not supported */
 #if defined(WOLFSSL_CRYPTOCELL) || defined(NO_ECC256) || \
-    defined(WOLFSSL_QNX_CAAM) || defined(WOLFSSL_SE050)
+    defined(WOLFSSL_QNX_CAAM) || defined(WOLFSSL_SE050) || \
+    defined(WOLFSSL_SECO_CAAM)
     ret  = wc_ecc_make_key(rng, ECC_KEYGEN_SIZE, key);
     if (ret != 0) {
         ERROR_OUT(-9861, done);

@@ -96,6 +96,10 @@
 #define CAAM_GENERATE_KEY 2
 #define CAAM_DELETE_KEY   4
 
+/* flags for key store open */
+#define CAAM_KEYSTORE_CREATE 1
+#define CAAM_KEYSTORE_UPDATE 0
+
 #define MAX_GROUP 1023
 
 WOLFSSL_LOCAL int SynchronousSendRequest(int type, unsigned int args[4],

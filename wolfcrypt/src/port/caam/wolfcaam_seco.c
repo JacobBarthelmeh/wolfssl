@@ -141,10 +141,25 @@ int wc_SECO_OpenHSM(word32 keyStoreId, word32 nonce, word16 maxUpdates,
     hsm_err_t err;
     open_svc_key_store_args_t key_store_args;
 
+    XMEMSET(&key_store_args, 0, sizeof(open_svc_key_store_args_t));
     key_store_args.key_store_identifier = keyStoreId,
     key_store_args.authentication_nonce = nonce;
     key_store_args.max_updates_number   = maxUpdates;
-    key_store_args.flags                = flag;
+    switch (flag) {
+        case CAAM_KEYSTORE_CREATE:
+            key_store_args.flags = HSM_SVC_KEY_STORE_FLAGS_CREATE;
+            break;
+        case CAAM_KEYSTORE_UPDATE:
+        #ifdef HSM_SVC_KEY_STORE_FLAGS_UPDATE
+            key_store_args.flags = HSM_SVC_KEY_STORE_FLAGS_UPDATE;
+        #else
+            key_store_args.flags = 0;
+        #endif
+            break;
+        default:
+            WOLFSSL_MSG("Unknown flag");
+            return -1;
+    }
 
     err = hsm_open_key_store_service(hsm_session, &key_store_args,
             &key_store_hdl);
@@ -487,37 +502,6 @@ int wc_SECO_DeleteKey(unsigned int keyId, int group, int keyTypeIn)
 
     if (wc_TranslateHSMError(0, err) == Success) {
         return 0;
-    }
-    else {
-        return -1;
-    }
-}
-
-
-/* can return a negative value on error */
-int wc_SECO_GetCounter()
-{
-    op_get_info_args_t op_args;
-    uint32_t sab_id;
-    uint8_t  chip_id;
-    uint16_t count;
-    uint16_t cycle;
-    uint32_t version;
-    uint32_t version_ext;
-    uint8_t  fips;
-    hsm_err_t err;
-
-    op_args.user_sab_id    = &sab_id;
-    op_args.chip_unique_id = &chip_id;
-    op_args.chip_monotonic_counter = &count;
-    op_args.chip_life_cycle = &cycle;
-    op_args.version     = &version;
-    op_args.version_ext = &version_ext;
-    op_args.fips_mode   = &fips;
-
-    err = hsm_get_info(hsm_session, &op_args);
-    if (wc_TranslateHSMError(0, err) == Success) {
-        return count;
     }
     else {
         return -1;

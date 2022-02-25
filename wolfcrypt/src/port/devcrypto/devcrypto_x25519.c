@@ -1,4 +1,4 @@
-/* devcrypto_math.c
+/* devcrypto_x25519.c
  *
  * Copyright (C) 2006-2021 wolfSSL Inc.
  *
@@ -33,18 +33,6 @@
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h>
 
-const unsigned char qbe[] = {
-    0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xED
-};
-const unsigned char a24be[] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xdb, 0x42
-};
 const unsigned char qle[] = {
     0xED, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -70,7 +58,6 @@ int wc_DevCryptoCurve25519(byte* out, word32 outSz, const byte* k,
     const unsigned char* a24 = a24le;
     const unsigned char* q   = qle;
 
-
     ret = wc_DevCryptoCreate(&ctx, CRYPTO_ASYM_MUL_MOD, NULL, 0);
     if (ret == 0) {
         kop.crk_op = CRK_MUL_MOD;
@@ -78,8 +65,6 @@ int wc_DevCryptoCurve25519(byte* out, word32 outSz, const byte* k,
         kop.crk_flags = 0;
         if (endian == EC25519_LITTLE_ENDIAN) {
             kop.crk_flags = CAAM_MUL_MOD_LE;
-            a24 = a24le;
-            q   = qle;
         }
 
         kop.crk_param[inIdx].crp_p     = (byte*)k;
@@ -118,5 +103,5 @@ int wc_DevCryptoCurve25519(byte* out, word32 outSz, const byte* k,
 
     return ret;
 }
-#endif /* WOLFSSL_DEVCRYPTO */
+#endif /* WOLFSSL_DEVCRYPTO_CURVE25519 */
 

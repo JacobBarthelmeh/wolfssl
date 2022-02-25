@@ -126,23 +126,10 @@ int wc_DevCryptoEccEcdh(int curveId, int enc, byte* pri, word32 priSz,
         kop.crk_op = CRK_ECC_ECDH;
         kop.ses    = ctx.sess.ses;
         kop.crk_flags = CurveIDToFlag(curveId);
-printf("crk_flags = %X\n", kop.crk_flags);
         if (enc) {
-printf("using black key with ecdh\n");
             kop.crk_flags |= (CAAM_KEY_COLOR_BLACK << 8);
         }
 
-{
-    word32 z;
-    printf("pub :");
-    for (z = 0; z < pubSz; z++)
-        printf("%02X", pub[z]);
-    printf("\n");
-    printf("pri :");
-    for (z = 0; z < priSz; z++)
-        printf("%02X", pri[z]);
-    printf("\n");
-}
         kop.crk_param[inIdx].crp_p     = pub;
         kop.crk_param[inIdx].crp_nbits = pubSz * WOLFSSL_BIT_SIZE;
         inIdx++;
@@ -166,15 +153,7 @@ printf("using black key with ecdh\n");
             ret = WC_DEVCRYPTO_E;
         }
         wc_DevCryptoFree(&ctx);
-{
-    word32 z;
-    printf("out :");
-    for (z = 0; z < outSz; z++)
-        printf("%02X", out[z]);
-    printf("\n");
-}
     }
-printf("devcrypto ecdh ret = 0\n");
     return ret;
 }
 
@@ -288,7 +267,6 @@ int wc_DevCryptoEccVerify(int curveId, byte* pub, word32 pubSz,
         wc_DevCryptoFree(&ctx);
     }
 
-    printf("kop status = %d ret = %d\n", kop.crk_status, ret);
     if (ret == 0) {
         if (kop.crk_status == 0) {
             ret = SIG_VERIFY_E;

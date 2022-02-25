@@ -71,7 +71,6 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
     int ret = CRYPTOCB_UNAVAILABLE;
 
     (void)ctx;
-    (void)devId;
     switch (info->algo_type) {
         case WC_ALGO_TYPE_PK:
             switch (info->pk.type) {
@@ -80,27 +79,27 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
                     ret = wc_CAAM_EccSign(info->pk.eccsign.in,
                             info->pk.eccsign.inlen, info->pk.eccsign.out,
                             info->pk.eccsign.outlen, info->pk.eccsign.rng,
-                            info->pk.eccsign.key);
+                            info->pk.eccsign.key, devId);
                     break;
 
                 case WC_PK_TYPE_ECDSA_VERIFY:
                     ret = wc_CAAM_EccVerify(info->pk.eccverify.sig,
                             info->pk.eccverify.siglen, info->pk.eccverify.hash,
                             info->pk.eccverify.hashlen, info->pk.eccverify.res,
-                            info->pk.eccverify.key);
+                            info->pk.eccverify.key, devId);
                     break;
 
                 case WC_PK_TYPE_EC_KEYGEN:
                     ret = wc_CAAM_MakeEccKey(info->pk.eckg.rng,
                             info->pk.eckg.size, info->pk.eckg.key,
-                            info->pk.eckg.curveId);
+                            info->pk.eckg.curveId, devId);
                     break;
 
                 case WC_PK_TYPE_ECDH:
                     ret = wc_CAAM_Ecdh(info->pk.ecdh.private_key,
                               info->pk.ecdh.public_key,
                               info->pk.ecdh.out,
-                              info->pk.ecdh.outlen);
+                              info->pk.ecdh.outlen, devId);
                    break;
 
                 case WC_PK_TYPE_EC_CHECK_PRIV_KEY:
@@ -148,6 +147,10 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
             break;
 
         case WC_ALGO_TYPE_CMAC:
+        #ifdef WOLFSSL_SECO_CAAM
+            if (devId != WOLFSSL_SECO_DEVID)
+                break;
+        #endif
         #if defined(WOLFSSL_CMAC) && !defined(NO_AES) && \
             defined(WOLFSSL_AES_DIRECT)
             ret = wc_CAAM_Cmac(info->cmac.cmac,
@@ -213,6 +216,10 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
             break;
 
         case WC_ALGO_TYPE_CIPHER:
+        #ifdef WOLFSSL_SECO_CAAM
+            if (devId == WOLFSSL_CAAM_DEVID)
+                break; /* only call to SECO if using WOLFSSL_SECO_DEVID */
+        #endif
             switch (info->cipher.type) {
             #if defined(HAVE_AESCCM)
                 case WC_CIPHER_AES_CCM:

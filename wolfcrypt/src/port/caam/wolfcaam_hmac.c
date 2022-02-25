@@ -54,7 +54,7 @@ int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg, int msgSz,
 {
     int ret = 0;
 
-    if (hmac->keyLen > 0) {
+    if (hmac->ctx.cfd == -1 && hmac->keyLen > 0) {
         ret = wc_DevCrypto_HmacSetKey(hmac, macType, hmac->keyRaw,
                     hmac->keyLen);
         if (ret != 0) {
@@ -62,10 +62,6 @@ int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg, int msgSz,
             if (ret == HASH_TYPE_E) {
                 ret = CRYPTOCB_UNAVAILABLE; /* that hash type is not supported*/
             }
-        }
-        else {
-            /* only set the key once */
-            hmac->keyLen = 0;
         }
     }
 

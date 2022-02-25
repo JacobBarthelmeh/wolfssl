@@ -52,11 +52,11 @@ int wc_DevCryptoInit(void)
             return WC_DEVCRYPTO_E;
         }
 
-//        if ((asymAva & CRF_RSA_PUBLIC) == 0) {
-//            WOLFSSL_MSG("CRK_MOD_EXP is not available");
-//            close(fd);
-//            return WC_DEVCRYPTO_E;
-//        }
+        if ((asymAva & CRF_RSA_PUBLIC) == 0) {
+            WOLFSSL_MSG("CRK_RSA_PUBLIC is not available");
+            close(fd);
+            return WC_DEVCRYPTO_E;
+        }
     }
 #endif
 
@@ -75,7 +75,7 @@ void wc_DevCryptoCleanup(void)
 int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
 {
 #if defined(CIOCGSESSINFO) && defined(DEBUG_DEVCRYPTO)
-//    struct session_info_op sesInfo;
+    struct session_info_op sesInfo;
 #endif
 
     if (ctx == NULL) {
@@ -91,11 +91,11 @@ int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
         return WC_DEVCRYPTO_E;
     }
 
-//    if (fcntl(ctx->cfd, F_SETFD, 1) == -1) {
-//        WOLFSSL_MSG("Error setting F_SETFD with fcntl");
-//        (void)close(ctx->cfd);
-//        return WC_DEVCRYPTO_E;
-//    }
+    if (fcntl(ctx->cfd, F_SETFD, 1) == -1) {
+        WOLFSSL_MSG("Error setting F_SETFD with fcntl");
+        (void)close(ctx->cfd);
+        return WC_DEVCRYPTO_E;
+    }
 
     /* set up session */
     switch (type) {
@@ -169,14 +169,14 @@ int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
     }
 
 #if defined(CIOCGSESSINFO) && defined(DEBUG_DEVCRYPTO)
-//    sesInfo.ses = ctx->sess.ses;
-//    if (ioctl(ctx->cfd, CIOCGSESSINFO, &sesInfo)) {
-//        (void)close(ctx->cfd);
-//        WOLFSSL_MSG("Error getting session info");
-//        return WC_DEVCRYPTO_E;
-//    }
-//    printf("Using %s with driver %s\n", sesInfo.hash_info.cra_name,
-//        sesInfo.hash_info.cra_driver_name);
+    sesInfo.ses = ctx->sess.ses;
+    if (ioctl(ctx->cfd, CIOCGSESSINFO, &sesInfo)) {
+        (void)close(ctx->cfd);
+        WOLFSSL_MSG("Error getting session info");
+        return WC_DEVCRYPTO_E;
+    }
+    printf("Using %s with driver %s\n", sesInfo.hash_info.cra_name,
+        sesInfo.hash_info.cra_driver_name);
 #endif
     (void)key;
     (void)keySz;
@@ -193,6 +193,7 @@ void wc_DevCryptoFree(WC_CRYPTODEV* ctx)
             WOLFSSL_MSG("Error stopping cryptodev session");
         }
         (void)close(ctx->cfd);
+        ctx->cfd = -1;
     }
 }
 
