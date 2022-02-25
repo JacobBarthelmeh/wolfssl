@@ -25,7 +25,7 @@
 
 #include <wolfssl/wolfcrypt/settings.h>
 
-#if defined(HAVE_ECC)
+#if defined(WOLFSSL_CAAM) && defined(HAVE_ECC)
 
 #include <wolfssl/wolfcrypt/logging.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
@@ -46,6 +46,215 @@
 #if defined(WOLFSSL_CAAM_DEBUG) || defined(WOLFSSL_CAAM_PRINT)
 #include <stdio.h>
 #endif
+
+#if defined(WOLFSSL_DEVCRYPTO_ECDSA)
+/* offload calls through devcrypto support */
+
+
+/* create signature using CAAM
+ * returns MP_OKAY on success
+ */
+int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
+        WC_RNG *rng, ecc_key *key)
+{
+    const ecc_set_type* dp;
+    int ret, keySz;
+    byte r[MAX_ECC_BYTES] = {0};
+    byte s[MAX_ECC_BYTES] = {0};
+
+    byte pk[MAX_ECC_BYTES] = {0};
+
+    (void)rng;
+    if (key->dp != NULL) {
+        dp = key->dp;
+    }
+    else {
+        dp = wc_ecc_get_curve_params(key->idx);
+    }
+
+    if (dp->id != ECC_SECP256R1) {
+        WOLFSSL_MSG("Limiting CAAM to P256 for now");
+        return CRYPTOCB_UNAVAILABLE;
+    }
+    keySz  = wc_ecc_size(key);
+
+    /* private key */
+    if (mp_to_unsigned_bin_len(&key->k, pk, keySz) != MP_OKAY) {
+        return MP_TO_E;
+    }
+
+    ret = wc_DevCryptoEccSign(dp->id, key->blackKey, pk, keySz, in, inlen,
+            r, keySz, s, keySz);
+
+    /* convert signature from raw bytes to signature format */
+    {
+        mp_int mpr, mps;
+    
+        mp_init(&mpr);
+        mp_init(&mps);
+    
+        mp_read_unsigned_bin(&mpr, r, 32);
+        mp_read_unsigned_bin(&mps, s, 32);
+
+        ret = StoreECC_DSA_Sig(out, outlen, &mpr, &mps);
+        mp_free(&mpr);
+        mp_free(&mps);
+        if (ret != 0) {
+            WOLFSSL_MSG("Issue converting to signature\n");
+            return -1;
+        }
+    }
+
+    return MP_OKAY;
+}
+
+
+/* verify with individual r and s signature parts
+ * returns MP_OKAY on success and sets 'res' to 1 if verified
+ */
+static int wc_CAAM_EccVerify_ex(mp_int* r, mp_int *s, const byte* hash,
+        word32 hashlen, int* res, ecc_key* key)
+{
+    const ecc_set_type* dp;
+    int ret;
+    int keySz;
+
+    byte rbuf[MAX_ECC_BYTES] = {0};
+    byte sbuf[MAX_ECC_BYTES] = {0};
+
+    byte qx[MAX_ECC_BYTES] = {0};
+    byte qy[MAX_ECC_BYTES] = {0};
+    byte qxy[MAX_ECC_BYTES * 2] = {0};
+    word32 qxLen, qyLen;
+
+    if (key->dp != NULL) {
+        dp = key->dp;
+    }
+    else {
+        dp = wc_ecc_get_curve_params(key->idx);
+    }
+
+    /* Wx,y public key */
+    keySz = wc_ecc_size(key);
+    qxLen = qyLen = MAX_ECC_BYTES;
+    wc_ecc_export_public_raw(key, qx, &qxLen, qy, &qyLen);
+    XMEMCPY(qxy, qx, qxLen);
+    XMEMCPY(qxy+qxLen, qy, qyLen);
+
+    if (mp_to_unsigned_bin_len(r, rbuf, keySz) != MP_OKAY) {
+        return MP_TO_E;
+    }
+    if (mp_to_unsigned_bin_len(s, sbuf, keySz) != MP_OKAY) {
+        return MP_TO_E;
+    }
+    ret = wc_DevCryptoEccVerify(dp->id, qxy, qxLen + qyLen, hash, hashlen,
+            rbuf, keySz, sbuf, keySz);
+
+    printf("ret of devcrypto verify call = %d\n", ret);
+    *res = 0;
+    if (ret == 0)
+        *res = 1;
+
+    return ret;
+}
+
+
+/* Verify with ASN1 syntax around the signature
+ * returns MP_OKAY on success
+ */
+int wc_CAAM_EccVerify(const byte* sig, word32 siglen, const byte* hash,
+        word32 hashlen, int* res, ecc_key* key)
+{
+    int ret;
+    mp_int r, s;
+
+    ret = DecodeECC_DSA_Sig(sig, siglen, &r, &s);
+    if (ret == 0) {
+        ret = wc_CAAM_EccVerify_ex(&r, &s, hash, hashlen, res, key);
+        mp_free(&r);
+        mp_free(&s);
+    }
+
+    return ret;
+}
+
+
+/* Does ECDH operation using CAAM and returns MP_OKAY on success */
+int wc_CAAM_Ecdh(ecc_key* private_key, ecc_key* public_key, byte* out,
+        word32* outlen)
+{
+    const ecc_set_type* dp;
+    int ret, keySz;
+
+    byte pk[MAX_ECC_BYTES] = {0};
+    byte qx[MAX_ECC_BYTES] = {0};
+    byte qy[MAX_ECC_BYTES] = {0};
+    byte qxy[MAX_ECC_BYTES * 2] = {0};
+    word32 qxSz, qySz;
+
+    if (private_key->dp != NULL) {
+        dp = private_key->dp;
+    }
+    else {
+        dp = wc_ecc_get_curve_params(private_key->idx);
+    }
+
+    keySz = wc_ecc_size(private_key);
+    if (*outlen < (word32)keySz) {
+        WOLFSSL_MSG("out buffer is to small");
+        return BUFFER_E;
+    }
+
+    /* public key */
+    qxSz = qySz = MAX_ECC_BYTES;
+    wc_ecc_export_public_raw(public_key, qx, &qxSz, qy, &qySz);
+    XMEMCPY(qxy, qx, qxSz);
+    XMEMCPY(qxy+qxSz, qy, qySz);
+
+    /* private key */
+    if (mp_to_unsigned_bin_len(&private_key->k, pk, keySz) != MP_OKAY) {
+        printf("error getting private key buffer\n");
+        return MP_TO_E;
+    }
+
+printf("qxSz = %d qySz = %d outlen = %d keySz = %d\n", qxSz, qySz, *outlen, keySz);
+    ret = wc_DevCryptoEccEcdh(dp->id, private_key->blackKey, pk, keySz,
+        qxy, qxSz + qySz, out, *outlen);
+    if (ret == 0) {
+        *outlen = keySz;
+    }
+printf("caam ecdh ret = %d\n", ret);
+    return ret;
+}
+
+
+/* [ private black key ] [ x , y ] */
+int wc_CAAM_MakeEccKey(WC_RNG* rng, int keySize, ecc_key* key, int curveId)
+{
+    int ret;
+    int blackKey = 1; /* default to using black encrypted keys */
+
+    byte s[MAX_ECC_BYTES]    = {0};
+    byte xy[MAX_ECC_BYTES*2] = {0};
+
+    key->type = ECC_PRIVATEKEY;
+
+    /* if set to default curve then assume SECP256R1 */
+    if (keySize == 32 && curveId == ECC_CURVE_DEF) curveId = ECC_SECP256R1;
+
+    ret = wc_DevCryptoEccKeyGen(curveId, blackKey, s, keySize, xy, keySize*2);
+    if (wc_ecc_import_unsigned(key, xy, xy + keySize, s, curveId) != 0) {
+        WOLFSSL_MSG("issue importing key");
+        return -1;
+    }
+    key->blackKey = blackKey;
+    printf("setting black key to %d\n", key->blackKey);
+
+    (void)rng;
+    return ret;
+}
+
+#else /* use non cryptodev calls */
 
 /* helper function get the ECDSEL value, this is a value that signals the
  * hardware to use preloaded curve parameters
@@ -460,6 +669,7 @@ int wc_CAAM_MakeEccKey(WC_RNG* rng, int keySize, ecc_key* key, int curveId)
     }
     return -1;
 }
+#endif /* WOLFSSL_DEVCRYPTO_ECDSA */
 
 
 /* if dealing with a black encrypted key then it can not be checked */

@@ -52,7 +52,6 @@ int wc_DevCryptoInit(void)
             return WC_DEVCRYPTO_E;
         }
 
-printf("asymAva = 0x%x\n", asymAva);
 //        if ((asymAva & CRF_RSA_PUBLIC) == 0) {
 //            WOLFSSL_MSG("CRK_MOD_EXP is not available");
 //            close(fd);
@@ -138,8 +137,17 @@ int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
             break;
     #endif
 
+    #if defined(WOLFSSL_DEVCRYPTO_ECDSA)
+        case CRYPTO_ASYM_ECDSA_SIGN:
+        case CRYPTO_ASYM_ECDSA_VERIFY:
+        case CRYPTO_ASYM_ECC_KEYGEN:
+        case CRYPTO_ASYM_ECC_ECDH:
+            ctx->sess.acipher = type;
+            break;
+    #endif
+
     #if defined(WOLFSSL_DEVCRYPTO_CURVE25519)
-        case CRYPTO_PKHA_MOD_MUL:
+        case CRYPTO_ASYM_MUL_MOD:
             ctx->sess.acipher = type;
             break;
     #endif /* WOLFSSL_DEVCRYPTO_CURVE25519 */
@@ -159,7 +167,6 @@ int wc_DevCryptoCreate(WC_CRYPTODEV* ctx, int type, byte* key, word32 keySz)
         WOLFSSL_MSG("Error starting cryptodev session");
         return WC_DEVCRYPTO_E;
     }
-printf("session id = %08X\n", ctx->sess.ses);
 
 #if defined(CIOCGSESSINFO) && defined(DEBUG_DEVCRYPTO)
 //    sesInfo.ses = ctx->sess.ses;
@@ -241,45 +248,6 @@ void wc_SetupCryptAead(struct crypt_auth_op* crt, WC_CRYPTODEV* dev,
     crt->tag = authTag;
     crt->tag_len = authTagSz;
 }
-
-#if defined(WOLFSSL_DEVCRYPTO_CURVE25519)
-/* 'type' is for which version of mod mul to use i.e. KCOP_FLAG_MONTGOMERY_FORMAT
- * flag con is for constant time (1) or not (0) */
-int wc_DevCryptoMulMod(byte* out, word32* outSz, byte* a, word32 aSz,
-        byte* b, word32 bSz, int type, byte con)
-{
-    int ret = 0;
-    int inIdx = 0, outIdx = 0;
-    struct crypt_kop kop;
-    WC_CRYPTODEV dev;
-
-    if (out == NULL || a == NULL || b == NULL) {
-        return BAD_FUNC_ARG;
-    }
-
-    ret = wc_DevCryptoCreate(&dev, CRYPTO_PKHA_MOD_MUL, NULL, 0);
-
-    XMEMSET(&kop, 0, sizeof(struct crypt_kop));
-    kop.crk_op = CRK_MOD_MUL;
-    kop.crk_flags = type;
-    if (con) {
-        kop.crk_flags |= KCOP_FLAG_TIMING_EQUALIZATION;
-    }
-
-    if (ret == 0) {
-        if (ioctl(dev->cfd, CIOCKEY, &kop)) {
-        #if defined(DEBUG_DEVCRYPTO)
-            perror("Error value with MOD MUL ");
-        #endif
-            WOLFSSL_MSG("Error with MUL_MOD call to ioctl");
-            ret = WC_DEVCRYPTO_E;
-        }
-    }
-
-    wc_DevCryptoFree(&dev);
-    return ret;
-}
-#endif /* WOLFSSL_DEVCRYPTO_CURVE25519 */
 
 #endif /* WOLFSSL_DEVCRYPTO */
 

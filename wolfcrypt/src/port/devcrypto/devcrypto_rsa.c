@@ -78,12 +78,9 @@ static void wc_SetupRsaPublic(struct crypt_kop* kop, WC_CRYPTODEV* dev,
 
 static void wc_SetupRsaPrivate(struct crypt_kop* kop, WC_CRYPTODEV* dev,
         const byte* in, word32 inSz, byte* d, word32 dSz, byte* n, word32 nSz,
-                               byte* p, word32 pSz,
-                               byte* q, word32 qSz,
-                               byte* dp, word32 dpSz,
-                               byte* dq, word32 dqSz,
-                               byte* u,  word32 uSz,
-        byte* out, word32 outSz, int flag)
+        byte* p, word32 pSz, byte* q, word32 qSz, byte* dp, word32 dpSz,
+        byte* dq, word32 dqSz, byte* u,  word32 uSz, byte* out, word32 outSz,
+        int flag)
 {
     int inIdx  = 0;
     int outIdx = 0;
@@ -91,14 +88,13 @@ static void wc_SetupRsaPrivate(struct crypt_kop* kop, WC_CRYPTODEV* dev,
     XMEMSET(kop, 0, sizeof(struct crypt_kop));
     kop->ses      = dev->sess.ses;
     kop->crk_op   = CRK_RSA_PRIVATE;
-    kop->crk_pad1 = dSz;
     kop->crk_flags= flag;
 
     kop->crk_param[inIdx].crp_p     = (byte*)in;
     kop->crk_param[inIdx].crp_nbits = inSz * WOLFSSL_BIT_SIZE;
     inIdx++;
 
-    if (nSz > 0) {
+    if (dpSz == 0 || dqSz == 0) {
         kop->crk_param[inIdx].crp_p     = n;
         kop->crk_param[inIdx].crp_nbits = dSz * WOLFSSL_BIT_SIZE;
         inIdx++;
@@ -111,19 +107,19 @@ static void wc_SetupRsaPrivate(struct crypt_kop* kop, WC_CRYPTODEV* dev,
         kop->crk_param[inIdx].crp_p     = p;
         kop->crk_param[inIdx].crp_nbits = pSz * WOLFSSL_BIT_SIZE;
         inIdx++;
-    
+
         kop->crk_param[inIdx].crp_p     = q;
         kop->crk_param[inIdx].crp_nbits = qSz * WOLFSSL_BIT_SIZE;
         inIdx++;
-    
+
         kop->crk_param[inIdx].crp_p     = dp;
         kop->crk_param[inIdx].crp_nbits = dpSz * WOLFSSL_BIT_SIZE;
         inIdx++;
-    
+
         kop->crk_param[inIdx].crp_p     = dq;
         kop->crk_param[inIdx].crp_nbits = dqSz * WOLFSSL_BIT_SIZE;
         inIdx++;
-    
+
         kop->crk_param[inIdx].crp_p     = u;
         kop->crk_param[inIdx].crp_nbits = uSz * WOLFSSL_BIT_SIZE;
         inIdx++;
@@ -166,10 +162,11 @@ static int _PrivateOperation(const byte* in, word32 inlen, byte* out,
     byte* dp   = NULL;
     byte* u    = NULL;
     byte* n    = NULL;
-    word32 dSz, pSz, qSz, dpSz, dqSz, uSz, nSz;
+    word32 dSz, pSz, qSz, dpSz = 0, dqSz = 0, uSz = 0, nSz;
 
     dev = &key->ctx;
-    dSz = pSz = qSz = nSz = wc_RsaEncryptSize(key);
+    dSz = nSz = wc_RsaEncryptSize(key);
+    pSz = qSz = nSz / 2;
     if (outlen < dSz) {
         WOLFSSL_MSG("Output buffer is too small");
         return BAD_FUNC_ARG;
@@ -189,55 +186,45 @@ static int _PrivateOperation(const byte* in, word32 inlen, byte* out,
     }
 
     if (ret == 0) {
-        byte e[4];
-        word32 eSz = 4;
+        byte e[8];
+        word32 eSz = 8;
         ret = wc_RsaExportKey(key, e, &eSz, n, &nSz, d, &dSz, p, &pSz, q, &qSz);
         if (ret != 0) {
-            printf("Error %d with key export\n", ret);
+            WOLFSSL_MSG("Error with key export");
         }
-
-        dpSz = mp_unsigned_bin_size(&key->dP);
-        dqSz = mp_unsigned_bin_size(&key->dQ);
-        uSz  = mp_unsigned_bin_size(&key->u);
+        if (!key->blackKey) { /* @TODO unexpected results with black key CRT form */
+            dpSz = mp_unsigned_bin_size(&key->dP);
+            dqSz = mp_unsigned_bin_size(&key->dQ);
+            uSz  = mp_unsigned_bin_size(&key->u);
+        }
     }
 
-    {
-        word32 z;
-        printf("nSz = %d\n", nSz);
-        for (z = 0; z < nSz; z++)
-            printf("%02X", n[z]);
-        printf("\n");
-    }
     /* get values for CRT if present */
-#if 0
-    if (ret == 0 && dpSz > 0) {
-        dq = (byte*)XMALLOC(dpSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        dp = (byte*)XMALLOC(dpSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        u  = (byte*)XMALLOC(uSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        if (dq == NULL || dp == NULL || u == NULL) {
-            ret = MEMORY_E;
+    if (!key->blackKey) { /* @TODO unexpected results with black key CRT form */
+        if (ret == 0 && dpSz > 0) {
+            dSz = 0; nSz = 0;
+            dq = (byte*)XMALLOC(dpSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+            dp = (byte*)XMALLOC(dpSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+            u  = (byte*)XMALLOC(uSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+            if (dq == NULL || dp == NULL || u == NULL) {
+                ret = MEMORY_E;
+            }
         }
-    }
-
-    if (ret == 0 && dq != NULL) {
-        if (mp_to_unsigned_bin_len(&key->dQ, dq, dqSz) != MP_OKAY)
-        {
-        }
-    }
-
-    if (ret == 0 && dp != NULL) {
-        if (mp_to_unsigned_bin_len(&key->dP, dp, dpSz) != MP_OKAY)
-        {
-        }
-    }
-
-    if (ret == 0 && u != NULL) {
-        if (mp_to_unsigned_bin_len(&key->u, u, uSz) != MP_OKAY)
-        {
+        if (ret == 0 && dq != NULL &&
+            mp_to_unsigned_bin(&key->dQ, dq) != MP_OKAY) {
+            ret = MP_READ_E;
         }
 
+        if (ret == 0 && dp != NULL &&
+            mp_to_unsigned_bin(&key->dP, dp) != MP_OKAY) {
+            ret = MP_READ_E;
+        }
+
+        if (ret == 0 && u != NULL &&
+            mp_to_unsigned_bin(&key->u, u) != MP_OKAY) {
+            ret = MP_READ_E;
+        }
     }
-#endif
 
     if (ret == 0) {
         if (key->blackKey) {
@@ -461,14 +448,10 @@ int wc_DevCrypto_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
     int  eBufSz;
 
     key->ctx.cfd = -1;
-    ret = wc_DevCryptoCreate(&key->ctx, CRYPTO_ASYM_RSA_KEYGEN, NULL, 0);
-    if (ret != 0) {
-
-    }
-
     nSz = dSz = bSz;
     cSz = pSz = qSz = dpSz = dqSz = bSz/2;
 
+    ret = wc_DevCryptoCreate(&key->ctx, CRYPTO_ASYM_RSA_KEYGEN, NULL, 0);
     if (ret == 0) {
         p  = (byte*)XMALLOC(pSz, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
         q  = (byte*)XMALLOC(qSz, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
@@ -549,18 +532,14 @@ int wc_DevCrypto_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
     wc_DevCryptoFree(&key->ctx);
 
     if (ret == 0) {
+        key->type = RSA_PRIVATE;
         if (kop.crk_flags & (CAAM_KEY_COLOR_BLACK << 8)) {
             key->blackKey = 1;
         }
         mp_read_unsigned_bin(&key->n, n, nSz);
     #ifndef WOLFSSL_RSA_PUBLIC_ONLY
-{
-    int z;
-    printf("d created :");
-    for (z = 0; z < dSz; z++)
-        printf("%02X", d[z]);
-    printf("\n");
-}
+        mp_read_unsigned_bin(&key->p, p, pSz);
+        mp_read_unsigned_bin(&key->q, q, qSz);
         mp_read_unsigned_bin(&key->d, d, dSz);
     #if defined(WOLFSSL_KEY_GEN) || defined(OPENSSL_EXTRA) || !defined(RSA_LOW_MEM)
         mp_read_unsigned_bin(&key->dP, dp, dpSz);

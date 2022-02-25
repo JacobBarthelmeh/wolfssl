@@ -85,6 +85,22 @@ WOLFSSL_LOCAL int wc_DevCrypto_RsaDecrypt(const byte* in, word32 inlen,
 WOLFSSL_LOCAL int wc_DevCrypto_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng);
 WOLFSSL_LOCAL void wc_DevCrypto_RsaFree(RsaKey* key);
 #endif /* WOLFSSL_DEVCRYPTO_RSA */
+
+#if defined(WOLFSSL_DEVCRYPTO_CURVE25519)
+WOLFSSL_LOCAL int wc_DevCryptoCurve25519(byte* out, word32 outSz, const byte* k,
+    word32 kSz, const byte* a, word32 aSz, int endian);
+#endif
+
+#if defined(WOLFSSL_DEVCRYPTO_ECDSA)
+int wc_DevCryptoEccKeyGen(int curveId, int enc, byte* pri, word32 priSz, byte* pub, word32 pubSz);
+int wc_DevCryptoEccEcdh(int curveId, int enc, byte* pri, word32 priSz,
+    byte* pub, word32 pubSz, byte* out, word32 outSz);
+int wc_DevCryptoEccSign(int curveId, int enc, byte* pri, word32 priSz,
+    const byte* hash, word32 hashSz, byte* r, word32 rSz, byte* s, word32 sSz);
+int wc_DevCryptoEccVerify(int curveId, byte* pub, word32 pubSz,
+    const byte* hash, word32 hashSz, byte* r, word32 rSz, byte* s, word32 sSz);
+#endif
+
 #endif /* WOLFSSL_DEVCRYPTO */
 #endif /* WOLFSSL_DEVCRYPTO_H */
 

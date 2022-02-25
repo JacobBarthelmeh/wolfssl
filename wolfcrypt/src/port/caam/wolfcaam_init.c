@@ -111,7 +111,6 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
             #endif /* HAVE_ECC */
             #ifndef NO_RSA
                 case WC_PK_TYPE_RSA:
-                    fprintf(stderr,"calling caam rsa\n");
                     ret = wc_CAAM_Rsa(info->pk.rsa.in,
                                    info->pk.rsa.inLen,
                                    info->pk.rsa.out,
@@ -122,13 +121,27 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
                     break;
 
                 case WC_PK_TYPE_RSA_KEYGEN:
-                    fprintf(stderr,"calling caam rsa keygen\n");
                     ret = wc_CAAM_MakeRsaKey(info->pk.rsakg.key,
                                 info->pk.rsakg.size,
                                 info->pk.rsakg.e,
                                 info->pk.rsakg.rng);
                     break;
             #endif /* !NO_RSA */
+            #ifdef HAVE_CURVE25519
+                case WC_PK_TYPE_CURVE25519_KEYGEN:
+                    ret = wc_CAAM_MakeCurve25519Key(info->pk.curve25519kg.key,
+                        info->pk.curve25519kg.size,
+                        info->pk.curve25519kg.rng);
+                    break;
+
+                case WC_PK_TYPE_CURVE25519:
+                    ret = wc_CAAM_Curve25519(info->pk.curve25519.out,
+                        info->pk.curve25519.outlen,
+                        info->pk.curve25519.private_key,
+                        info->pk.curve25519.public_key,
+                        info->pk.curve25519.endian);
+                    break;
+            #endif /* HAVE_CURVE25519 */
                 default:
                     WOLFSSL_MSG("unsupported public key operation");
             }
@@ -313,6 +326,7 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
  */
 int wc_caamInit(void)
 {
+    int ret = 0;
     WOLFSSL_MSG("Starting interface with CAAM driver");
     if (CAAM_INIT_INTERFACE() != 0) {
         WOLFSSL_MSG("Error initializing CAAM");
@@ -363,8 +377,15 @@ int wc_caamInit(void)
     #endif
 #endif
 
-    return wc_CryptoDev_RegisterDevice(WOLFSSL_CAAM_DEVID, wc_CAAM_router,
+#ifdef WOLFSSL_SECO_CAAM
+    ret = wc_CryptoDev_RegisterDevice(WOLFSSL_SECO_DEVID, wc_CAAM_router,
             NULL);
+#endif
+    if (ret == 0) {
+        ret = wc_CryptoDev_RegisterDevice(WOLFSSL_CAAM_DEVID, wc_CAAM_router,
+            NULL);
+    }
+    return ret;
 }
 
 

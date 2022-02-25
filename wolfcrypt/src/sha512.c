@@ -585,9 +585,7 @@ static int InitSha512_Family(wc_Sha512* sha512, void* heap, int devId,
     sha512->W = NULL;
 #endif
 #ifdef WOLF_CRYPTO_CB
-devId = 7;
     sha512->devId = devId;
-printf("setting sha512 devid to %d\n", devId);
     sha512->devCtx = NULL;
 #endif
 

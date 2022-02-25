@@ -49,7 +49,7 @@ static int InternalTypeToDevcrypto(int t)
         default:
             WOLFSSL_MSG("Unsupported HMAC hash type with devcrypto");
     }
-    return 0;
+    return HASH_TYPE_E;
 }
 
 
@@ -59,7 +59,12 @@ int wc_DevCrypto_HmacSetKey(Hmac* hmac, int t, const byte* key, word32 keySz)
 
     hmac->ctx.cfd = -1;
     hType = InternalTypeToDevcrypto(t);
-    return wc_DevCryptoCreate(&hmac->ctx, hType, (byte*)key, keySz);
+    if (hType < 0) {
+        return hType;
+    }
+    else {
+        return wc_DevCryptoCreate(&hmac->ctx, hType, (byte*)key, keySz);
+    }
 }
 
 

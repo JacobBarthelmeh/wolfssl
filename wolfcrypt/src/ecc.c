@@ -9353,13 +9353,14 @@ int wc_ecc_export_ex(ecc_key* key, byte* qx, word32* qxLen,
     #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A)
         /* Hardware cannot export private portion */
         return NOT_COMPILED_IN;
-    #elif defined(WOLFSSL_SECO_CAAM)
-        if (key->blackKey > 0) {
-            /* Hardware cannot export private portion */
-            WOLFSSL_MSG("Can not export private key from HSM");
-            return NOT_COMPILED_IN;
-        }
     #else
+    #if defined(WOLFSSL_SECO_CAAM)
+//        if (key->blackKey > 0 && key->devId == WOLFSSL_SECO_DEVID) {
+//            /* Hardware cannot export private portion */
+//            WOLFSSL_MSG("Can not export private key from HSM");
+//            return NOT_COMPILED_IN;
+//        }
+    #endif
     #ifdef WOLFSSL_QNX_CAAM
         if (encType == WC_TYPE_BLACK_KEY) {
             if (key->blackKey > 0) {

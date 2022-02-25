@@ -59,9 +59,12 @@ int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg, int msgSz,
                     hmac->keyLen);
         if (ret != 0) {
             WOLFSSL_MSG("Error with set key");
+            if (ret == HASH_TYPE_E) {
+                ret = CRYPTOCB_UNAVAILABLE; /* that hash type is not supported*/
+            }
         }
         else {
-            ForceZero((byte*)hmac->keyRaw, hmac->keyLen);
+            /* only set the key once */
             hmac->keyLen = 0;
         }
     }
@@ -82,7 +85,7 @@ int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg, int msgSz,
             wc_DevCrypto_HmacFree(hmac);
         }
     }
-    return 0;
+    return ret;
 }
 #else
 int wc_CAAM_Hmac(Hmac* hmac, int macType, const byte* msg, int msgSz,

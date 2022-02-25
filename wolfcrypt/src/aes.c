@@ -65,6 +65,10 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
     #include <wolfssl/wolfcrypt/cryptocb.h>
 #endif
 
+#ifdef WOLFSSL_SECO_CAAM
+#include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
+#endif
+
 #ifdef WOLFSSL_IMXRT_DCP
     #include <wolfssl/wolfcrypt/port/nxp/dcp_port.h>
 #endif
@@ -2839,6 +2843,33 @@ static WARN_UNUSED_RESULT int wc_AesDecrypt(
             /* set local values */
             userKey = local;
             keylen = localSz;
+        }
+    #endif
+
+    #ifdef WOLFSSL_SECO_CAAM
+        /* if set to use hardware than import the key */
+        if (aes->devId == WOLFSSL_CAAM_DEVID) {
+            int keyGroup = 1; /* group one was chosen arbitrarily */
+            unsigned int keyIdOut;
+            byte importiv[] = {1,2,3,4,5,6,7,8,9,10,11,12};
+            int importivSz  = 12;
+            int keyType = 0;
+
+    printf("keylen = %d\n", keylen);
+            switch (keylen) {
+                case 16: keyType = CAAM_KEYTYPE_AES128; break;
+                case 24: keyType = CAAM_KEYTYPE_AES192; break;
+                case 32: keyType = CAAM_KEYTYPE_AES256; break;
+            }
+
+            keyIdOut = wc_SECO_WrapKey(0, (byte*)userKey, keylen, importiv, importivSz, keyType,
+                CAAM_KEY_TRANSIENT, keyGroup);
+            printf("keyIdOut created for aes key = %u\n", keyIdOut);
+            if (keyIdOut == 0) {
+                return WC_HW_E;
+            }
+            aes->blackKey = keyIdOut;
+            return 0;
         }
     #endif
 

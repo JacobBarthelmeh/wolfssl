@@ -1904,7 +1904,7 @@ then
 
     AC_CHECK_LIB([hsm_lib],[hsm_open_session])
     AC_CHECK_LIB([seco_nvm_manager],[seco_nvm_manager])
-    LIB_STATIC_ADD="$LIB_STATIC_ADD $SECO_LIB/hsm_lib.a $SECO_LIB/she_lib.a $SECO_LIB/seco_nvm_manager.a"
+    LIB_STATIC_ADD="$LIB_STATIC_ADD $SECO_LIB/hsm_lib.a $SECO_LIB/seco_nvm_manager.a"
     LIB_ADD="$LIB_ADD -lz"
 fi
 

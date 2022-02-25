@@ -28,6 +28,11 @@
 
 #ifdef WOLFSSL_SECO_CAAM
 
+/* unique devId for SECO use on crypto callbacks */
+#ifndef WOLFSSL_SECO_DEVID
+    #define WOLFSSL_SECO_DEVID 8
+#endif
+
 #define Error int
 #define Value int
 #define Boolean int
@@ -54,6 +59,7 @@
 #define LastBuffer 0
 #define Success 1
 
+#include <wolfssl/wolfcrypt/port/caam/wolfcaam_x25519.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_ecdsa.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_cmac.h>
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam_aes.h>
@@ -125,6 +131,7 @@ WOLFSSL_API int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32
     byte* msg, word32 msgSz);
 WOLFSSL_API int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
     byte* msg, word32 msgSz);
+WOLFSSL_API int wc_SECO_GetCounter(void);
 #define CAAM_SEND_REQUEST(type, sz, arg, buf) \
         SynchronousSendRequest((type), (arg), (buf), (sz))
 #define CAAM_INIT_INTERFACE wc_SECOInitInterface

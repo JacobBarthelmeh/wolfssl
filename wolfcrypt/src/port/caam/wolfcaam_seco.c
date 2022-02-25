@@ -494,6 +494,37 @@ int wc_SECO_DeleteKey(unsigned int keyId, int group, int keyTypeIn)
 }
 
 
+/* can return a negative value on error */
+int wc_SECO_GetCounter()
+{
+    op_get_info_args_t op_args;
+    uint32_t sab_id;
+    uint8_t  chip_id;
+    uint16_t count;
+    uint16_t cycle;
+    uint32_t version;
+    uint32_t version_ext;
+    uint8_t  fips;
+    hsm_err_t err;
+
+    op_args.user_sab_id    = &sab_id;
+    op_args.chip_unique_id = &chip_id;
+    op_args.chip_monotonic_counter = &count;
+    op_args.chip_life_cycle = &cycle;
+    op_args.version     = &version;
+    op_args.version_ext = &version_ext;
+    op_args.fips_mode   = &fips;
+
+    err = hsm_get_info(hsm_session, &op_args);
+    if (wc_TranslateHSMError(0, err) == Success) {
+        return count;
+    }
+    else {
+        return -1;
+    }
+}
+
+
 #if defined(WOLFSSL_CMAC)
 void wc_SECO_CMACSetKeyID(Cmac* cmac, int keyId)
 {
@@ -602,8 +633,8 @@ int wc_SECO_ECDSA_CreateSignature(ecc_key *key, byte* sigOut, word32 sigOutSz,
         sig_args.signature_size = sigOutSz;
 
         sig_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
-        //sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_DIGEST;
-        sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_MESSAGE;
+        sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_DIGEST;
+        //sig_args.flags     = HSM_OP_GENERATE_SIGN_FLAGS_INPUT_MESSAGE;
 
     #ifdef DEBUG_SECO
         printf("Trying to create an ECC signature:\n");
@@ -671,8 +702,8 @@ int wc_SECO_ECDSA_VerifySignature(ecc_key* key, byte* sig, word32 sigSz,
         sig_ver_args.signature_size = rsRSz;
         sig_ver_args.scheme_id = HSM_SIGNATURE_SCHEME_ECDSA_NIST_P256_SHA_256;
 
-        //sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_DIGEST;
-        sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_MESSAGE;
+        sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_DIGEST;
+        //sig_ver_args.flags = HSM_OP_VERIFY_SIGN_FLAGS_INPUT_MESSAGE;
 
     #ifdef DEBUG_SECO
         {
@@ -1542,31 +1573,10 @@ int SynchronousSendRequest(int type, unsigned int args[4], CAAM_BUFFER *buf,
 
     case CAAM_ECDSA_SIGN:
         //err = wc_SECO_ECDSA_Sign(args, buf, sz);
-
-        /* private key */
-        if (args[0] == 1) {
-            privkey = buf[0].TheAddress;
-        }
-        else {
-            //SETIOV(&in[inIdx], buf[0].TheAddress, buf[0].Length);
-        }
-
-        /* msg */
-        //SETIOV(&in[inIdx], buf[1].TheAddress, buf[1].Length);
-
-        /* r out */
-        //SETIOV(&out[outIdx], buf[2].TheAddress, buf[2].Length);
-
-        /* s out */
-        //SETIOV(&out[outIdx], buf[3].TheAddress, buf[3].Length);
-
-//        cmd = WC_CAAM_ECDSA_SIGN;
         break;
 
     case CAAM_ECDSA_ECDH:
-#if 0
-        err = wc_SECO_ECDSA_ECDH(args, buf, sz);
-#endif
+        //err = wc_SECO_ECDSA_ECDH(args, buf, sz);
         break;
 
     case CAAM_BLOB_ENCAP:

@@ -921,7 +921,7 @@ static const char* bench_result_words2[][5] = {
 #endif
 
 /* Asynchronous helper macros */
-#ifdef WOLFSSL_QNX_CAAM
+#ifdef WOLFSSL_CAAM
 #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
 static THREAD_LS_T int devId = WOLFSSL_CAAM_DEVID;
 #else
@@ -931,7 +931,7 @@ static THREAD_LS_T int devId = INVALID_DEVID;
 #ifdef WOLFSSL_ASYNC_CRYPT
     static WOLF_EVENT_QUEUE eventQueue;
 
-    #define BENCH_ASYNC_GET_DEV(obj)      (&(obj)->asyncDev)
+    #define BENCH_ASYNC_CAAM_DEVIDGET_DEV(obj)      (&(obj)->asyncDev)
     #define BENCH_ASYNC_GET_NAME(doAsync) (doAsync) ? "HW" : "SW"
     #define BENCH_MAX_PENDING             (WOLF_ASYNC_MAX_PENDING)
 
@@ -4870,8 +4870,7 @@ static void bench_rsaKeyGen_helper(int doAsync, int keySz)
                                                0, &times, genTimes, &pending)) {
 
                     wc_FreeRsaKey(&genKey[i]);
-                    ret = wc_InitRsaKey_ex(&genKey[i], HEAP_HINT,
-                        doAsync ? devId : INVALID_DEVID);
+                    ret = wc_InitRsaKey_ex(&genKey[i], HEAP_HINT, devId);
                     if (ret < 0) {
                         goto exit;
                     }
@@ -5266,8 +5265,7 @@ void bench_rsa(int doAsync)
     /* init keys */
     for (i = 0; i < BENCH_MAX_PENDING; i++) {
         /* setup an async context for each key */
-        ret = wc_InitRsaKey_ex(&rsaKey[i], HEAP_HINT,
-                               doAsync ? devId : INVALID_DEVID);
+        ret = wc_InitRsaKey_ex(&rsaKey[i], HEAP_HINT, devId);
         if (ret < 0) {
             goto exit_bench_rsa;
         }
@@ -5346,8 +5344,7 @@ void bench_rsa_key(int doAsync, int rsaKeySz)
             if (!isPending[i]) { /* if making the key is pending then just call
                                   * wc_MakeRsaKey again */
                 /* setup an async context for each key */
-                if (wc_InitRsaKey_ex(&rsaKey[i], HEAP_HINT,
-                                     doAsync ? devId : INVALID_DEVID) < 0) {
+                if (wc_InitRsaKey_ex(&rsaKey[i], HEAP_HINT, devId) < 0) {
                     goto exit_bench_rsa_key;
                 }
 
@@ -6061,8 +6058,8 @@ void bench_curve25519KeyAgree(void)
     const char**desc = bench_desc_words[lng_index];
     word32 x = 0;
 
-    wc_curve25519_init(&genKey);
-    wc_curve25519_init(&genKey2);
+    wc_curve25519_init_ex(&genKey,  HEAP_HINT, devId);
+    wc_curve25519_init_ex(&genKey2, HEAP_HINT, devId);
 
     ret = wc_curve25519_make_key(&gRng, 32, &genKey);
     if (ret != 0) {
