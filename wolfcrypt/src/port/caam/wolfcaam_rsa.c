@@ -89,6 +89,7 @@ int wc_CAAM_Rsa(const byte* in, word32 inLen, byte* out, word32* outLen,
     return CRYPTOCB_UNAVAILABLE;
 }
 
+#ifdef WOLFSSL_KEY_GEN
 int wc_CAAM_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
 {
     (void)size;
@@ -97,6 +98,7 @@ int wc_CAAM_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
     (void)rng;
     return CRYPTOCB_UNAVAILABLE;
 }
+#endif
 #endif /* WOLFSSL_DEVCRYPTO_RSA */
 
 #endif

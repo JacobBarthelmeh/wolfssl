@@ -360,6 +360,7 @@ int wc_DevCrypto_RsaEncrypt(const byte* in, word32 inlen, byte* out,
 }
 
 
+#ifdef WOLFSSL_KEY_GEN
 /* generate p and q prive values for RSA key generation
  * nSz is size of key in bits
  */
@@ -569,14 +570,7 @@ int wc_DevCrypto_MakeRsaKey(RsaKey* key, int size, long e, WC_RNG* rng)
     (void)rng;
     return ret;
 }
-
-#if 0
-int wc_DevCrypto_RsaInit()
-{
-    return 0;
-}
-#endif
-
+#endif /* WOLFSSL_KEY_GEN */
 
 void wc_DevCrypto_RsaFree(RsaKey* rsa)
 {

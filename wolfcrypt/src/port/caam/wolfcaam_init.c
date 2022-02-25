@@ -89,11 +89,13 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
                             info->pk.eccverify.key, devId);
                     break;
 
+                #ifdef WOLFSSL_KEY_GEN
                 case WC_PK_TYPE_EC_KEYGEN:
                     ret = wc_CAAM_MakeEccKey(info->pk.eckg.rng,
                             info->pk.eckg.size, info->pk.eckg.key,
                             info->pk.eckg.curveId, devId);
                     break;
+                #endif /* WOLFSSL_KEY_GEN */
 
                 case WC_PK_TYPE_ECDH:
                     ret = wc_CAAM_Ecdh(info->pk.ecdh.private_key,
@@ -119,12 +121,14 @@ static int wc_CAAM_router(int devId, wc_CryptoInfo* info, void* ctx)
                                    info->pk.rsa.rng);
                     break;
 
+                #ifdef WOLFSSL_KEY_GEN
                 case WC_PK_TYPE_RSA_KEYGEN:
                     ret = wc_CAAM_MakeRsaKey(info->pk.rsakg.key,
                                 info->pk.rsakg.size,
                                 info->pk.rsakg.e,
                                 info->pk.rsakg.rng);
                     break;
+                #endif
             #endif /* !NO_RSA */
             #ifdef HAVE_CURVE25519
                 case WC_PK_TYPE_CURVE25519_KEYGEN:

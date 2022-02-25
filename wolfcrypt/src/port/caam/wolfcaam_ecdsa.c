@@ -87,7 +87,7 @@ static int wc_CAAM_DevEccSign(const byte* in, int inlen, byte* out,
             r, keySz, s, keySz);
 
     /* convert signature from raw bytes to signature format */
-    {
+    if (ret == 0) {
         mp_int mpr, mps;
 
         mp_init(&mpr);
@@ -105,7 +105,7 @@ static int wc_CAAM_DevEccSign(const byte* in, int inlen, byte* out,
         }
     }
 
-    return MP_OKAY;
+    return ret;
 }
 
 
@@ -205,6 +205,7 @@ static int wc_CAAM_DevEcdh(ecc_key* private_key, ecc_key* public_key, byte* out,
 }
 
 
+#ifdef WOLFSSL_KEY_GEN
 /* [ private black key ] [ x , y ] */
 static int wc_CAAM_DevMakeEccKey(WC_RNG* rng, int keySize, ecc_key* key,
     int curveId)
@@ -235,6 +236,7 @@ static int wc_CAAM_DevMakeEccKey(WC_RNG* rng, int keySize, ecc_key* key,
     (void)rng;
     return ret;
 }
+#endif /* WOLFSSL_KEY_GEN */
 
 #endif /* WOLFSSL_DEVCRYPTO_ECDSA */
 
@@ -376,6 +378,7 @@ int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
         }
     }
 
+    (void)devId;
     return MP_OKAY;
 }
 
@@ -504,6 +507,7 @@ int wc_CAAM_EccVerify(const byte* sig, word32 siglen, const byte* hash,
         mp_free(&s);
     }
 
+    (void)devId;
     return ret;
 }
 
@@ -599,6 +603,7 @@ int wc_CAAM_Ecdh(ecc_key* private_key, ecc_key* public_key, byte* out,
     args[2] = ecdsel;
     args[3] = keySz;
     ret = wc_caamAddAndWait(buf, idx, args, CAAM_ECDSA_ECDH);
+    (void)devId;
     if (ret == 0) {
         *outlen = keySz;
         return MP_OKAY;
@@ -609,6 +614,7 @@ int wc_CAAM_Ecdh(ecc_key* private_key, ecc_key* public_key, byte* out,
 }
 
 
+#ifdef WOLFSSL_KEY_GEN
 /* [ private black key ] [ x , y ] */
 int wc_CAAM_MakeEccKey(WC_RNG* rng, int keySize, ecc_key* key, int curveId,
     int devId)
@@ -644,6 +650,7 @@ int wc_CAAM_MakeEccKey(WC_RNG* rng, int keySize, ecc_key* key, int curveId,
     }
 
     (void)rng;
+    (void)devId;
 
     buf[0].TheAddress = (CAAM_ADDRESS)s;
     buf[0].Length     = keySize;
@@ -677,6 +684,7 @@ int wc_CAAM_MakeEccKey(WC_RNG* rng, int keySize, ecc_key* key, int curveId,
     }
     return -1;
 }
+#endif /* WOLFSSL_KEY_GEN */
 
 
 /* if dealing with a black encrypted key then it can not be checked */

@@ -52,6 +52,10 @@ int wc_CAAM_Cmac(Cmac* cmac, const byte* key, word32 keySz, const byte* in,
         return BAD_FUNC_ARG;
     }
 
+    if (out != NULL && outSz == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
     if (key != NULL || ctx != NULL) {
         XMEMSET(&cmac->aes, 0, sizeof(Aes));
         if (ctx != NULL) {
@@ -177,6 +181,10 @@ int wc_CAAM_Cmac(Cmac* cmac, const byte* key, word32 keySz, const byte* in,
         word32 add = (sz < (int)(AES_BLOCK_SIZE - cmac->bufferSz))?
                                               (word32)sz :
                                               (AES_BLOCK_SIZE - cmac->bufferSz);
+
+        if (pt == NULL) {
+            return MEMORY_E;
+        }
         XMEMCPY(&cmac->buffer[cmac->bufferSz], pt, add);
         cmac->bufferSz += add;
     }
