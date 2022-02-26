@@ -39,12 +39,11 @@
 
 #define MAX_SECO_TIMEOUT 1000
 
-/* for devctl use */
-int caamFd = -1;
 wolfSSL_Mutex caamMutex;
 static pthread_t tid;
 static uint32_t nvm_status = 0;
 static hsm_hdl_t hsm_session;
+static hsm_hdl_t key_store_hdl;
 static int wc_TranslateHSMError(int current, hsm_err_t err);
 
 static void* hsm_storage_init(void* args)
@@ -120,17 +119,6 @@ void wc_SECOFreeInterface()
 
     wc_FreeMutex(&caamMutex);
 }
-
-static wc_SECO_KEK_cb SECO_KEK_function = NULL;
-hsm_hdl_t key_store_hdl;
-
-
-/* set callback for KEK to be used with non encrypted AES keys */
-void wc_SECO_SetKEKCb(wc_SECO_KEK_cb cb)
-{
-    SECO_KEK_function = cb;
-}
-
 
 /* open the key management HSM handle
  * return 0 on success

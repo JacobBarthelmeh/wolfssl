@@ -108,9 +108,6 @@ WOLFSSL_LOCAL int SynchronousSendRequest(int type, unsigned int args[4],
 WOLFSSL_LOCAL int wc_SECOInitInterface(void);
 WOLFSSL_LOCAL void wc_SECOFreeInterface(void);
 
-typedef int (*wc_SECO_KEK_cb)(byte* encKEK, word32* encKEKSz, byte* KEKID);
-WOLFSSL_API void wc_SECO_SetKEKCb(wc_SECO_KEK_cb cb);
-
 WOLFSSL_API int wc_SECO_OpenHSM(word32 keyId, word32 nonce, word16 maxUpdates,
                                 byte flag);
 WOLFSSL_API int wc_SECO_CloseHSM(void);
