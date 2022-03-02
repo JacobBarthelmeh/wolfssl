@@ -739,6 +739,7 @@ static hsm_err_t wc_SECO_ECDSA_Verify(unsigned int args[4], CAAM_BUFFER *buf,
 
 static hsm_err_t wc_SECO_CMAC(unsigned int args[4], CAAM_BUFFER* buf, int sz)
 {
+    unsigned int blackKey;
     hsm_err_t err;
     hsm_hdl_t mac_hdl;
     open_svc_mac_args_t  mac_svc_args;
@@ -750,9 +751,44 @@ static hsm_err_t wc_SECO_CMAC(unsigned int args[4], CAAM_BUFFER* buf, int sz)
         return HSM_GENERAL_ERROR;
     }
 
+    blackKey = args[2];
+    /* black key listed as 0, the key needs to be imported */
+    if (blackKey == 0) {
+        int keyGroup = 1; /* group one was chosen arbitrarily */
+        byte importIV[GCM_NONCE_MID_SZ];
+        int importIVSz = GCM_NONCE_MID_SZ;
+        int keyType = 0;
+        WC_RNG rng;
+
+        if (wc_InitRng(&rng) != 0) {
+            WOLFSSL_MSG("RNG init for IV failed");
+            return HSM_GENERAL_ERROR;
+        }
+
+        if (wc_RNG_GenerateBlock(&rng, importIV, importIVSz) != 0) {
+            WOLFSSL_MSG("Generate IV failed");
+            wc_FreeRng(&rng);
+            return HSM_GENERAL_ERROR;
+        }
+        wc_FreeRng(&rng);
+
+        switch (buf[0].Length) {
+            case AES_128_KEY_SIZE: keyType = CAAM_KEYTYPE_AES128; break;
+            case AES_192_KEY_SIZE: keyType = CAAM_KEYTYPE_AES192; break;
+            case AES_256_KEY_SIZE: keyType = CAAM_KEYTYPE_AES256; break;
+        }
+
+        blackKey = wc_SECO_WrapKey(0, (byte*)buf[0].TheAddress, buf[0].Length,
+            importIV, importIVSz, keyType, CAAM_KEY_TRANSIENT, keyGroup);
+
+        if (blackKey == 0) {
+            return WC_HW_E;
+        }
+    }
+
     err = hsm_open_mac_service(key_store_hdl, &mac_svc_args, &mac_hdl);
     if (err == HSM_NO_ERROR) {
-        mac_args.key_identifier = args[2]; /* blackKey / HSM */
+        mac_args.key_identifier = blackKey; /* blackKey / HSM */
         mac_args.algorithm = HSM_OP_MAC_ONE_GO_ALGO_AES_CMAC;
         mac_args.flags     = HSM_OP_MAC_ONE_GO_FLAGS_MAC_GENERATION;
 
@@ -1051,6 +1087,11 @@ word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
         }
 
         if (ret == 0) {
+            /* use software implementation for encrypting with KEK */
+            ret = wc_AesInit(&aes, NULL, INVALID_DEVID);
+        }
+
+        if (ret == 0) {
             ret = wc_AesGcmSetKey(&aes, KEK, KEKSz);
             if (ret != 0) {
                 WOLFSSL_MSG("error with AES-GCM set key");
@@ -1064,7 +1105,7 @@ word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
         #endif
     }
     else {
-        wc_AesInit(&aes, NULL, WOLFSSL_CAAM_DEVID);
+        wc_AesInit(&aes, NULL, WOLFSSL_SECO_DEVID);
         wc_SECO_AesSetKeyID(&aes, keyId);
     }
 
@@ -1096,7 +1137,7 @@ word32 wc_SECO_WrapKey(word32 keyId, byte* in, word32 inSz, byte* iv,
             printf("\tgroup     : %u\n", key_args.key_group);
             printf("\tkey type  : %d\n", key_args.key_type);
             printf("\tkey info  : %d\n", key_args.key_info);
-            printf("\tkey input Size : %d\n", key_args.input_size);
+            printf("\tkey input Size [iv | key | tag ]: %d\n", key_args.input_size);
             printf("\t[iv]  = ");
             for (i = 0; i < 12; i++)
                 printf("%02X", key_args.input_data[i]);

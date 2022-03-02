@@ -72,8 +72,8 @@ static int wc_CAAM_DevEccSign(const byte* in, int inlen, byte* out,
         dp = wc_ecc_get_curve_params(key->idx);
     }
 
-    if (dp->id != ECC_SECP256R1) {
-        WOLFSSL_MSG("Limiting CAAM to P256 for now");
+    if (dp->id != ECC_SECP256R1 && dp->id != ECC_SECP384R1) {
+        WOLFSSL_MSG("Limiting CAAM to P256 and P384 for now");
         return CRYPTOCB_UNAVAILABLE;
     }
     keySz  = wc_ecc_size(key);
@@ -307,8 +307,8 @@ int wc_CAAM_EccSign(const byte* in, int inlen, byte* out, word32* outlen,
         dp = wc_ecc_get_curve_params(key->idx);
     }
 
-    if (dp->id != ECC_SECP256R1) {
-        WOLFSSL_MSG("Limiting CAAM to P256 for now");
+    if (dp->id != ECC_SECP256R1 && dp->id != ECC_SECP384R1) {
+        WOLFSSL_MSG("Limiting CAAM to P256/P384 for now");
         return CRYPTOCB_UNAVAILABLE;
     }
 
@@ -413,9 +413,8 @@ static int wc_CAAM_EccVerify_ex(mp_int* r, mp_int *s, const byte* hash,
         dp = wc_ecc_get_curve_params(key->idx);
     }
 
-    /* right now only support P256 @TODO */
-    if (dp->id != ECC_SECP256R1 &&
-        dp->id != ECC_SECP384R1) {
+    /* right now only support P256/P384 @TODO */
+    if (dp->id != ECC_SECP256R1 && dp->id != ECC_SECP384R1) {
         WOLFSSL_MSG("Only support P256 and P384 verify with CAAM for now");
         return CRYPTOCB_UNAVAILABLE;
     }
@@ -638,8 +637,8 @@ int wc_CAAM_MakeEccKey(WC_RNG* rng, int keySize, ecc_key* key, int curveId,
     /* if set to default curve then assume SECP256R1 */
     if (keySize == 32 && curveId == ECC_CURVE_DEF) curveId = ECC_SECP256R1;
 
-    if (curveId != ECC_SECP256R1) {
-        /* currently only implemented P256 support */
+    if (curveId != ECC_SECP256R1 && curveId != ECC_SECP384R1) {
+        /* currently only implemented P256/P384 support */
         return CRYPTOCB_UNAVAILABLE;
     }
 

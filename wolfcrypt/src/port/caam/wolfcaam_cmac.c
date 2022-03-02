@@ -58,13 +58,14 @@ int wc_CAAM_Cmac(Cmac* cmac, const byte* key, word32 keySz, const byte* in,
 
     if (key != NULL || ctx != NULL) {
         XMEMSET(&cmac->aes, 0, sizeof(Aes));
-        if (ctx != NULL) {
-            cmac->blackKey = 1;
-            XMEMCPY((byte*)cmac->aes.key, (byte*)ctx, keySz + 16);
-        }
-        else {
-            cmac->blackKey = 0;
-            XMEMCPY((byte*)cmac->aes.key, (byte*)key, keySz);
+        if (cmac->blackKey == 0) {
+            if (ctx != NULL) {
+                cmac->blackKey = 1;
+                XMEMCPY((byte*)cmac->aes.key, (byte*)ctx, keySz + 16);
+            }
+            else {
+                XMEMCPY((byte*)cmac->aes.key, (byte*)key, keySz);
+            }
         }
         cmac->keylen = keySz;
         cmac->initialized = 0;

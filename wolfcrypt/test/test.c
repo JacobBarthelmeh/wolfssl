@@ -354,7 +354,7 @@
     #define HASH_SIZE_LIMIT
 #endif
 
-#if defined(WOLFSSL_CERT_GEN) && defined(WOLFSSL_MULTI_ATTRIB)
+#if defined(WOLFSSL_CERT_GEN) || defined(WOLFSSL_MULTI_ATTRIB)
 static void initDefaultName(void);
 #endif
 

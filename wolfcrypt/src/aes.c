@@ -2851,18 +2851,31 @@ static WARN_UNUSED_RESULT int wc_AesDecrypt(
         if (aes->devId == WOLFSSL_SECO_DEVID) {
             int keyGroup = 1; /* group one was chosen arbitrarily */
             unsigned int keyIdOut;
-            byte importiv[] = {1,2,3,4,5,6,7,8,9,10,11,12};
-            int importivSz  = 12;
+            byte importiv[GCM_NONCE_MID_SZ];
+            int importivSz = GCM_NONCE_MID_SZ;
             int keyType = 0;
+            WC_RNG rng;
 
-            switch (keylen) {
-                case 16: keyType = CAAM_KEYTYPE_AES128; break;
-                case 24: keyType = CAAM_KEYTYPE_AES192; break;
-                case 32: keyType = CAAM_KEYTYPE_AES256; break;
+            if (wc_InitRng(&rng) != 0) {
+                WOLFSSL_MSG("RNG init for IV failed");
+                return WC_HW_E;
             }
 
-            keyIdOut = wc_SECO_WrapKey(0, (byte*)userKey, keylen, importiv, importivSz, keyType,
-                CAAM_KEY_TRANSIENT, keyGroup);
+            if (wc_RNG_GenerateBlock(&rng, importiv, importivSz) != 0) {
+                WOLFSSL_MSG("Generate IV failed");
+                wc_FreeRng(&rng);
+                return WC_HW_E;
+            }
+            wc_FreeRng(&rng);
+
+            switch (keylen) {
+                case AES_128_KEY_SIZE: keyType = CAAM_KEYTYPE_AES128; break;
+                case AES_192_KEY_SIZE: keyType = CAAM_KEYTYPE_AES192; break;
+                case AES_256_KEY_SIZE: keyType = CAAM_KEYTYPE_AES256; break;
+            }
+
+            keyIdOut = wc_SECO_WrapKey(0, (byte*)userKey, keylen, importiv,
+                importivSz, keyType, CAAM_KEY_TRANSIENT, keyGroup);
             if (keyIdOut == 0) {
                 return WC_HW_E;
             }
@@ -4711,6 +4724,11 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
         if (haveAESNI)
             return ret;
     #endif /* WOLFSSL_AESNI */
+    #if defined(WOLFSSL_SECO_CAAM)
+        if (aes->devId == WOLFSSL_SECO_DEVID) {
+            return ret;
+        }
+    #endif /* WOLFSSL_SECO_CAAM */
 
 #if !defined(FREESCALE_LTC_AES_GCM)
     if (ret == 0)
