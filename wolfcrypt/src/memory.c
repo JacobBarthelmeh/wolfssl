@@ -379,6 +379,34 @@ void wolfSSL_Free(void *ptr)
     }
 }
 
+
+/* calls either XREALLOC or maps to the NO realloc function */
+#ifdef WOLFSSL_DEBUG_MEMORY
+void* wolfSSL_XRealloc(void *p, size_t pSz, size_t n, void* heap, int type,
+    const char* func, const char* file, unsigned int line)
+#else
+void* wolfSSL_XRealloc(void *ptr, size_t pSz, size_t n, void* heap, int type)
+#endif
+{
+    void* ret;
+
+#ifdef WOLFSSL_NO_REALLOC
+    #ifdef WOLFSSL_DEBUG_MEMORY
+    ret = wolfSSL_NoRealloc(p, pSz, n, heap, type, func, file, line);
+    #else
+    ret = wolfSSL_NoRealloc(ptr, pSz, n, heap, type);
+    #endif
+#else
+    #ifdef WOLFSSL_DEBUG_MEMORY
+    ret = XREALLOC(p, n, heap, type, func, file, line);
+    #else
+    ret = XREALLOC(p, n, heap, type);
+    #endif
+#endif
+    return ret;
+}
+
+#ifndef WOLFSSL_NO_REALLOC
 #ifdef WOLFSSL_DEBUG_MEMORY
 void* wolfSSL_Realloc(void *ptr, size_t size, const char* func, unsigned int line)
 #else
@@ -432,6 +460,7 @@ void* wolfSSL_Realloc(void *ptr, size_t size)
     return res;
 #endif
 }
+#endif /* WOLFSSL_NO_REALLOC */
 #endif /* WOLFSSL_STATIC_MEMORY */
 
 #ifdef WOLFSSL_STATIC_MEMORY
@@ -1235,6 +1264,39 @@ void XFREE(void *p, void* heap, int type)
 }
 
 #endif /* HAVE_IO_POOL */
+
+#ifdef WOLFSSL_NO_REALLOC
+#ifdef WOLFSSL_DEBUG_MEMORY
+void* wolfSSL_NoRealloc(void *p, size_t pSz, size_t n, void* heap, int type,
+    const char* func, const char* file, unsigned int line)
+#else
+void* wolfSSL_NoRealloc(void *ptr, size_t pSz, size_t n, void* heap, int type)
+#endif
+{
+    void* ret;
+
+    #ifdef WOLFSSL_DEBUG_MEMORY
+        fprintf(stderr, "Avoiding ReAlloc\n");
+        ret = (void*)XMALLOC(n, heap, type, func, file, line);
+        if (ret != NULL) {
+            if (ptr != NULL) {
+                XMEMCPY(ret, ptr, pSz);
+                XFREE(ptr, heap, type, func, file, line);
+            }
+        }
+    #else
+        ret = (void*)XMALLOC(n, heap, type);
+        if (ret != NULL) {
+            if (ptr != NULL) {
+                XMEMCPY(ret, ptr, pSz);
+                XFREE(ptr, heap, type);
+            }
+        }
+    #endif
+
+    return ret;
+}
+#endif
 
 #ifdef WOLFSSL_MEMORY_LOG
 void *xmalloc(size_t n, void* heap, int type, const char* func,

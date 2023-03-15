@@ -347,8 +347,13 @@ static int der_to_enc_pem_alloc(unsigned char* der, int derSz,
         byte *tmpBuf;
 
         /* Add space for padding. */
+    #ifdef WOLFSSL_NO_REALLOC
+        tmpBuf = (byte*)XREALLOC(der, derSz, derSz + blockSz, heap,
+            DYNAMIC_TYPE_TMP_BUFFER);
+    #else
         tmpBuf = (byte*)XREALLOC(der, derSz + blockSz, heap,
             DYNAMIC_TYPE_TMP_BUFFER);
+    #endif
         if (tmpBuf == NULL) {
             WOLFSSL_ERROR_MSG("Extending DER buffer failed");
             XFREE(der, NULL, DYNAMIC_TYPE_TMP_BUFFER);

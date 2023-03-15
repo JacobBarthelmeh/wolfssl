@@ -8422,7 +8422,7 @@ static DtlsFragBucket* DtlsMsgCombineFragBuckets(DtlsMsg* msg,
     }
 
     {
-#ifdef XREALLOC
+#if defined(XREALLOC) && !defined(WOLFSSL_NO_REALLOC)
         DtlsFragBucket* tmp = (DtlsFragBucket*)XREALLOC(*chosenBucket,
                 sizeof(DtlsFragBucket) + newSz, heap, DYNAMIC_TYPE_DTLS_FRAG);
 #else
@@ -8431,7 +8431,7 @@ static DtlsFragBucket* DtlsMsgCombineFragBuckets(DtlsMsg* msg,
 #endif
         if (tmp == NULL)
             return NULL;
-#ifndef XREALLOC
+#if !defined(XREALLOC) || defined(WOLFSSL_NO_REALLOC)
         XMEMCPY(tmp, *chosenBucket, sizeof(DtlsFragBucket) +
                 (*chosenBucket)->m.m.sz);
 #endif
@@ -8442,7 +8442,7 @@ static DtlsFragBucket* DtlsMsgCombineFragBuckets(DtlsMsg* msg,
                 beforeNext = beforeNext->m.m.next;
             beforeNext->m.m.next = tmp;
         }
-#ifndef XREALLOC
+#if !defined(XREALLOC) || defined(WOLFSSL_NO_REALLOC)
         XFREE(*chosenBucket, heap, DYNAMIC_TYPE_DTLS_FRAG);
 #endif
         newBucket = *chosenBucket = tmp;
@@ -31157,8 +31157,11 @@ static int DoSessionTicket(WOLFSSL* ssl, const byte* input, word32* inOutIdx,
                          * generated in the renegotiation. */
                         if (ssl->buffers.serverDH_Pub.length <
                                 ssl->buffers.serverDH_P.length) {
-                            byte* tmp = (byte*)XREALLOC(
+                            byte* tmp;
+
+                            tmp = (byte*)wolfSSL_XRealloc(
                                     ssl->buffers.serverDH_Pub.buffer,
+                                    ssl->buffers.serverDH_Pub.length,
                                     ssl->buffers.serverDH_P.length +
                                         OPAQUE16_LEN,
                                     ssl->heap, DYNAMIC_TYPE_PUBLIC_KEY);
@@ -31263,8 +31266,11 @@ static int DoSessionTicket(WOLFSSL* ssl, const byte* input, word32* inOutIdx,
                          * generated in the renegotiation. */
                         if (ssl->buffers.serverDH_Pub.length <
                                 ssl->buffers.serverDH_P.length) {
-                            byte* tmp = (byte*)XREALLOC(
+                            byte* tmp;
+
+                            tmp = (byte*)wolfSSL_XRealloc(
                                     ssl->buffers.serverDH_Pub.buffer,
+                                    ssl->buffers.serverDH_Pub.length,
                                     ssl->buffers.serverDH_P.length +
                                         OPAQUE16_LEN,
                                     ssl->heap, DYNAMIC_TYPE_PUBLIC_KEY);

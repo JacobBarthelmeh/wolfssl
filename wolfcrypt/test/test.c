@@ -13600,27 +13600,22 @@ WOLFSSL_TEST_SUBROUTINE int memory_test(void)
     }
 #endif
 
-#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_NO_MALLOC) && defined(XREALLOC)
+#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_NO_MALLOC) && \
+    defined(XREALLOC) && !defined(WOLFSSL_NO_REALLOC)
     /* realloc test */
     {
         byte *c = NULL;
         byte *b = (byte*)XMALLOC(MEM_TEST_SZ, HEAP_HINT,
                                  DYNAMIC_TYPE_TMP_BUFFER);
-        #ifndef WOLFSSL_NO_REALLOC
         if (b) {
-            c = (byte*)XREALLOC(b, MEM_TEST_SZ+sizeof(word32), HEAP_HINT,
-                                DYNAMIC_TYPE_TMP_BUFFER);
+            c = (byte*)XREALLOC(b, MEM_TEST_SZ, MEM_TEST_SZ+sizeof(word32) 
+                HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
             if (c)
                 b = c;
         }
-        #endif
         if (b)
             XFREE(b, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-        if ((b == NULL)
-        #ifndef WOLFSSL_NO_REALLOC
-                || (c == NULL)
-        #endif
-        ) {
+        if ((b == NULL) || (c == NULL)) {
             return WC_TEST_RET_ENC_ERRNO;
         }
     }
@@ -43879,7 +43874,7 @@ WOLFSSL_TEST_SUBROUTINE int memcb_test(void)
 {
     int ret = 0;
 #if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_LINUXKM) && \
-    !defined(WOLFSSL_STATIC_MEMORY)
+    !defined(WOLFSSL_STATIC_MEMORY) && !defined(WOLFSSL_NO_REALLOC)
     byte* b = NULL;
 #endif
     wolfSSL_Malloc_cb  mc;
@@ -43892,7 +43887,7 @@ WOLFSSL_TEST_SUBROUTINE int memcb_test(void)
         return WC_TEST_RET_ENC_EC(ret);
 
 #if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_LINUXKM) && \
-    !defined(WOLFSSL_STATIC_MEMORY)
+    !defined(WOLFSSL_STATIC_MEMORY) && !defined(WOLFSSL_NO_REALLOC)
 
     /* test realloc */
     b = (byte*)XREALLOC(b, 1024, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
@@ -43928,7 +43923,7 @@ WOLFSSL_TEST_SUBROUTINE int memcb_test(void)
 #endif /* !WOLFSSL_NO_MALLOC */
 
 #if !defined(WOLFSSL_NO_MALLOC) && !defined(WOLFSSL_LINUXKM) && \
-    !defined(WOLFSSL_STATIC_MEMORY)
+    !defined(WOLFSSL_STATIC_MEMORY) && !defined(WOLFSSL_NO_REALLOC)
 exit_memcb:
 
     /* reset malloc/free/realloc counts */

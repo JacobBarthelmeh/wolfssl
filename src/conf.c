@@ -771,8 +771,8 @@ static char* expandValue(WOLFSSL_CONF *conf, const char* section,
                     /* This will allocate slightly more memory than necessary
                      * but better be safe */
                     strLen += valueLen;
-                    newRet = (char*)XREALLOC(ret, strLen + 1, NULL,
-                            DYNAMIC_TYPE_OPENSSL);
+                    newRet = (char*)wolfSSL_XRealloc(ret, strLen, strLen + 1,
+                        NULL, DYNAMIC_TYPE_OPENSSL);
                     if (!newRet) {
                         WOLFSSL_MSG("realloc error");
                         goto expand_cleanup;

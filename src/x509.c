@@ -981,12 +981,11 @@ WOLFSSL_X509_EXTENSION* wolfSSL_X509_set_ext(WOLFSSL_X509* x509, int loc)
                 objSz += length;
 
                 /* Set object size and reallocate space in object buffer */
-                ext->obj->objSz = objSz;
                 if(((ext->obj->dynamic & WOLFSSL_ASN1_DYNAMIC_DATA) != 0) ||
                    (ext->obj->obj == NULL)) {
-                        ext->obj->obj =(byte*)XREALLOC((byte*)ext->obj->obj,
-                                             ext->obj->objSz,
-                                             NULL,DYNAMIC_TYPE_ASN1);
+                        ext->obj->obj =(byte*)wolfSSL_XRealloc(
+                            (byte*)ext->obj->obj, ext->obj->objSz, objSz,
+                            NULL, DYNAMIC_TYPE_ASN1);
                     if (ext->obj->obj == NULL) {
                         wolfSSL_ASN1_OBJECT_free(ext->obj);
                         wolfSSL_X509_EXTENSION_free(ext);
@@ -1001,6 +1000,7 @@ WOLFSSL_X509_EXTENSION* wolfSSL_X509_set_ext(WOLFSSL_X509* x509, int loc)
                 } else {
                     ext->obj->dynamic &= ~WOLFSSL_ASN1_DYNAMIC_DATA;
                 }
+                ext->obj->objSz = objSz;
                 /* Get OID from input and copy to ASN1_OBJECT buffer */
                 XMEMCPY(oidBuf+2, input+idx, length);
                 XMEMCPY((byte*)ext->obj->obj, oidBuf, ext->obj->objSz);

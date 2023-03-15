@@ -10808,8 +10808,10 @@ int wolfSSL_ASN1_BIT_STRING_set_bit(WOLFSSL_ASN1_BIT_STRING* str, int pos,
     bit = 1<<(7-(pos%8));
 
     if (bytes_cnt+1 > str->length) {
-        if (!(temp = (byte*)XREALLOC(str->data, bytes_cnt+1, NULL,
-                DYNAMIC_TYPE_OPENSSL))) {
+        temp = (byte*)wolfSSL_XRealloc(str->data, bytes_cnt, bytes_cnt+1, NULL,
+                DYNAMIC_TYPE_OPENSSL);
+
+        if (temp == NULL) {
             return WOLFSSL_FAILURE;
         }
         XMEMSET(temp+str->length, 0, bytes_cnt+1 - str->length);
@@ -14869,7 +14871,7 @@ int wolfSSL_GetSessionFromCache(WOLFSSL* ssl, WOLFSSL_SESSION* output)
     if (error == WOLFSSL_SUCCESS && preallocNonceUsed) {
         if (preallocNonceLen < PREALLOC_SESSION_TICKET_NONCE_LEN) {
             /* buffer bigger than needed */
-#ifndef XREALLOC
+#if !defined(XREALLOC) || defined(WOLFSSL_NO_REALLOC)
             output->ticketNonce.data = (byte*)XMALLOC(preallocNonceLen,
                 output->heap, DYNAMIC_TYPE_SESSION_TICK);
             if (output->ticketNonce.data != NULL)
@@ -21478,8 +21480,9 @@ static int wolfSSL_DupSessionEx(const WOLFSSL_SESSION* input,
                 ret = WOLFSSL_FAILURE;
             }
             else {
-                tmp = (byte*)XREALLOC(ticBuff, input->ticketLen,
-                        output->heap, DYNAMIC_TYPE_SESSION_TICK);
+                tmp = (byte*)wolfSSL_XRealloc(ticBuff, ticLenAlloc,
+                        input->ticketLen, output->heap,
+                        DYNAMIC_TYPE_SESSION_TICK);
                 if (tmp == NULL) {
                     WOLFSSL_MSG("Failed to allocate memory for ticket");
                     XFREE(ticBuff, output->heap, DYNAMIC_TYPE_SESSION_TICK);
@@ -30629,8 +30632,8 @@ int wolfSSL_ASN1_STRING_canon(WOLFSSL_ASN1_STRING* asn_out,
                     break;
                 }
 
-                p = (char*)XREALLOC(headerStr, headerLen + pemLen + 1, NULL,
-                                                       DYNAMIC_TYPE_TMP_BUFFER);
+                p = (char*)wolfSSL_XRealloc(headerStr, headerLen,
+                    headerLen + pemLen + 1, NULL, DYNAMIC_TYPE_TMP_BUFFER);
                 if (p == NULL) {
                     ret = WOLFSSL_FAILURE;
                     break;
@@ -30658,8 +30661,8 @@ int wolfSSL_ASN1_STRING_canon(WOLFSSL_ASN1_STRING* asn_out,
                 if (XSTRNCMP(pem, PEM_END, PEM_END_SZ) == 0)
                     break;
 
-                p = (char*)XREALLOC(der, derLen + pemLen + 1, NULL,
-                                                       DYNAMIC_TYPE_TMP_BUFFER);
+                p = (char*)wolfSSL_XRealloc(der, derLen, derLen + pemLen + 1,
+                    NULL, DYNAMIC_TYPE_TMP_BUFFER);
                 if (p == NULL) {
                     ret = WOLFSSL_FAILURE;
                     break;
@@ -34744,8 +34747,11 @@ int wolfSSL_a2i_ASN1_INTEGER(WOLFSSL_BIO *bio, WOLFSSL_ASN1_INTEGER *asn1,
         if (len > (int)(WOLFSSL_ASN1_INTEGER_MAX - extraTagSz)) {
             /* Allocate mem for data */
             if (asn1->isDynamic) {
-                byte* tmp = (byte*)XREALLOC(asn1->data, len + extraTagSz, NULL,
-                        DYNAMIC_TYPE_OPENSSL);
+                byte* tmp;
+
+                tmp = (byte*)wolfSSL_XRealloc(asn1->data,
+                    WOLFSSL_ASN1_INTEGER_MAX, len + extraTagSz, NULL,
+                    DYNAMIC_TYPE_OPENSSL);
                 if (!tmp) {
                     WOLFSSL_MSG("realloc error");
                     return WOLFSSL_FAILURE;
@@ -38061,7 +38067,8 @@ int wolfSSL_BUF_MEM_grow_ex(WOLFSSL_BUF_MEM* buf, size_t len,
     mx = (len_int + 3) / 3 * 4;
 
     /* use realloc */
-    tmp = (char*)XREALLOC(buf->data, mx, NULL, DYNAMIC_TYPE_OPENSSL);
+    tmp = (char*)wolfSSL_XRealloc(buf->data, buf->length, mx, NULL,
+        DYNAMIC_TYPE_OPENSSL);
     if (tmp == NULL) {
         return 0; /* ERR_R_MALLOC_FAILURE; */
     }
@@ -38103,7 +38110,8 @@ int wolfSSL_BUF_MEM_resize(WOLFSSL_BUF_MEM* buf, size_t len)
     mx = ((int)len + 3) / 3 * 4;
 
     /* We want to shrink the internal buffer */
-    tmp = (char*)XREALLOC(buf->data, mx, NULL, DYNAMIC_TYPE_OPENSSL);
+    tmp = (char*)wolfSSL_XRealloc(buf->data, buf->length, mx, NULL,
+        DYNAMIC_TYPE_OPENSSL);
     if (tmp == NULL)
         return 0;
 
@@ -40182,8 +40190,8 @@ PKCS7* wolfSSL_SMIME_read_PKCS7(WOLFSSL_BIO* in,
                  * exceeded. */
                 if ((canonPos + canonLineLen) >= canonSize) {
                     canonSize = canonPos + canonLineLen;
-                    canonSection = (char*)XREALLOC(canonSection, canonSize,
-                                                   NULL, DYNAMIC_TYPE_PKCS7);
+                    canonSection = (char*)wolfSSL_XRealloc(canonSection,
+                        canonPos, canonSize, NULL, DYNAMIC_TYPE_PKCS7);
                     if (canonSection == NULL) {
                         goto error;
                     }

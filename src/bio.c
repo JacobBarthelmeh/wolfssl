@@ -2416,8 +2416,13 @@ int wolfSSL_BIO_flush(WOLFSSL_BIO* bio)
         else {
             currLen = XSTRLEN(b->ip);
             if (currLen != newLen) {
+            #ifdef WOLFSSL_NO_REALLOC
+                b->ip = (char*)XREALLOC(b->ip, currLen, newLen + 1, b->heap,
+                    DYNAMIC_TYPE_OPENSSL);
+            #else
                 b->ip = (char*)XREALLOC(b->ip, newLen + 1, b->heap,
                     DYNAMIC_TYPE_OPENSSL);
+            #endif
                 if (b->ip == NULL) {
                     WOLFSSL_MSG("Hostname realloc failed.");
                     return WOLFSSL_FAILURE;

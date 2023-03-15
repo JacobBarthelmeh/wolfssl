@@ -501,7 +501,13 @@ typedef struct w64wrapper {
                 #else
                     #define XFREE(p, h, t)       {void* xp = (p); if (xp) wolfSSL_Free(xp, h, t, __func__, __LINE__);}
                 #endif
-                #define XREALLOC(p, n, h, t) wolfSSL_Realloc((p), (n), (h), (t), __func__, __LINE__)
+                #ifdef WOLFSSL_NO_REALLOC
+                    #define XREALLOC(p, pSz, n, h, t) \
+                        wolfSSL_NoRealloc((p), (pSz), (n), (h), (t), __func__, __LINE__)
+                #else
+                    #define XREALLOC(p, n, h, t) \
+                        wolfSSL_Realloc((p), (n), (h), (t), __func__, __LINE__)
+                #endif
             #else
                 #define XMALLOC(s, h, t)     wolfSSL_Malloc((s), (h), (t))
                 #ifdef WOLFSSL_XFREE_NO_NULLNESS_CHECK
@@ -509,7 +515,13 @@ typedef struct w64wrapper {
                 #else
                     #define XFREE(p, h, t)       {void* xp = (p); if (xp) wolfSSL_Free(xp, h, t);}
                 #endif
-                #define XREALLOC(p, n, h, t) wolfSSL_Realloc((p), (n), (h), (t))
+                #ifdef WOLFSSL_NO_REALLOC
+                    #define XREALLOC(p, pSz, n, h, t) \
+                        wolfSSL_NoRealloc((p), (pSz), (n), (h), (t))
+                #else
+                    #define XREALLOC(p, n, h, t) \
+                        wolfSSL_Realloc((p), (n), (h), (t))
+                #endif
             #endif /* WOLFSSL_DEBUG_MEMORY */
         #elif (!defined(FREERTOS) && !defined(FREERTOS_TCP)) || defined(WOLFSSL_TRACK_MEMORY)
             #ifdef WOLFSSL_DEBUG_MEMORY
@@ -527,7 +539,12 @@ typedef struct w64wrapper {
                 #else
                     #define XFREE(p, h, t)       {void* xp = (p); if (xp) wolfSSL_Free(xp);}
                 #endif
-                #define XREALLOC(p, n, h, t) wolfSSL_Realloc((p), (n))
+                #ifdef WOLFSSL_NO_REALLOC
+                    #define XREALLOC(p, pSz, n, h, t) \
+                        wolfSSL_NoRealloc((p), (pSz), (n), (h), (t))
+                #else
+                    #define XREALLOC(p, n, h, t) wolfSSL_Realloc((p), (n))
+                #endif
             #endif /* WOLFSSL_DEBUG_MEMORY */
         #endif /* WOLFSSL_STATIC_MEMORY */
     #endif
