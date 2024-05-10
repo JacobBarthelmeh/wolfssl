@@ -21853,6 +21853,18 @@ static int DecodeCertInternal(DecodedCert* cert, int verify, int* criticalExt,
         subjectSz = dataASN[X509CERTASN_IDX_TBS_SPUBKEYINFO_SEQ].offset -
             dataASN[X509CERTASN_IDX_TBS_SUBJECT_SEQ].offset;
     }
+
+#ifndef WOLFSSL_NO_ASN_STRICT
+    /* Strict serial number requirements based on RFC 5280 section 4.1.2.2 */
+    if (ret == 0) {
+        if (serialSz == 1 && cert->serial[0] == 0) {
+            WOLFSSL_MSG("Serial number cannot be zero");
+            WOLFSSL_ERROR_VERBOSE(ASN_PARSE_E);
+            ret = ASN_PARSE_E;
+        }
+    }
+#endif
+
     if ((ret == 0) && stopAtPubKey) {
         /* Return any bad date error through badDateRet and return offset of
          * subjectPublicKeyInfo.
@@ -24164,6 +24176,15 @@ int wc_GetSerialNumber(const byte* input, word32* inOutIdx,
         WOLFSSL_ERROR_VERBOSE(ASN_PARSE_E);
         return ASN_PARSE_E;
     }
+
+#ifndef WOLFSSL_NO_ASN_STRICT
+    /* Strict serial number requirements based on RFC 5280 section 4.1.2.2 */
+    if (*serialSz == 1 && serial[0] == 0) {
+        WOLFSSL_MSG("Serial number must be positive, not zero value");
+        WOLFSSL_ERROR_VERBOSE(ASN_PARSE_E);
+        return ASN_PARSE_E;
+    }
+#endif
 
     /* return serial */
     XMEMCPY(serial, &input[*inOutIdx], (size_t)*serialSz);
