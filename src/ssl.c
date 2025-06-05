@@ -26040,13 +26040,26 @@ int wolfSSL_RAND_poll(void)
         WOLFSSL_MSG("Global RNG no Init");
         return  WOLFSSL_FAILURE;
     }
+
     ret = wc_GenerateSeed(&globalRNG.seed, entropy, entropy_sz);
     if (ret != 0){
         WOLFSSL_MSG("Bad wc_RNG_GenerateBlock");
-        ret = WOLFSSL_FAILURE;
-    }else
-        ret = WOLFSSL_SUCCESS;
+    }
 
+    if (ret == 0) {
+        ret = wc_RNG_DRBG_Reseed(&globalRNG, entropy, entropy_sz);
+        if (ret != 0){
+            WOLFSSL_MSG("Reseed with pulled entropy failed");
+        }
+    }
+
+    /* conform to expected return values WOLFSSL_FAILURE or WOLFSSL_SUCCESS */
+    if (ret != 0) {
+        ret = WOLFSSL_FAILURE;
+    }
+    else {
+        ret = WOLFSSL_SUCCESS;
+    }
     return ret;
 }
 
