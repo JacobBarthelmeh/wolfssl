@@ -92,7 +92,7 @@ static int _ShaUpdate(byte* buffer, word32* buffLen, const byte* ctx,
         if (*buffLen == WC_CAAM_HASH_BLOCK) {
             /* Set buffer for context */
             buf[idx].BufferType = DataBuffer;
-            buf[idx].TheAddress = (CAAM_ADDRESS)sha->ctx;
+            buf[idx].TheAddress = (CAAM_ADDRESS)ctx;
             buf[idx].Length     = digestSz + WC_CAAM_CTXLEN;
         #if defined(__INTEGRITY) || defined(INTEGRITY)
             buf[idx].Transferred = 0;
@@ -101,7 +101,7 @@ static int _ShaUpdate(byte* buffer, word32* buffLen, const byte* ctx,
 
             /* data to update with */
             buf[idx].BufferType = DataBuffer | LastBuffer;
-            buf[idx].TheAddress = (CAAM_ADDRESS)sha->buffer;
+            buf[idx].TheAddress = (CAAM_ADDRESS)buffer;
             buf[idx].Length     = *buffLen;
         #if defined(__INTEGRITY) || defined(INTEGRITY)
             buf[idx].Transferred = 0;
@@ -127,7 +127,7 @@ static int _ShaUpdate(byte* buffer, word32* buffLen, const byte* ctx,
 
         /* Set buffer for context */
         buf[idx].BufferType = DataBuffer;
-        buf[idx].TheAddress = (CAAM_ADDRESS)sha->ctx;
+        buf[idx].TheAddress = (CAAM_ADDRESS)ctx;
         buf[idx].Length     = digestSz + WC_CAAM_CTXLEN;
     #if defined(__INTEGRITY) || defined(INTEGRITY)
         buf[idx].Transferred = 0;
