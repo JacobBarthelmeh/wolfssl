@@ -2253,6 +2253,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
     ExpectNotNull(ctx = test_tls_parse_server_ctx(wolfTLSv1_3_server_method()));
     ExpectNotNull(ssl = wolfSSL_new(ctx));
@@ -2268,6 +2270,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
     /* TLSX_KeyShare_Choose(): extension->resp == 1 means a server key share
      * was already chosen (e.g. after a HelloRetryRequest) -- outside of
@@ -2299,6 +2303,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
 #ifdef WOLFSSL_HAVE_MLKEM
     /* TLSX_KeyShare_Choose(): a client-offered group above WOLFSSL_ECC_MAX
@@ -2335,6 +2341,8 @@ int test_TLSX_KeyShare_negotiate(void)
             }
             wolfSSL_free(ssl);
             wolfSSL_CTX_free(ctx);
+            ssl = NULL;
+            ctx = NULL;
         }
     }
 #endif /* WOLFSSL_HAVE_MLKEM */
@@ -2351,6 +2359,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
     ExpectNotNull(ctx = test_tls_parse_server_ctx(wolfTLSv1_3_server_method()));
     ExpectNotNull(ssl = wolfSSL_new(ctx));
@@ -2362,6 +2372,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
     /* TLSX_KeyShare_Parse_ClientHello(): the list-length prefix and the
      * MAX_EXT_DATA_LEN bound. Both are checked against the 'length'
@@ -2397,6 +2409,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
     /* TLSX_KeyShare_Parse(), server_hello direction: "not in the list sent
      * if there isn't a private key". A group that was offered (both
@@ -2431,6 +2445,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
     /* Same shape, but the client's entry already has a (fully initialised,
      * so freeing it later is safe) DH key object -- key != NULL alone is
@@ -2469,6 +2485,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 
     /* Same shape, but the client's entry already has a private key (as a
      * real one would by the time a ServerHello arrives): the gate passes
@@ -2508,6 +2526,8 @@ int test_TLSX_KeyShare_negotiate(void)
     }
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+    ssl = NULL;
+    ctx = NULL;
 #endif /* !NO_DH && HAVE_FFDHE_2048 */
 #endif
     return EXPECT_RESULT();
